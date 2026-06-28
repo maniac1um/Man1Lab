@@ -1,19 +1,28 @@
 from pathlib import Path
 
 from models.paper import PaperModel
+from prompt.builder import PromptBuilder
+from prompt.loader import PromptLoader
 from services.pdf_service import PDFService
 
 _PLACEHOLDER = "Pending LLM extraction."
 
 
 class Reader:
-    def __init__(self, pdf_service: PDFService) -> None:
+    def __init__(
+        self,
+        pdf_service: PDFService,
+        prompt_builder: PromptBuilder | None = None,
+    ) -> None:
         self._pdf_service = pdf_service
+        self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._last_prompt: str | None = None
 
     def read_text(self, paper_path: Path) -> str:
         return self._pdf_service.extract(paper_path)
 
     def run(self, paper_path: Path) -> PaperModel:
+        self._last_prompt = self._prompt_builder.build_reader_prompt()
         text = self.read_text(paper_path)
         return self._build_placeholder_paper(text, paper_path)
 
