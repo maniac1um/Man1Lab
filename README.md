@@ -1,40 +1,12 @@
 # ResearchAgent MVP
 
-ResearchAgent is an engineering pipeline for automated research paper reproduction. Given a research paper in PDF form, the system extracts structured paper information, plans engineering tasks, generates a reproduction repository, prepares a Python environment, and executes the training script.
+ResearchAgent is an engineering pipeline for automated research paper reproduction. Given a research paper in PDF form, the system extracts structured paper information, plans engineering tasks, generates a reproduction repository, prepares a Python environment, executes the training script, verifies results, and produces a final report.
 
-## Current Pipeline
+## Status
 
-```text
-Research Paper (PDF)
-        ↓
-Reader → PaperModel
-        ↓
-Planner → TaskModel
-        ↓
-Coder → Workspace
-        ↓
-Runner → ExecutionResult
-        ↓
-Reviewer (planned)
-        ↓
-Reporter → ReportModel
-```
+See **[docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md)** for implemented capabilities, pipeline state, latest integration result, and active issues.
 
-## Implemented Capabilities
-
-| Capability | Description |
-|------------|-------------|
-| **Reader** | PDF ingestion, LLM structured extraction, `PaperModel` construction |
-| **Planner** | Engineering task decomposition, `TaskModel` construction |
-| **Coder** | Workspace skeleton, task routing, per-file LLM code generation |
-| **Runner** | Environment preparation (venv, pip) and `scripts/train.py` execution |
-
-## Planned Capabilities
-
-| Capability | Description |
-|------------|-------------|
-| **Reviewer** | Execution failure analysis and `PatchPlan` generation |
-| **Reporter** | Full structured final reporting (partial template exists) |
+New contributors: start with **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**.
 
 ## Requirements
 
@@ -67,10 +39,12 @@ OPENAI_MODEL=deepseek-v4-pro
 
 | Document | Location |
 |----------|----------|
+| **Current status** | [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) |
+| **Getting started** | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
+| Documentation index | [docs/README.md](docs/README.md) |
 | Development guide | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Architecture | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
-| Capabilities | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
-| Roadmap | [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) |
+| Reviews | [docs/reviews/README.md](docs/reviews/README.md) |
 | ADRs | [docs/adr/README.md](docs/adr/README.md) |
 
 ## Project Structure
@@ -79,8 +53,9 @@ OPENAI_MODEL=deepseek-v4-pro
 agents/          # Reader, Planner, Coder, Runner, Reviewer, Reporter
 models/          # Pydantic domain models
 workflow/        # WorkflowOrchestrator
-services/        # PDF, environment, execution services
+services/        # PDF, environment, execution, verification services
 execution/       # ExecutionPlanner
+planning/        # PatchPlanner
 workspace/       # WorkspaceManager
 prompt/          # Prompt loader and builder
 llm/             # LLM provider abstraction

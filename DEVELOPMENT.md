@@ -23,7 +23,8 @@ Each milestone is scoped, implemented, reviewed, and committed before the next b
 Before writing code:
 
 - Read [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
-- Check [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) for current milestone
+- Check [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) for current implementation state
+- Check [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) for milestone timeline
 - Identify affected frozen interfaces (see Architecture Freeze below)
 - Define goal, scope, acceptance criteria, and deliverables
 
@@ -200,9 +201,11 @@ As of M5.F, the following capabilities are considered complete for MVP baseline:
 - **Coder** — workspace construction and population
 - **Runner** — environment preparation and script execution
 
-**Reviewer** is the next capability milestone (M6). Public interfaces for frozen capabilities must not change without ADR and architecture review.
+Public interfaces for these frozen capabilities must not change without ADR and architecture review.
 
-See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the full capability summary.
+Post-M5 capabilities (Verification, Reviewer, PatchPlanner, Reporter) and current integration status are documented in [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md).
+
+See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the M5.F capability reference (note: status tables there may lag CURRENT_STATUS).
 
 ---
 
@@ -215,6 +218,9 @@ Research_Agent_MVP/
 ├── DEVELOPMENT.md          # This file
 ├── ARCHITECTURE.md         # Pointer to canonical architecture doc
 ├── docs/
+│   ├── README.md           # Documentation index
+│   ├── GETTING_STARTED.md  # Contributor quick start
+│   ├── CURRENT_STATUS.md   # Implementation status (single source of truth)
 │   ├── architecture/       # Architecture document
 │   ├── roadmap/            # Roadmap and milestone specs
 │   ├── adr/                # Architecture Decision Records
@@ -252,6 +258,9 @@ Set `PAPER_PATH` to override the default `paper.pdf` location.
 
 | Document | Location |
 |----------|----------|
+| **Current status** | [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) |
+| **Getting started** | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
+| Documentation index | [docs/README.md](docs/README.md) |
 | Architecture | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
 | Capabilities | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
 | Roadmap | [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) |
