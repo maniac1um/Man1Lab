@@ -66,6 +66,14 @@ class PromptBuilderTest(unittest.TestCase):
         self.assertLess(prompt.index("PEXTRACTION"), prompt.index("PSCHEMA"))
         self.assertLess(prompt.index("PSCHEMA"), prompt.index("PEXAMPLES"))
 
+    def test_build_coder_prompt_uses_category_template(self) -> None:
+        coder_dir = self.prompts_dir / "coder"
+        coder_dir.mkdir(parents=True, exist_ok=True)
+        (coder_dir / "system.md").write_text("CSYSTEM", encoding="utf-8")
+        (coder_dir / "source.md").write_text("CSOURCE", encoding="utf-8")
+        prompt = self.builder.build_coder_prompt("source")
+        self.assertLess(prompt.index("CSYSTEM"), prompt.index("CSOURCE"))
+
 
 if __name__ == "__main__":
     unittest.main()

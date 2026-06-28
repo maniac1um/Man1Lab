@@ -1,27 +1,54 @@
 import re
-from datetime import datetime
 from pathlib import Path
 
 import config
 from models.report import ReportModel
+from models.review import PatchPlan
+from models.routing import TaskRoutingTable
+from models.task import TaskModel
 from models.workspace import Workspace
+
+REPOSITORY_SUBDIRS = ("src", "configs", "scripts", "logs", "outputs")
 
 
 class WorkspaceManager:
     def __init__(self, root: Path | None = None, outputs_dir: Path | None = None) -> None:
         self._root = root or config.WORKSPACE_ROOT
         self._outputs_dir = outputs_dir or config.OUTPUTS_DIR
+        self._routing_tables: dict[Path, TaskRoutingTable] = {}
         self._root.mkdir(parents=True, exist_ok=True)
         self._outputs_dir.mkdir(parents=True, exist_ok=True)
 
     def create_workspace(self, paper_slug: str) -> Workspace:
         slug = self._sanitize_slug(paper_slug)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        workspace_name = f"{timestamp}_{slug}"
-        root_path = self._root / workspace_name
-        for subdir in ("src", "configs", "scripts", "logs", "outputs"):
+        root_path = self._root / slug
+        for subdir in REPOSITORY_SUBDIRS:
             (root_path / subdir).mkdir(parents=True, exist_ok=True)
         return Workspace(root_path=root_path, paper_slug=slug)
+
+    def store_routing_table(self, workspace: Workspace, routing_table: TaskRoutingTable) -> None:
+        self._routing_tables[workspace.root_path.resolve()] = routing_table
+
+    def get_routing_table(self, workspace: Workspace) -> TaskRoutingTable | None:
+        return self._routing_tables.get(workspace.root_path.resolve())
+
+    def initialize_repository(
+        self,
+        workspace: Workspace,
+        paper_title: str,
+        task: TaskModel,
+        patch_plan: PatchPlan | None = None,
+    ) -> None:
+        self.write_file(
+            workspace,
+            "README.md",
+            self._format_readme(paper_title, task, patch_plan),
+        )
+        self.write_file(
+            workspace,
+            "requirements.txt",
+            self._format_requirements(),
+        )
 
     def write_file(self, workspace: Workspace, relative_path: str, content: str) -> None:
         path = workspace.root_path / relative_path
@@ -49,6 +76,65 @@ class WorkspaceManager:
     def _sanitize_slug(paper_slug: str) -> str:
         slug = re.sub(r"[^a-z0-9]+", "_", paper_slug.lower()).strip("_")
         return slug or "paper"
+
+    @staticmethod
+    def _format_requirements() -> str:
+        return "# Dependencies will be populated during code generation.\n"
+
+    @staticmethod
+    def _format_readme(
+        paper_title: str,
+        task: TaskModel,
+        patch_plan: PatchPlan | None = None,
+    ) -> str:
+        lines = [
+            f"# {paper_title}",
+            "",
+            "## Project Structure",
+            "",
+            "```text",
+            ".",
+            "├── src/",
+            "├── configs/",
+            "├── scripts/",
+            "├── outputs/",
+            "├── logs/",
+            "├── README.md",
+            "└── requirements.txt",
+            "```",
+            "",
+            "## Engineering Tasks",
+            "",
+        ]
+        for step in task.steps:
+            lines.append(
+                f"- **{step.id}** ({step.status}): {step.name} — {step.description}"
+            )
+        if not task.steps:
+            lines.append("- No tasks defined.")
+        lines.extend(
+            [
+                "",
+                "## Workspace Status",
+                "",
+                "- **Repository skeleton:** created",
+                "- **Source code generation:** not started",
+                "- **Configuration generation:** not started",
+                "",
+                "This workspace is a repository skeleton. "
+                "Implementation files have not been generated yet.",
+            ]
+        )
+        if patch_plan is not None:
+            lines.extend(
+                [
+                    "",
+                    "## Patch Analysis",
+                    "",
+                    patch_plan.analysis,
+                ]
+            )
+        return "\n".join(lines) + "\n"
 
     @staticmethod
     def _format_report(report: ReportModel) -> str:

@@ -14,3 +14,10 @@ class PromptBuilder:
         sections = ("system", "extraction", "schema", "examples")
         parts = [self._loader.load("planner", section) for section in sections]
         return "\n\n".join(parts)
+
+    def build_coder_prompt(self, file_category: str) -> str:
+        parts = [
+            self._loader.load("coder", "system"),
+            self._loader.load("coder", file_category),
+        ]
+        return "\n\n".join(parts)

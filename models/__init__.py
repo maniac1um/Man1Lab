@@ -2,6 +2,7 @@ from models.execution import ExecutionResult
 from models.paper import PaperModel
 from models.report import ReportModel, StageRecord, WorkflowHistory
 from models.review import PatchItem, PatchPlan
+from models.routing import RepositoryTarget, TaskRoutingTable
 from models.task import TaskModel, TaskStep
 from models.workspace import Workspace
 
@@ -11,8 +12,10 @@ __all__ = [
     "PatchItem",
     "PatchPlan",
     "ReportModel",
+    "RepositoryTarget",
     "StageRecord",
     "TaskModel",
+    "TaskRoutingTable",
     "TaskStep",
     "WorkflowHistory",
     "Workspace",
