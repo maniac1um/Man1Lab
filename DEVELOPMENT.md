@@ -164,10 +164,13 @@ Changing a frozen interface requires:
 | Component | Frozen Contract |
 |-----------|-----------------|
 | `WorkflowOrchestrator` | Constructor signature; `run(paper_path: Path) -> ReportModel` |
-| `Reader` | `read_text(paper_path: Path) -> str`; `run(paper_path: Path) -> PaperModel` |
 | `PromptBuilder` | Public builder methods (e.g. `build_reader_prompt() -> str`) |
 | `PromptLoader` | `load(agent: str, section: str) -> str` |
 | `WorkspaceManager` | `create_workspace`, `write_file`, `read_file`, `write_output`, `write_report` |
+| `Reader` | `read_text(paper_path: Path) -> str`; `run(paper_path: Path) -> PaperModel` |
+| `Planner` | `run(paper: PaperModel) -> TaskModel` |
+| `Coder` | `run(paper, task, patch_plan=None) -> Workspace` |
+| `Runner` | `run(workspace: Workspace) -> ExecutionResult` |
 
 ### Not Frozen
 
@@ -176,6 +179,30 @@ Changing a frozen interface requires:
 - Private methods and attributes (e.g. `Reader._last_prompt`)
 - Test fixtures
 - Prompt file content under `prompts/`
+
+### Repository and Runtime Artifact Ownership
+
+Repository files and runtime artifacts have different ownership boundaries.
+
+- **Repository files** evolve through `Coder` and are written exclusively via `WorkspaceManager`.
+- **Runtime artifacts** evolve through `Runner` and future execution services (currently `EnvironmentService`).
+
+Do not route runtime artifact creation (virtual environments, execution logs, checkpoints, telemetry) through `WorkspaceManager`. Do not route repository file generation through execution services.
+
+See [ADR-0006](docs/adr/ADR-0006-Runtime-Artifact-Ownership.md) and [Architecture §8](docs/architecture/ARCHITECTURE.md#8-workspace).
+
+### Capability Freeze (M5.F)
+
+As of M5.F, the following capabilities are considered complete for MVP baseline:
+
+- **Reader** — `PaperModel` extraction pipeline
+- **Planner** — `TaskModel` planning pipeline
+- **Coder** — workspace construction and population
+- **Runner** — environment preparation and script execution
+
+**Reviewer** is the next capability milestone (M6). Public interfaces for frozen capabilities must not change without ADR and architecture review.
+
+See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the full capability summary.
 
 ---
 
@@ -197,7 +224,9 @@ Research_Agent_MVP/
 ├── agents/                 # Agent implementations
 ├── models/                 # Pydantic domain models
 ├── workflow/               # Orchestrator and pipeline
-├── services/               # Cross-cutting services (PDF)
+├── services/               # Cross-cutting services (PDF, environment, execution)
+├── execution/              # ExecutionPlanner
+├── routing/                # TaskRouter
 ├── prompt/                 # Prompt loader and builder
 ├── prompts/                # Prompt resource files
 ├── llm/                    # LLM provider abstraction
@@ -224,6 +253,7 @@ Set `PAPER_PATH` to override the default `paper.pdf` location.
 | Document | Location |
 |----------|----------|
 | Architecture | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
+| Capabilities | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
 | Roadmap | [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) |
 | Milestones | [docs/roadmap/MILESTONES.md](docs/roadmap/MILESTONES.md) |
 | ADRs | [docs/adr/README.md](docs/adr/README.md) |

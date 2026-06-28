@@ -8,6 +8,7 @@ Entry point for ResearchAgent project documentation.
 |----------|-------------|
 | [DEVELOPMENT.md](../DEVELOPMENT.md) | Engineering workflow, commit policy, architecture freeze |
 | [Architecture](architecture/ARCHITECTURE.md) | System architecture and design principles |
+| [Capabilities](architecture/CAPABILITIES.md) | Capability summary and implementation status |
 | [Roadmap](roadmap/ROADMAP.md) | Long-term milestone timeline |
 | [Milestones](roadmap/MILESTONES.md) | Milestone workflow and specifications |
 
@@ -20,6 +21,8 @@ Entry point for ResearchAgent project documentation.
 | [ADR-0003](adr/ADR-0003-Prompt-Infrastructure.md) | Prompt Infrastructure |
 | [ADR-0004](adr/ADR-0004-Planning-Strategy.md) | Planning Strategy |
 | [ADR-0005](adr/ADR-0005-Planner-Capability.md) | Planner Capability |
+| [ADR-0006](adr/ADR-0006-Runtime-Artifact-Ownership.md) | Runtime Artifact Ownership |
+| [ADR-0007](adr/ADR-0007-Execution-Capability.md) | Execution Capability |
 
 Full ADR index and template: [adr/README.md](adr/README.md)
 

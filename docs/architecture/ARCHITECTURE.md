@@ -70,12 +70,53 @@ The Orchestrator is the only component responsible for scheduling agents.
 
 Agents never communicate directly.
 
+## 3.1 Implementation Status
+
+| Capability | Status | Output Artifact |
+|------------|--------|-----------------|
+| Reader | **Implemented** | `PaperModel` |
+| Planner | **Implemented** | `TaskModel` |
+| Coder | **Implemented** | `Workspace` |
+| Runner | **Implemented** | `ExecutionResult` |
+| Reviewer | **Planned** | `PatchPlan` |
+| Reporter | **Partial** | `ReportModel` |
+
+See [CAPABILITIES.md](CAPABILITIES.md) for component-level detail.
+
+### Canonical Pipeline (Implemented)
+
+```text
+Research Paper
+        ↓
+Reader
+        ↓
+PaperModel
+        ↓
+Planner
+        ↓
+TaskModel
+        ↓
+Coder
+        ↓
+Workspace
+        ↓
+Runner
+        ↓
+ExecutionResult
+        ↓
+Reviewer (Planned)
+```
+
+The full workflow including review loop and reporting is described in Section 4.
+
 ---
 
 # 4. Workflow
 
+## 4.1 Primary Pipeline
+
 ```text
-paper.pdf
+Research Paper (paper.pdf)
 
 ↓
 
@@ -111,7 +152,7 @@ ExecutionResult
 
 ↓
 
-Reviewer
+Reviewer (Planned)
 
 ↓
 
@@ -119,7 +160,7 @@ PatchPlan
 
 ↓
 
-Coder
+Coder (retry, when review enabled)
 
 ↓
 
@@ -131,8 +172,12 @@ Reporter
 
 ↓
 
-Final Report
+ReportModel
 ```
+
+## 4.2 Review Loop
+
+When Reviewer is implemented (M6), failed executions will produce a `PatchPlan` that triggers Coder retry. The current Reviewer returns a stub `PatchPlan` with `requires_patch=False`.
 
 ---
 
@@ -282,6 +327,29 @@ Generate
 
 Coder never executes code.
 
+### Implementation Status
+
+**Status:** Implemented
+
+**Pipeline:**
+
+```text
+PaperModel + TaskModel
+  ↓
+WorkspaceManager.create_workspace()
+  ↓
+TaskRouter.route_task() → TaskRoutingTable
+  ↓
+WorkspaceManager.initialize_repository()
+  ↓
+for each RepositoryTarget:
+    PromptBuilder → LLM → WorkspaceManager.write_file()
+  ↓
+Workspace
+```
+
+**Modules:** `WorkspaceManager`, `TaskRouter`, `PromptBuilder`, `LLMProvider`, `CoderMockLLMProvider`
+
 ---
 
 ## 5.5 Runner
@@ -296,20 +364,33 @@ ExecutionResult
 
 Responsibilities
 
-Run
+Coordinate execution:
 
-* pip install
-* pytest
-* python train.py
+* environment preparation (`EnvironmentService`)
+* execution planning (`ExecutionPlanner`)
+* script execution (`ExecutionService`)
 
-Collect
+Runner never modifies repository source files. Runtime artifact creation is delegated to execution services (see ADR-0006, ADR-0007).
 
-* stdout
-* stderr
-* execution time
-* exit code
+### Implementation Status
 
-Runner never modifies files.
+**Status:** Implemented
+
+**Pipeline:**
+
+```text
+Workspace
+  ↓
+EnvironmentService.prepare()     → .venv, pip install, environment_preparation.log
+  ↓
+ExecutionPlanner.plan()        → ExecutionPlan (scripts/train.py)
+  ↓
+ExecutionService.execute()     → subprocess, execution.log
+  ↓
+ExecutionResult
+```
+
+**Modules:** `EnvironmentService`, `ExecutionPlanner`, `ExecutionService`, `ExecutionPlan`
 
 ---
 
@@ -333,6 +414,12 @@ Analyze
 
 Reviewer never edits source code.
 
+### Implementation Status
+
+**Status:** Planned (stub only)
+
+The current `Reviewer.run()` returns `requires_patch=False` without analyzing execution output.
+
 ---
 
 ## 5.7 Reporter
@@ -353,9 +440,59 @@ Generate
 * debugging history
 * final status
 
+### Implementation Status
+
+**Status:** Partial (template report generation)
+
+`Reporter.run()` produces a template `ReportModel`. `WorkspaceManager.write_report()` persists the report to project `outputs/`.
+
 ---
 
-# 6. Domain Models
+# 6. Artifact Pipeline
+
+Artifacts evolve through the pipeline as typed domain models and on-disk workspace content.
+
+```text
+Research Paper (PDF)
+        ↓
+PaperModel
+        ↓
+TaskModel
+        ↓
+Workspace
+        ↓
+ExecutionResult
+        ↓
+PatchPlan (planned — Reviewer capability)
+        ↓
+ReportModel
+```
+
+## 6.1 Artifact Definitions
+
+| Artifact | Type | Produced by | Description |
+|----------|------|-------------|-------------|
+| Research Paper | File (`paper.pdf`) | User input | Source PDF document |
+| `PaperModel` | Pydantic model | Reader | Structured paper fields |
+| `TaskModel` | Pydantic model | Planner | Ordered engineering tasks |
+| `Workspace` | Pydantic model + directory | Coder | Reproduction project root |
+| `ExecutionResult` | Pydantic model | Runner | Script execution outcome |
+| `PatchPlan` | Pydantic model | Reviewer (planned) | Repair strategy for retry loop |
+| `ReportModel` | Pydantic model | Reporter | Final workflow report |
+
+## 6.2 On-Disk Artifact Evolution
+
+| Stage | Repository artifacts | Runtime artifacts |
+|-------|---------------------|-------------------|
+| After Coder | `src/`, `configs/`, `scripts/`, `README.md`, `requirements.txt` | — |
+| After Runner (prep) | unchanged | `.venv/`, `logs/environment_preparation.log` |
+| After Runner (execute) | unchanged | `logs/execution.log` |
+
+Repository and runtime artifact ownership is defined in [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md).
+
+---
+
+# 7. Domain Models
 
 Every stage communicates through strongly typed models.
 
@@ -379,7 +516,7 @@ No raw dictionaries should be passed between agents.
 
 ---
 
-# 7. Workspace
+# 8. Workspace
 
 Every reproduction task owns an independent workspace.
 
@@ -399,15 +536,97 @@ paper_name/
     logs/
 
     outputs/
+
+    .venv/
 ```
 
-Agents never manipulate files directly.
+A workspace contains two categories of on-disk content with different ownership boundaries. See [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md).
 
-All file operations are managed by WorkspaceManager.
+Agents never manipulate files directly. Repository writes go through `WorkspaceManager`. Runtime writes go through execution services invoked by `Runner`.
+
+## 8.1 Repository Artifact Lifecycle
+
+Repository artifacts are the files that constitute the reproduction project design.
+
+**Owner:** `WorkspaceManager`
+
+**Orchestrated by:** `Coder`
+
+**Lifecycle:**
+
+```text
+TaskModel
+  ↓
+Coder.run()
+  ↓
+WorkspaceManager.create_workspace()        → directory skeleton
+WorkspaceManager.store_routing_table()     → routing metadata (in-memory)
+WorkspaceManager.initialize_repository()   → README.md, requirements.txt stub
+WorkspaceManager.write_file()              → per-target generated files (M4.3)
+  ↓
+Repository artifacts on disk
+```
+
+**Repository artifact paths:**
+
+| Path | Purpose |
+|------|---------|
+| `src/` | Source modules |
+| `configs/` | Configuration files |
+| `scripts/` | Executable scripts |
+| `README.md` | Project documentation |
+| `requirements.txt` | Dependency declaration |
+
+Repository artifacts evolve when `Coder.run()` is invoked, including during review-loop retries.
+
+`WorkspaceManager` methods used: `create_workspace`, `initialize_repository`, `write_file`, `read_file`, `write_output`.
+
+## 8.2 Runtime Artifact Lifecycle
+
+Runtime artifacts are files created when a workspace is prepared or executed.
+
+**Owner:** Runtime services (`EnvironmentService`, `ExecutionService`)
+
+**Orchestrated by:** `Runner`
+
+**Lifecycle:**
+
+```text
+Workspace
+  ↓
+Runner.run()
+  ↓
+EnvironmentService.prepare()
+  ↓
+.venv/, logs/environment_preparation.log
+  ↓
+ExecutionPlanner.plan() → ExecutionPlan
+  ↓
+ExecutionService.execute()
+  ↓
+logs/execution.log
+  ↓
+ExecutionResult
+```
+
+**Runtime artifact paths:**
+
+| Path | Purpose | Status |
+|------|---------|--------|
+| `.venv/` | Python virtual environment | Implemented (M5.1) |
+| `logs/environment_preparation.log` | Environment prep log | Implemented (M5.1) |
+| `logs/execution.log` | Script execution log | Implemented (M5.2) |
+| `outputs/` | Execution run outputs | Reserved |
+| `checkpoints/` | Model checkpoints | Reserved |
+| `tensorboard/` | Training telemetry | Reserved |
+
+Runtime artifacts evolve when `Runner.run()` is invoked. They are not created or modified by `WorkspaceManager` or `Coder`.
+
+**Note:** `WorkspaceManager.write_output()` writes to `workspace/outputs/` as a repository-scoped output path. Future execution services may also write runtime outputs under `outputs/`. Callers must use the API matching the artifact category.
 
 ---
 
-# 8. LLM Layer
+# 9. LLM Layer
 
 The system should never call an LLM SDK directly inside an Agent.
 
@@ -439,7 +658,7 @@ Future provider replacement should require zero changes to Agent logic.
 
 ---
 
-# 9. Prompt System
+# 10. Prompt System
 
 Each Agent owns an independent prompt directory.
 
@@ -465,13 +684,14 @@ Few-shot examples can be added later without modifying workflow logic.
 
 ---
 
-# 10. Directory Structure
+# 11. Directory Structure
 
 ```text
-research-agent/
+Research_Agent_MVP/
 
 ├── app.py
 ├── config.py
+├── README.md
 │
 ├── workflow/
 │   ├── orchestrator.py
@@ -488,33 +708,43 @@ research-agent/
 ├── models/
 │   ├── paper.py
 │   ├── task.py
+│   ├── workspace.py
+│   ├── routing.py
 │   ├── execution.py
+│   ├── execution_plan.py
 │   ├── review.py
 │   └── report.py
 │
+├── services/
+│   ├── pdf_service.py
+│   ├── environment_service.py
+│   └── execution_service.py
+│
+├── execution/
+│   └── execution_planner.py
+│
+├── routing/
+│   └── task_router.py
+│
+├── validation/
+│
 ├── llm/
-│   ├── provider.py
-│   ├── openai_provider.py
-│   └── anthropic_provider.py
 │
 ├── workspace/
-│   ├── manager.py
-│   └── tasks/
+│   └── manager.py
+│
+├── prompt/
 │
 ├── prompts/
 │
-├── tools/
-│
-├── outputs/
-│
-├── logs/
+├── docs/
 │
 └── tests/
 ```
 
 ---
 
-# 11. Design Principles
+# 12. Design Principles
 
 1. Single Responsibility
 
@@ -546,7 +776,7 @@ Future modules should integrate without redesigning the architecture.
 
 ---
 
-# 12. Future Roadmap
+# 13. Future Roadmap
 
 v0.1
 

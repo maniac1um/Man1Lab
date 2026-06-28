@@ -252,29 +252,11 @@ Sub-milestones completed: M3.1 (Structured Task Extraction), M3.2 (Task Validati
 
 ## Planned Milestones
 
-### Phase 3 — Coder Capability
+### M6 — Reviewer Capability
 
-**Status:** Not Started
+**Status:** Next
 
-### M4.1 — Workspace Population
-
-**Goal:** Populate reproduction workspaces from `PaperModel` and `TaskModel` via `WorkspaceManager`.
-
-### M4.2 — Structured Code Generation
-
-**Goal:** Generate project source code, configs, and scripts using LLM-backed structured extraction.
-
-### M4.3 — Coder Capability Review
-
-**Goal:** Validate Coder capability, synchronize documentation, and record architectural decisions.
-
-### M5 — Runner
-
-**Goal:** Execute generated code and collect `ExecutionResult`.
-
-### M6 — Reviewer
-
-**Goal:** Analyze failures and produce `PatchPlan` for retry loop.
+**Goal:** Analyze execution failures and produce `PatchPlan` for retry loop.
 
 ### M7 — Reporter
 
@@ -282,4 +264,27 @@ Sub-milestones completed: M3.1 (Structured Task Extraction), M3.2 (Task Validati
 
 ### M8 — MVP Release
 
-**Goal:** End-to-end autonomous single-paper reproduction with real integrations.
+**Goal:** End-to-end autonomous single-paper reproduction with full integrations.
+
+---
+
+## Completed Capability Phases (Summary)
+
+| Phase | Milestones | Status |
+|-------|------------|--------|
+| Reader | M2.1 – M2.3 | Completed |
+| Planner | M3.1 – M3.2 | Completed |
+| Coder | M4.1 – M4.3 | Completed |
+| Runner | M5.1 – M5.2, M5.F | Completed |
+
+Historical milestone specifications for M2 and M3 remain in the sections above.
+
+### Former Planned Milestones (Now Completed)
+
+The following were previously listed as planned; see [ROADMAP.md](ROADMAP.md) for current status:
+
+- M4.1 — Workspace Construction
+- M4.2 — Task Routing
+- M4.3 — Repository Population
+- M5.1 — Environment Preparation
+- M5.2 — Script Execution

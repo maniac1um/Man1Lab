@@ -82,41 +82,65 @@ Validate extracted tasks, apply lightweight normalization, and construct a real 
 
 ## Phase 3 — Coder Capability
 
-**Status:** Not Started
+**Status:** Completed
 
-Coder development begins after Planner capability closure.
+Build and populate reproduction workspaces from engineering tasks.
 
-### M4.1 — Workspace Population
+### M4.1 — Workspace Construction
 
-**Status:** Planned
+**Status:** Completed
 
-Populate reproduction workspaces from `PaperModel` and `TaskModel` via `WorkspaceManager`.
+Create repository skeleton via `WorkspaceManager`.
 
-### M4.2 — Structured Code Generation
+### M4.2 — Task Routing
 
-**Status:** Planned
+**Status:** Completed
 
-Generate project source code, configs, and scripts using LLM-backed structured extraction.
+Deterministic `TaskRouter` maps `TaskStep` to `RepositoryTarget`.
 
-### M4.3 — Coder Capability Review
+### M4.3 — Repository Population
 
-**Status:** Planned
+**Status:** Completed
 
-Validate Coder capability, synchronize documentation, and record architectural decisions.
+Per-target LLM file generation through `WorkspaceManager`.
 
 ---
 
-## M5 — Runner
+## Phase 4 — Runner Capability
 
-**Status:** Planned
+**Status:** Completed
 
-Execute generated code (install dependencies, run training, run tests) and produce `ExecutionResult`.
+Prepare workspace environment and execute reproduction scripts.
+
+### M5.1 — Environment Preparation
+
+**Status:** Completed
+
+`EnvironmentService` creates `.venv` and installs `requirements.txt`.
+
+### M5.1.1 — Runtime Artifact Ownership
+
+**Status:** Completed
+
+Document repository vs runtime artifact boundaries (ADR-0006).
+
+### M5.2 — Script Execution
+
+**Status:** Completed
+
+`ExecutionPlanner` and `ExecutionService` execute `scripts/train.py`.
+
+### M5.F — Capability Freeze
+
+**Status:** Completed
+
+Architecture documentation consolidation before M6.
 
 ---
 
 ## M6 — Reviewer
 
-**Status:** Planned
+**Status:** Next
 
 Analyze execution failures and produce `PatchPlan` for automated repair iterations.
 
