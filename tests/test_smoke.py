@@ -8,8 +8,11 @@ from agents.reader import Reader
 from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
+from services.environment_service import EnvironmentService
+from services.execution_service import ExecutionService
 from services.pdf_service import PDFService
 from tests.fixtures import create_sample_paper_pdf
+from tests.runner_mocks import mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
 
@@ -31,7 +34,14 @@ class SmokeTest(unittest.TestCase):
                 reader=reader,
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
-                runner=Runner(),
+                runner=Runner(
+                    environment_service=EnvironmentService(
+                        command_runner=mock_command_runner
+                    ),
+                    execution_service=ExecutionService(
+                        command_runner=mock_command_runner
+                    ),
+                ),
                 reviewer=Reviewer(),
                 reporter=Reporter(),
                 workspace_manager=workspace_manager,

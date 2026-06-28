@@ -1,4 +1,5 @@
 from models.execution import ExecutionResult
+from models.execution_plan import ExecutionPlan
 from models.paper import PaperModel
 from models.report import ReportModel, StageRecord, WorkflowHistory
 from models.review import PatchItem, PatchPlan
@@ -8,6 +9,7 @@ from models.workspace import Workspace
 
 __all__ = [
     "ExecutionResult",
+    "ExecutionPlan",
     "PaperModel",
     "PatchItem",
     "PatchPlan",

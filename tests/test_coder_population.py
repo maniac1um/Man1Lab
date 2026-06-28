@@ -7,7 +7,12 @@ from llm.coder_mock_provider import MOCK_FILE_CONTENT, CoderMockLLMProvider
 from llm.provider import LLMMessage, LLMProvider
 from models.paper import PaperModel
 from models.task import TaskModel, TaskStep
+from agents.runner import Runner
+from services.environment_service import EnvironmentService
+from services.execution_service import ExecutionService
+from services.pdf_service import PDFService
 from tests.fixtures import create_sample_paper_pdf
+from tests.runner_mocks import mock_command_runner
 from workspace.manager import WorkspaceManager
 
 
@@ -150,7 +155,14 @@ class CoderPopulationWorkflowTest(unittest.TestCase):
                 reader=Reader(pdf_service=PDFService()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
-                runner=Runner(),
+                runner=Runner(
+                    environment_service=EnvironmentService(
+                        command_runner=mock_command_runner
+                    ),
+                    execution_service=ExecutionService(
+                        command_runner=mock_command_runner
+                    ),
+                ),
                 reviewer=Reviewer(),
                 reporter=Reporter(),
                 workspace_manager=workspace_manager,

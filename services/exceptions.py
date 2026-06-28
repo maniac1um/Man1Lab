@@ -16,3 +16,15 @@ class PDFEncryptedError(PDFError):
 
 class PDFExtractionError(PDFError):
     """Raised when text extraction fails for any other reason."""
+
+
+class EnvironmentError(Exception):
+    """Base exception for environment preparation errors."""
+
+
+class RequirementsNotFoundError(EnvironmentError):
+    """Raised when requirements.txt is missing from the workspace."""
+
+
+class ExecutionPlanError(Exception):
+    """Raised when an execution plan cannot be built for the workspace."""
