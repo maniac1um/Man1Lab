@@ -183,6 +183,30 @@ Examples
 
 Reader never generates code.
 
+### Implementation Status
+
+**Status:** Completed
+
+**Pipeline:**
+
+```text
+PDF
+  ↓
+Raw Text
+  ↓
+Prompt
+  ↓
+LLM
+  ↓
+Structured dict
+  ↓
+Validation
+  ↓
+PaperModel
+```
+
+**Modules:** `PDFService`, `PromptBuilder`, `LLMProvider`, `ResponseParser`, `validation/paper.py`
+
 ---
 
 ## 5.3 Planner

@@ -6,6 +6,18 @@ For the high-level timeline, see [ROADMAP.md](ROADMAP.md).
 
 ---
 
+## Capability Completion Criteria
+
+A capability milestone is considered complete only when:
+
+* production implementation exists
+* tests pass
+* design review completed
+* ADR updated (if required)
+* committed to repository
+
+---
+
 ## Milestone Lifecycle
 
 Every milestone follows this lifecycle:
@@ -75,6 +87,16 @@ Verifiable conditions for completion.
 ### Deliverables
 
 Concrete artifacts: code, tests, documentation, review reports.
+
+---
+
+## Completed Capabilities
+
+### Reader (M2) — Complete
+
+The Reader capability is complete. It ingests a PDF, extracts structured paper information via LLM, validates and normalizes the result, and returns a `PaperModel`.
+
+Sub-milestones completed: M2.1 (PDF Ingestion), M2.1.8 (Interface Stabilization, Prompt Infrastructure), M2.1.9 (Governance), M2.2 (Structured Extraction), M2.3 (Validation and PaperModel Construction).
 
 ---
 
@@ -158,17 +180,55 @@ Concrete artifacts: code, tests, documentation, review reports.
 
 ---
 
+### M2.2 — Structured Paper Extraction
+
+**Goal:** Produce a structured extraction dict from PDF text via LLM.
+
+**Scope:** LLM integration in Reader, `ResponseParser`, tests. No `PaperModel` population.
+
+**Acceptance Criteria:**
+- Reader invokes LLM and ResponseParser
+- Structured dict stored internally
+- Placeholder `PaperModel` still returned
+- All tests pass
+
+**Deliverables:** `llm/response_parser.py`, updated `Reader`, tests, design review report.
+
+---
+
+### M2.3 — Validation and PaperModel Construction
+
+**Goal:** Transform structured extraction dict into a validated `PaperModel`.
+
+**Scope:** `validation/paper.py`, normalization, real `PaperModel` construction. No Planner changes.
+
+**Acceptance Criteria:**
+- `Reader.run()` returns real `PaperModel`
+- Placeholder implementation removed
+- `PaperValidationError` on invalid data
+- Workflow executable
+
+**Deliverables:** `validation/` module, updated `Reader`, tests, design review report.
+
+---
+
 ## Planned Milestones
 
-### M2.2 — LLM Paper Extraction
+### Phase 2 — Planning Capability
 
-**Goal:** Populate `PaperModel` from PDF text using LLM and composed prompts.
+**Status:** Not Started
 
-**Scope:** Reader LLM integration, JSON parsing, prompt wiring. No Planner changes.
+### M3.1 — Engineering Task Planning
 
-### M3 — Planner
+**Goal:** Convert `PaperModel` into `TaskModel` via LLM-backed engineering task decomposition. See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md).
 
-**Goal:** Generate `TaskModel` from `PaperModel` via LLM.
+### M3.2 — Task Validation
+
+**Goal:** Validate `TaskModel` structure and task ordering.
+
+### M3.3 — Planner Integration
+
+**Goal:** Integrate Planner into workflow with end-to-end verification.
 
 ### M4 — Coder
 

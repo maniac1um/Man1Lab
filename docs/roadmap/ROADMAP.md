@@ -18,7 +18,7 @@ Establish the project architecture: six agents, `WorkflowOrchestrator`, Pydantic
 
 ## M2 — Reader
 
-**Status:** In Progress
+**Status:** Completed
 
 Build the document ingestion and paper-understanding pipeline for the Reader agent.
 
@@ -46,17 +46,43 @@ Implement `PromptLoader` and `PromptBuilder`; integrate Reader with centralized 
 
 Establish documentation structure, ADRs, development workflow, and architecture freeze policy.
 
-### M2.2 — LLM Paper Extraction (Planned)
+### M2.2 — Structured Paper Extraction
 
-Use composed prompts and LLM providers to populate `PaperModel` from extracted PDF text.
+**Status:** Completed
+
+Integrate LLM provider and `ResponseParser` to produce a structured extraction dict from PDF text.
+
+### M2.3 — Validation and PaperModel Construction
+
+**Status:** Completed
+
+Validate extracted data, apply lightweight normalization, and construct a real `PaperModel` from LLM output.
 
 ---
 
-## M3 — Planner
+## Phase 2 — Planning Capability
+
+**Status:** Not Started
+
+Planner development begins after Reader capability closure. See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md) for Planner philosophy.
+
+### M3.1 — Engineering Task Planning
 
 **Status:** Planned
 
-Convert `PaperModel` into an executable `TaskModel` using LLM-backed planning and prompt infrastructure.
+Convert `PaperModel` into an executable `TaskModel` using LLM-backed engineering task decomposition.
+
+### M3.2 — Task Validation
+
+**Status:** Planned
+
+Validate `TaskModel` structure, required fields, and task ordering before passing to Coder.
+
+### M3.3 — Planner Integration
+
+**Status:** Planned
+
+Integrate Planner into the workflow with prompt infrastructure and end-to-end smoke test verification.
 
 ---
 

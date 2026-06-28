@@ -11,6 +11,17 @@ Entry point for ResearchAgent project documentation.
 | [Roadmap](roadmap/ROADMAP.md) | Long-term milestone timeline |
 | [Milestones](roadmap/MILESTONES.md) | Milestone workflow and specifications |
 
+## Architecture Decision Records
+
+| ADR | Title |
+|-----|-------|
+| [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) | Workflow Orchestrator |
+| [ADR-0002](adr/ADR-0002-Stable-Reader-Interface.md) | Stable Reader Interface |
+| [ADR-0003](adr/ADR-0003-Prompt-Infrastructure.md) | Prompt Infrastructure |
+| [ADR-0004](adr/ADR-0004-Planning-Strategy.md) | Planning Strategy |
+
+Full ADR index and template: [adr/README.md](adr/README.md)
+
 ## Governance
 
 | Directory | Description |
