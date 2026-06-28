@@ -9,24 +9,11 @@ from agents.reader import Reader
 from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
-from llm.mock_provider import MOCK_PLANNER_JSON, MockLLMProvider
-from llm.openai_provider import OpenAIProvider
+from llm.factory import build_llm_provider, build_planner_llm_provider
+from planning.patch_planner import PatchPlanner
 from services.pdf_service import PDFService
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
-
-
-def build_llm_provider():
-    if config.OPENAI_API_KEY:
-        return OpenAIProvider()
-    logging.warning("OPENAI_API_KEY not set; using MockLLMProvider")
-    return MockLLMProvider()
-
-
-def build_planner_llm_provider():
-    if config.OPENAI_API_KEY:
-        return OpenAIProvider()
-    return MockLLMProvider(MOCK_PLANNER_JSON)
 
 
 def main() -> None:
@@ -46,12 +33,14 @@ def main() -> None:
             f"Paper not found: {paper_path}. Set PAPER_PATH or place paper.pdf in the project root."
         )
 
+    llm = build_llm_provider()
+    patch_planner = PatchPlanner(llm=llm)
     workspace_manager = WorkspaceManager()
-    reader = Reader(pdf_service=PDFService(), llm=build_llm_provider())
+    reader = Reader(pdf_service=PDFService(), llm=llm)
     planner = Planner(llm=build_planner_llm_provider())
-    coder = Coder(workspace_manager=workspace_manager)
+    coder = Coder(workspace_manager=workspace_manager, llm=llm)
     runner = Runner()
-    reviewer = Reviewer()
+    reviewer = Reviewer(llm=llm, patch_planner=patch_planner)
     reporter = Reporter()
 
     orchestrator = WorkflowOrchestrator(
@@ -62,6 +51,7 @@ def main() -> None:
         reviewer=reviewer,
         reporter=reporter,
         workspace_manager=workspace_manager,
+        patch_planner=patch_planner,
     )
 
     report = orchestrator.run(paper_path)

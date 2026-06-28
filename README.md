@@ -49,7 +49,19 @@ python -m unittest discover -s tests -v
 python app.py
 ```
 
-Set `PAPER_PATH` to point to a PDF file. Set `OPENAI_API_KEY` for real LLM extraction; without it, mock providers are used.
+Set `PAPER_PATH` to point to a PDF file.
+
+### LLM configuration (DeepSeek / OpenAI-compatible)
+
+Copy `.env.example` to `.env` and set:
+
+```bash
+OPENAI_API_KEY=sk-your-key
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL=deepseek-v4-pro
+```
+
+`config.py` loads `.env` automatically. Without `OPENAI_API_KEY`, mock providers are used.
 
 ## Documentation
 

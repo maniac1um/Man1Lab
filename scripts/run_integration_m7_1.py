@@ -14,27 +14,14 @@ from agents.reader import Reader
 from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
-from llm.mock_provider import MOCK_PLANNER_JSON, MockLLMProvider
-from llm.openai_provider import OpenAIProvider
+from llm.factory import build_llm_provider, build_planner_llm_provider
+from planning.patch_planner import PatchPlanner
 from services.pdf_service import PDFService
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
 
 PAPER_PATH = Path(__file__).resolve().parent.parent / "1512.03385v1.pdf"
 INTEGRATION_LOG = config.LOGS_DIR / "integration_m7_1.log"
-
-
-def build_llm_provider():
-    if config.OPENAI_API_KEY:
-        return OpenAIProvider()
-    logging.warning("OPENAI_API_KEY not set; Reader uses MockLLMProvider")
-    return MockLLMProvider()
-
-
-def build_planner_llm_provider():
-    if config.OPENAI_API_KEY:
-        return OpenAIProvider()
-    return MockLLMProvider(MOCK_PLANNER_JSON)
 
 
 def main() -> int:
@@ -63,15 +50,18 @@ def main() -> int:
             return super().run(history)
 
     try:
+        llm = build_llm_provider()
+        patch_planner = PatchPlanner(llm=llm)
         workspace_manager = WorkspaceManager()
         orchestrator = WorkflowOrchestrator(
-            reader=Reader(pdf_service=PDFService(), llm=build_llm_provider()),
+            reader=Reader(pdf_service=PDFService(), llm=llm),
             planner=Planner(llm=build_planner_llm_provider()),
-            coder=Coder(workspace_manager=workspace_manager),
+            coder=Coder(workspace_manager=workspace_manager, llm=llm),
             runner=Runner(),
-            reviewer=Reviewer(),
+            reviewer=Reviewer(llm=llm, patch_planner=patch_planner),
             reporter=CapturingReporter(),
             workspace_manager=workspace_manager,
+            patch_planner=patch_planner,
         )
         report = orchestrator.run(PAPER_PATH)
     except Exception as exc:

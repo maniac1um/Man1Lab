@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 WORKSPACE_ROOT = Path("workspace/tasks")
 OUTPUTS_DIR = Path("outputs")
 LOGS_DIR = Path("logs")
@@ -8,6 +12,7 @@ PROMPTS_DIR = Path("prompts")
 MAX_REVIEW_ITERATIONS = 3
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-5-haiku-latest")
