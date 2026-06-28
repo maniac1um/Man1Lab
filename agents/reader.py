@@ -1,11 +1,13 @@
 from pathlib import Path
 
+from llm.mock_provider import MockLLMProvider
+from llm.provider import LLMMessage, LLMProvider
+from llm.response_parser import ResponseParser
 from models.paper import PaperModel
 from prompt.builder import PromptBuilder
 from prompt.loader import PromptLoader
 from services.pdf_service import PDFService
-
-_PLACEHOLDER = "Pending LLM extraction."
+from validation.paper import build_paper_model
 
 
 class Reader:
@@ -13,42 +15,26 @@ class Reader:
         self,
         pdf_service: PDFService,
         prompt_builder: PromptBuilder | None = None,
+        llm: LLMProvider | None = None,
+        response_parser: ResponseParser | None = None,
     ) -> None:
         self._pdf_service = pdf_service
         self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._llm = llm or MockLLMProvider()
+        self._response_parser = response_parser or ResponseParser()
         self._last_prompt: str | None = None
+        self._last_extracted: dict | None = None
 
     def read_text(self, paper_path: Path) -> str:
         return self._pdf_service.extract(paper_path)
 
     def run(self, paper_path: Path) -> PaperModel:
-        self._last_prompt = self._prompt_builder.build_reader_prompt()
         text = self.read_text(paper_path)
-        return self._build_placeholder_paper(text, paper_path)
-
-    @staticmethod
-    def _build_placeholder_paper(text: str, paper_path: Path) -> PaperModel:
-        title = Reader._extract_title(text)
-        return PaperModel(
-            title=title,
-            abstract=_PLACEHOLDER,
-            method=_PLACEHOLDER,
-            dataset=_PLACEHOLDER,
-            model=_PLACEHOLDER,
-            framework=_PLACEHOLDER,
-            optimizer=_PLACEHOLDER,
-            loss=_PLACEHOLDER,
-            training_pipeline=_PLACEHOLDER,
-            evaluation_metric=_PLACEHOLDER,
-            source_path=paper_path,
-        )
-
-    @staticmethod
-    def _extract_title(text: str) -> str:
-        for line in text.splitlines():
-            if line.startswith("Title:"):
-                return line.removeprefix("Title:").strip()
-        for line in text.splitlines():
-            if line.strip():
-                return line.strip()
-        return "Unknown"
+        self._last_prompt = self._prompt_builder.build_reader_prompt()
+        messages = [
+            LLMMessage(role="system", content=self._last_prompt),
+            LLMMessage(role="user", content=f"Paper text:\n{text}"),
+        ]
+        raw_response = self._llm.complete(messages, temperature=0.0)
+        self._last_extracted = self._response_parser.parse(raw_response)
+        return build_paper_model(self._last_extracted, paper_path)
