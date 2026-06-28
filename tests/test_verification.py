@@ -15,6 +15,7 @@ from models.workspace import Workspace
 from services.environment_service import EnvironmentService, LOG_FILENAME as ENV_LOG
 from services.environment_service import VENV_DIRNAME
 from services.execution_service import LOG_FILENAME as EXEC_LOG, ExecutionService
+from llm.mock_provider import MOCK_REVIEWER_FAIL_JSON, MockLLMProvider
 from services.pdf_service import PDFService
 from services.verification_service import VerificationService
 from tests.fixtures import create_sample_paper_pdf
@@ -181,24 +182,6 @@ class VerificationServiceTest(unittest.TestCase):
         self.assertEqual(result.overall_status, VERIFICATION_FAIL)
 
 
-class ReviewerTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self._temp_dir = tempfile.TemporaryDirectory()
-        self._root = Path(self._temp_dir.name) / "workspace"
-
-    def tearDown(self) -> None:
-        self._temp_dir.cleanup()
-
-    def test_reviewer_delegates_to_verification_service(self) -> None:
-        workspace = _valid_workspace(self._root)
-        execution_result = _successful_execution_result(workspace)
-        reviewer = Reviewer()
-
-        result = reviewer.run(workspace, execution_result)
-
-        self.assertEqual(result.overall_status, VERIFICATION_PASS)
-
-
 class VerificationWorkflowTest(unittest.TestCase):
     def test_workflow_execution_includes_verification(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -243,6 +226,8 @@ class VerificationWorkflowTest(unittest.TestCase):
                 history.verification_results[0].overall_status,
                 VERIFICATION_PASS,
             )
+            self.assertEqual(len(history.review_reports), 1)
+            self.assertEqual(history.review_reports[0].risk_level, "LOW")
             self.assertTrue(report.report_path.exists())
 
     def test_workflow_verification_fails_on_execution_error(self) -> None:
@@ -274,7 +259,9 @@ class VerificationWorkflowTest(unittest.TestCase):
                         command_runner=failing_train_command_runner
                     ),
                 ),
-                reviewer=Reviewer(),
+                reviewer=Reviewer(
+                    llm=MockLLMProvider(MOCK_REVIEWER_FAIL_JSON),
+                ),
                 reporter=CapturingReporter(),
                 workspace_manager=workspace_manager,
             )
@@ -284,6 +271,11 @@ class VerificationWorkflowTest(unittest.TestCase):
             self.assertEqual(
                 captured_history[0].verification_results[0].overall_status,
                 VERIFICATION_FAIL,
+            )
+            self.assertEqual(len(captured_history[0].review_reports), 1)
+            self.assertEqual(
+                captured_history[0].review_reports[0].risk_level,
+                "HIGH",
             )
 
 

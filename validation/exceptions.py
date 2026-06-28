@@ -4,3 +4,7 @@ class PaperValidationError(ValueError):
 
 class TaskValidationError(ValueError):
     """Raised when extracted task data fails validation."""
+
+
+class ReviewValidationError(ValueError):
+    """Raised when extracted review data fails validation."""

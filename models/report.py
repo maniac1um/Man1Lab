@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from models.execution import ExecutionResult
 from models.paper import PaperModel
 from models.review import PatchPlan
+from models.review_report import ReviewReport
 from models.task import TaskModel
 from models.verification import VerificationResult
 from models.workspace import Workspace
@@ -23,6 +24,7 @@ class WorkflowHistory(BaseModel):
     workspace: Workspace | None = None
     execution_results: list[ExecutionResult] = Field(default_factory=list)
     verification_results: list[VerificationResult] = Field(default_factory=list)
+    review_reports: list[ReviewReport] = Field(default_factory=list)
     patch_plans: list[PatchPlan] = Field(default_factory=list)
 
 

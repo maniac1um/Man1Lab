@@ -21,3 +21,8 @@ class PromptBuilder:
             self._loader.load("coder", file_category),
         ]
         return "\n\n".join(parts)
+
+    def build_reviewer_prompt(self) -> str:
+        sections = ("system", "extraction", "schema", "examples")
+        parts = [self._loader.load("reviewer", section) for section in sections]
+        return "\n\n".join(parts)

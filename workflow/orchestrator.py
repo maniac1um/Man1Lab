@@ -8,6 +8,7 @@ from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
 from models.report import ReportModel, StageRecord, WorkflowHistory
+from services.verification_service import VerificationService
 from workflow.pipeline import PipelineContext, PipelineStage
 from workspace.manager import WorkspaceManager
 
@@ -22,6 +23,7 @@ class WorkflowOrchestrator:
         reviewer: Reviewer,
         reporter: Reporter,
         workspace_manager: WorkspaceManager,
+        verification_service: VerificationService | None = None,
     ) -> None:
         self._reader = reader
         self._planner = planner
@@ -30,6 +32,7 @@ class WorkflowOrchestrator:
         self._reviewer = reviewer
         self._reporter = reporter
         self._workspace_manager = workspace_manager
+        self._verification_service = verification_service or VerificationService()
 
     def run(self, paper_path: Path) -> ReportModel:
         context = PipelineContext(paper_path=str(paper_path))
@@ -57,12 +60,22 @@ class WorkflowOrchestrator:
         )
         history.execution_results.append(execution_result)
 
-        verification_result = self._run_stage(
-            PipelineStage.REVIEWER,
-            history,
-            lambda: self._reviewer.run(history.workspace, execution_result),
+        verification_result = self._verification_service.verify(
+            history.workspace,
+            execution_result,
         )
         history.verification_results.append(verification_result)
+
+        review_report = self._run_stage(
+            PipelineStage.REVIEWER,
+            history,
+            lambda: self._reviewer.run(
+                history.paper,
+                history.task,
+                verification_result,
+            ),
+        )
+        history.review_reports.append(review_report)
 
         report = self._run_stage(
             PipelineStage.REPORTER,

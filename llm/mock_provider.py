@@ -63,6 +63,52 @@ MOCK_PLANNER_JSON = json.dumps(
 )
 
 
+MOCK_REVIEWER_PASS_JSON = json.dumps(
+    {
+        "summary": "Reproduction verification passed all deterministic checks.",
+        "analysis": (
+            "VerificationResult reports PASS for repository, environment, execution, "
+            "and output categories with no recorded findings."
+        ),
+        "identified_issues": [],
+        "strengths": [
+            "Repository skeleton and required entrypoint are present.",
+            "Environment preparation completed successfully.",
+            "Training script executed with exit code 0.",
+        ],
+        "risk_level": "LOW",
+        "next_action": (
+            "Proceed with deeper reproduction assessment when additional milestones "
+            "are available."
+        ),
+    }
+)
+
+
+MOCK_REVIEWER_FAIL_JSON = json.dumps(
+    {
+        "summary": "Reproduction verification failed during execution.",
+        "analysis": (
+            "VerificationResult reports FAIL in execution_status due to a non-zero "
+            "exit code from the training script."
+        ),
+        "identified_issues": [
+            "Execution failed with exit code 1.",
+            "Training script returned a non-zero exit code.",
+        ],
+        "strengths": [
+            "Repository structure passed verification.",
+            "Environment preparation passed verification.",
+        ],
+        "risk_level": "HIGH",
+        "next_action": (
+            "Review execution logs to understand the training failure before "
+            "continuing reproduction work."
+        ),
+    }
+)
+
+
 class MockLLMProvider(LLMProvider):
     def __init__(self, response: str = MOCK_PAPER_JSON) -> None:
         self._response = response
