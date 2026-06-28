@@ -232,6 +232,28 @@ Example
 
 Planner never writes code.
 
+### Implementation Status
+
+**Status:** Completed
+
+**Pipeline:**
+
+```text
+PaperModel
+  ↓
+Prompt
+  ↓
+LLM
+  ↓
+Structured dict
+  ↓
+Validation
+  ↓
+TaskModel
+```
+
+**Modules:** `PromptBuilder`, `LLMProvider`, `ResponseParser`, `validation/task.py`
+
 ---
 
 ## 5.4 Coder

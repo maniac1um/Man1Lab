@@ -25,6 +25,7 @@ Do not create an ADR for routine bug fixes, internal refactors that preserve int
 | [ADR-0002](ADR-0002-Stable-Reader-Interface.md) | Stable Reader Interface | Accepted |
 | [ADR-0003](ADR-0003-Prompt-Infrastructure.md) | Prompt Infrastructure | Accepted |
 | [ADR-0004](ADR-0004-Planning-Strategy.md) | Planning Strategy | Accepted |
+| [ADR-0005](ADR-0005-Planner-Capability.md) | Planner Capability | Accepted |
 
 ## Template
 

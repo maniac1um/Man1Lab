@@ -60,37 +60,49 @@ Validate extracted data, apply lightweight normalization, and construct a real `
 
 ---
 
-## Phase 2 — Planning Capability
+## M3 — Planner
 
-**Status:** Not Started
+**Status:** Completed
 
-Planner development begins after Reader capability closure. See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md) for Planner philosophy.
+Build the engineering task planning pipeline for the Planner agent. See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md) and [ADR-0005](../adr/ADR-0005-Planner-Capability.md).
 
-### M3.1 — Engineering Task Planning
+### M3.1 — Structured Task Extraction
 
-**Status:** Planned
+**Status:** Completed
 
-Convert `PaperModel` into an executable `TaskModel` using LLM-backed engineering task decomposition.
+Integrate LLM provider and `ResponseParser` to produce a structured task extraction dict from `PaperModel`.
 
-### M3.2 — Task Validation
+### M3.2 — Task Validation and TaskModel Construction
 
-**Status:** Planned
+**Status:** Completed
 
-Validate `TaskModel` structure, required fields, and task ordering before passing to Coder.
-
-### M3.3 — Planner Integration
-
-**Status:** Planned
-
-Integrate Planner into the workflow with prompt infrastructure and end-to-end smoke test verification.
+Validate extracted tasks, apply lightweight normalization, and construct a real `TaskModel` from LLM output.
 
 ---
 
-## M4 — Coder
+## Phase 3 — Coder Capability
+
+**Status:** Not Started
+
+Coder development begins after Planner capability closure.
+
+### M4.1 — Workspace Population
 
 **Status:** Planned
 
-Generate project source code, configs, and scripts into an isolated workspace from `PaperModel` and `TaskModel`.
+Populate reproduction workspaces from `PaperModel` and `TaskModel` via `WorkspaceManager`.
+
+### M4.2 — Structured Code Generation
+
+**Status:** Planned
+
+Generate project source code, configs, and scripts using LLM-backed structured extraction.
+
+### M4.3 — Coder Capability Review
+
+**Status:** Planned
+
+Validate Coder capability, synchronize documentation, and record architectural decisions.
 
 ---
 

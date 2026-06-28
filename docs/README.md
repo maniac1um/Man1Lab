@@ -19,6 +19,7 @@ Entry point for ResearchAgent project documentation.
 | [ADR-0002](adr/ADR-0002-Stable-Reader-Interface.md) | Stable Reader Interface |
 | [ADR-0003](adr/ADR-0003-Prompt-Infrastructure.md) | Prompt Infrastructure |
 | [ADR-0004](adr/ADR-0004-Planning-Strategy.md) | Planning Strategy |
+| [ADR-0005](adr/ADR-0005-Planner-Capability.md) | Planner Capability |
 
 Full ADR index and template: [adr/README.md](adr/README.md)
 

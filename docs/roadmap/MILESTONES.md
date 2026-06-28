@@ -98,6 +98,12 @@ The Reader capability is complete. It ingests a PDF, extracts structured paper i
 
 Sub-milestones completed: M2.1 (PDF Ingestion), M2.1.8 (Interface Stabilization, Prompt Infrastructure), M2.1.9 (Governance), M2.2 (Structured Extraction), M2.3 (Validation and PaperModel Construction).
 
+### Planner (M3) — Complete
+
+The Planner capability is complete. It receives a `PaperModel`, extracts structured engineering tasks via LLM, validates and normalizes the result, and returns a `TaskModel`.
+
+Sub-milestones completed: M3.1 (Structured Task Extraction), M3.2 (Task Validation and TaskModel Construction).
+
 ---
 
 ## Completed Milestones
@@ -212,27 +218,55 @@ Sub-milestones completed: M2.1 (PDF Ingestion), M2.1.8 (Interface Stabilization,
 
 ---
 
+### M3.1 — Structured Task Extraction
+
+**Goal:** Produce a structured task extraction dict from `PaperModel` via LLM.
+
+**Scope:** LLM integration in Planner, `ResponseParser`, prompt resources, tests. No `TaskModel` population.
+
+**Acceptance Criteria:**
+- Planner invokes PromptBuilder, LLM, and ResponseParser
+- Structured task dict stored internally
+- Placeholder `TaskModel` still returned
+- All tests pass
+
+**Deliverables:** Updated `Planner`, planner prompt resources, tests, design review report.
+
+---
+
+### M3.2 — Task Validation and TaskModel Construction
+
+**Goal:** Transform structured task extraction dict into a validated `TaskModel`.
+
+**Scope:** `validation/task.py`, normalization, real `TaskModel` construction. No Coder changes.
+
+**Acceptance Criteria:**
+- `Planner.run()` returns real `TaskModel`
+- Placeholder implementation removed
+- `TaskValidationError` on invalid data
+- Workflow executable
+
+**Deliverables:** `validation/task.py`, updated `Planner`, tests, design review report.
+
+---
+
 ## Planned Milestones
 
-### Phase 2 — Planning Capability
+### Phase 3 — Coder Capability
 
 **Status:** Not Started
 
-### M3.1 — Engineering Task Planning
+### M4.1 — Workspace Population
 
-**Goal:** Convert `PaperModel` into `TaskModel` via LLM-backed engineering task decomposition. See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md).
+**Goal:** Populate reproduction workspaces from `PaperModel` and `TaskModel` via `WorkspaceManager`.
 
-### M3.2 — Task Validation
+### M4.2 — Structured Code Generation
 
-**Goal:** Validate `TaskModel` structure and task ordering.
+**Goal:** Generate project source code, configs, and scripts using LLM-backed structured extraction.
 
-### M3.3 — Planner Integration
+### M4.3 — Coder Capability Review
 
-**Goal:** Integrate Planner into workflow with end-to-end verification.
-
-### M4 — Coder
-
-**Goal:** Generate reproduction project files into workspace.
+**Goal:** Validate Coder capability, synchronize documentation, and record architectural decisions.
 
 ### M5 — Runner
 
