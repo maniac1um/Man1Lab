@@ -5,6 +5,7 @@ from models.report import ReportModel, StageRecord, WorkflowHistory
 from models.review import PatchItem, PatchPlan
 from models.routing import RepositoryTarget, TaskRoutingTable
 from models.task import TaskModel, TaskStep
+from models.verification import VerificationFinding, VerificationResult
 from models.workspace import Workspace
 
 __all__ = [
@@ -19,6 +20,8 @@ __all__ = [
     "TaskModel",
     "TaskRoutingTable",
     "TaskStep",
+    "VerificationFinding",
+    "VerificationResult",
     "WorkflowHistory",
     "Workspace",
 ]

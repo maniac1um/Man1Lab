@@ -1,7 +1,6 @@
 import time
 from pathlib import Path
 
-import config
 from agents.coder import Coder
 from agents.planner import Planner
 from agents.reader import Reader
@@ -58,27 +57,12 @@ class WorkflowOrchestrator:
         )
         history.execution_results.append(execution_result)
 
-        for _ in range(config.MAX_REVIEW_ITERATIONS):
-            patch_plan = self._run_stage(
-                PipelineStage.REVIEWER,
-                history,
-                lambda: self._reviewer.run(execution_result),
-            )
-            history.patch_plans.append(patch_plan)
-            if not patch_plan.requires_patch:
-                break
-
-            history.workspace = self._run_stage(
-                PipelineStage.CODER,
-                history,
-                lambda: self._coder.run(history.paper, history.task, patch_plan),
-            )
-            execution_result = self._run_stage(
-                PipelineStage.RUNNER,
-                history,
-                lambda: self._runner.run(history.workspace),
-            )
-            history.execution_results.append(execution_result)
+        verification_result = self._run_stage(
+            PipelineStage.REVIEWER,
+            history,
+            lambda: self._reviewer.run(history.workspace, execution_result),
+        )
+        history.verification_results.append(verification_result)
 
         report = self._run_stage(
             PipelineStage.REPORTER,

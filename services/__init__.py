@@ -10,7 +10,7 @@ from services.exceptions import (
     PDFNotFoundError,
     RequirementsNotFoundError,
 )
-from services.pdf_service import PDFService
+from services.verification_service import VerificationService
 
 __all__ = [
     "EnvironmentError",
@@ -24,4 +24,5 @@ __all__ = [
     "PDFNotFoundError",
     "PDFService",
     "RequirementsNotFoundError",
+    "VerificationService",
 ]

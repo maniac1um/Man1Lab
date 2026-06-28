@@ -6,6 +6,7 @@ from models.execution import ExecutionResult
 from models.paper import PaperModel
 from models.review import PatchPlan
 from models.task import TaskModel
+from models.verification import VerificationResult
 from models.workspace import Workspace
 
 
@@ -21,6 +22,7 @@ class WorkflowHistory(BaseModel):
     task: TaskModel | None = None
     workspace: Workspace | None = None
     execution_results: list[ExecutionResult] = Field(default_factory=list)
+    verification_results: list[VerificationResult] = Field(default_factory=list)
     patch_plans: list[PatchPlan] = Field(default_factory=list)
 
 

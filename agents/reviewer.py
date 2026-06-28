@@ -1,14 +1,16 @@
 from models.execution import ExecutionResult
-from models.review import PatchPlan
+from models.verification import VerificationResult
+from models.workspace import Workspace
+from services.verification_service import VerificationService
 
 
 class Reviewer:
-    def run(self, result: ExecutionResult) -> PatchPlan:
-        return PatchPlan(
-            requires_patch=False,
-            patches=[],
-            analysis=(
-                f"No issues detected for command `{result.executed_command}` "
-                f"with exit code {result.exit_code}."
-            ),
-        )
+    def __init__(self, verification_service: VerificationService | None = None) -> None:
+        self._verification_service = verification_service or VerificationService()
+
+    def run(
+        self,
+        workspace: Workspace,
+        execution_result: ExecutionResult,
+    ) -> VerificationResult:
+        return self._verification_service.verify(workspace, execution_result)
