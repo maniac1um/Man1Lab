@@ -16,6 +16,7 @@ class PipelineStage(str, Enum):
     CODER = "Coder"
     RUNNER = "Runner"
     REVIEWER = "Reviewer"
+    PATCH_PLANNER = "PatchPlanner"
     REPORTER = "Reporter"
 
 

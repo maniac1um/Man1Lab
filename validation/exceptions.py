@@ -8,3 +8,7 @@ class TaskValidationError(ValueError):
 
 class ReviewValidationError(ValueError):
     """Raised when extracted review data fails validation."""
+
+
+class PatchValidationError(ValueError):
+    """Raised when extracted patch plan data fails validation."""

@@ -1,6 +1,7 @@
 import time
 from pathlib import Path
 
+import config
 from agents.coder import Coder
 from agents.planner import Planner
 from agents.reader import Reader
@@ -8,6 +9,7 @@ from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
 from models.report import ReportModel, StageRecord, WorkflowHistory
+from planning.patch_planner import PatchPlanner
 from services.verification_service import VerificationService
 from workflow.pipeline import PipelineContext, PipelineStage
 from workspace.manager import WorkspaceManager
@@ -24,6 +26,7 @@ class WorkflowOrchestrator:
         reporter: Reporter,
         workspace_manager: WorkspaceManager,
         verification_service: VerificationService | None = None,
+        patch_planner: PatchPlanner | None = None,
     ) -> None:
         self._reader = reader
         self._planner = planner
@@ -33,6 +36,7 @@ class WorkflowOrchestrator:
         self._reporter = reporter
         self._workspace_manager = workspace_manager
         self._verification_service = verification_service or VerificationService()
+        self._patch_planner = patch_planner or PatchPlanner()
 
     def run(self, paper_path: Path) -> ReportModel:
         context = PipelineContext(paper_path=str(paper_path))
@@ -60,22 +64,38 @@ class WorkflowOrchestrator:
         )
         history.execution_results.append(execution_result)
 
-        verification_result = self._verification_service.verify(
-            history.workspace,
-            execution_result,
-        )
-        history.verification_results.append(verification_result)
+        for _ in range(config.MAX_REVIEW_ITERATIONS):
+            verification_result = self._verification_service.verify(
+                history.workspace,
+                execution_result,
+            )
+            history.verification_results.append(verification_result)
 
-        review_report = self._run_stage(
-            PipelineStage.REVIEWER,
-            history,
-            lambda: self._reviewer.run(
-                history.paper,
-                history.task,
-                verification_result,
-            ),
-        )
-        history.review_reports.append(review_report)
+            review_report = self._run_stage(
+                PipelineStage.REVIEWER,
+                history,
+                lambda: self._reviewer.run(
+                    history.paper,
+                    history.task,
+                    verification_result,
+                ),
+            )
+            history.review_reports.append(review_report)
+
+            patch_plan = self._run_stage(
+                PipelineStage.PATCH_PLANNER,
+                history,
+                lambda: self._patch_planner.plan(review_report),
+            )
+            history.patch_plans.append(patch_plan)
+
+            if not patch_plan.requires_patch:
+                break
+
+            if patch_plan.requires_patch:
+                # Workflow iteration deferred to a later integration milestone.
+                pass
+            break
 
         report = self._run_stage(
             PipelineStage.REPORTER,

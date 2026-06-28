@@ -26,3 +26,8 @@ class PromptBuilder:
         sections = ("system", "extraction", "schema", "examples")
         parts = [self._loader.load("reviewer", section) for section in sections]
         return "\n\n".join(parts)
+
+    def build_patch_planner_prompt(self) -> str:
+        sections = ("system", "extraction", "schema", "examples")
+        parts = [self._loader.load("patch_planner", section) for section in sections]
+        return "\n\n".join(parts)

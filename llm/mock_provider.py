@@ -109,6 +109,34 @@ MOCK_REVIEWER_FAIL_JSON = json.dumps(
 )
 
 
+MOCK_PATCH_NO_ITERATION_JSON = json.dumps(
+    {
+        "requires_patch": False,
+        "priority": "LOW",
+        "targets": [],
+        "reason": "ReviewReport indicates verification passed with low risk.",
+        "strategy": "Proceed to final reporting without another workflow iteration.",
+    }
+)
+
+
+MOCK_PATCH_ITERATION_JSON = json.dumps(
+    {
+        "requires_patch": True,
+        "priority": "HIGH",
+        "targets": ["execution"],
+        "reason": (
+            "ReviewReport identifies execution failure requiring another "
+            "workflow pass."
+        ),
+        "strategy": (
+            "Schedule another reproduction workflow iteration focused on "
+            "execution recovery."
+        ),
+    }
+)
+
+
 class MockLLMProvider(LLMProvider):
     def __init__(self, response: str = MOCK_PAPER_JSON) -> None:
         self._response = response

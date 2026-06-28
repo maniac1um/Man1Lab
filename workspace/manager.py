@@ -129,9 +129,9 @@ class WorkspaceManager:
             lines.extend(
                 [
                     "",
-                    "## Patch Analysis",
+                    "## Patch Planning",
                     "",
-                    patch_plan.analysis,
+                    patch_plan.reason,
                 ]
             )
         return "\n".join(lines) + "\n"
@@ -168,7 +168,9 @@ class WorkspaceManager:
                 [
                     f"### Review {index}",
                     f"- Requires patch: {patch.requires_patch}",
-                    f"- Analysis: {patch.analysis}",
+                    f"- Priority: {patch.priority}",
+                    f"- Reason: {patch.reason}",
+                    f"- Strategy: {patch.strategy}",
                     "",
                 ]
             )

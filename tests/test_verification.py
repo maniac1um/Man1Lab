@@ -228,6 +228,8 @@ class VerificationWorkflowTest(unittest.TestCase):
             )
             self.assertEqual(len(history.review_reports), 1)
             self.assertEqual(history.review_reports[0].risk_level, "LOW")
+            self.assertEqual(len(history.patch_plans), 1)
+            self.assertFalse(history.patch_plans[0].requires_patch)
             self.assertTrue(report.report_path.exists())
 
     def test_workflow_verification_fails_on_execution_error(self) -> None:
@@ -277,6 +279,7 @@ class VerificationWorkflowTest(unittest.TestCase):
                 captured_history[0].review_reports[0].risk_level,
                 "HIGH",
             )
+            self.assertEqual(len(captured_history[0].patch_plans), 1)
 
 
 if __name__ == "__main__":
