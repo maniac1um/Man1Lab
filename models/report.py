@@ -1,0 +1,33 @@
+from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from models.execution import ExecutionResult
+from models.paper import PaperModel
+from models.review import PatchPlan
+from models.task import TaskModel
+from models.workspace import Workspace
+
+
+class StageRecord(BaseModel):
+    agent_name: str
+    status: str
+    duration_seconds: float
+
+
+class WorkflowHistory(BaseModel):
+    stages: list[StageRecord] = Field(default_factory=list)
+    paper: PaperModel | None = None
+    task: TaskModel | None = None
+    workspace: Workspace | None = None
+    execution_results: list[ExecutionResult] = Field(default_factory=list)
+    patch_plans: list[PatchPlan] = Field(default_factory=list)
+
+
+class ReportModel(BaseModel):
+    reproduction_summary: str
+    implementation_summary: str
+    execution_history: list[ExecutionResult] = Field(default_factory=list)
+    debugging_history: list[PatchPlan] = Field(default_factory=list)
+    final_status: str
+    report_path: Path | None = None
