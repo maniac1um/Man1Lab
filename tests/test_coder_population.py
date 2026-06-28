@@ -131,6 +131,58 @@ class CoderPopulationTest(unittest.TestCase):
         self.assertEqual(list((workspace.root_path / "scripts").iterdir()), [])
         self.assertEqual(list((workspace.root_path / "configs").iterdir()), [])
 
+    def test_shared_generation_context_included_in_prompts(self) -> None:
+        task = TaskModel(
+            paper_title="Population Test Paper",
+            steps=[_step("task_4", "Model implementation", "Implement network.")],
+        )
+
+        self._coder.run(_sample_paper(), task)
+
+        user_prompt = self._recording_llm.calls[0][1].content
+        self.assertIn("Shared generation context:", user_prompt)
+        self.assertIn('"framework": "PyTorch"', user_prompt)
+        self.assertIn('"dataset": "Dataset."', user_prompt)
+
+    def test_generation_order_dependencies_before_scripts(self) -> None:
+        task = TaskModel(
+            paper_title="Population Test Paper",
+            steps=[
+                _step("task_5", "Training", "Train the model."),
+                _step("task_1", "Environment setup"),
+            ],
+        )
+
+        self._coder.run(_sample_paper(), task)
+
+        target_paths = [
+            CoderMockLLMProvider._extract_target_path(call)
+            for call in self._recording_llm.calls
+        ]
+        self.assertEqual(
+            target_paths,
+            [
+                "requirements.txt",
+                "configs/train.yaml",
+                "scripts/train.py",
+            ],
+        )
+
+    def test_readme_reflects_populated_repository(self) -> None:
+        task = TaskModel(
+            paper_title="Population Test Paper",
+            steps=[_step("task_3", "Dataset preparation", "Load data.")],
+        )
+
+        workspace = self._coder.run(_sample_paper(), task)
+        readme = self._workspace_manager.read_file(workspace, "README.md")
+
+        self.assertIn("## Generated Files", readme)
+        self.assertIn("`src/dataset.py`", readme)
+        self.assertIn("`configs/dataset.yaml`", readme)
+        self.assertIn("Source code generation:** complete", readme)
+        self.assertNotIn("have not been generated yet", readme)
+
 
 class CoderPopulationWorkflowTest(unittest.TestCase):
     def test_workflow_execution(self) -> None:

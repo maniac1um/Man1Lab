@@ -73,7 +73,10 @@ class CoderWorkspaceTest(unittest.TestCase):
         self.assertIn("Diffusion Policy: Visuomotor Policy Learning", content)
         self.assertIn("## Engineering Tasks", content)
         self.assertIn("task_1", content)
-        self.assertIn("Implementation files have not been generated yet", content)
+        self.assertIn("PyTorch", content)
+        self.assertIn("Source code generation:** complete", content)
+        self.assertIn("scripts/train.py", content)
+        self.assertNotIn("have not been generated yet", content)
 
     def test_requirements_txt_generated(self) -> None:
         workspace = self._coder.run(_sample_paper(), _sample_task())
