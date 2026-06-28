@@ -9,3 +9,8 @@ class PromptBuilder:
         sections = ("system", "extraction", "schema", "examples")
         parts = [self._loader.load("reader", section) for section in sections]
         return "\n\n".join(parts)
+
+    def build_planner_prompt(self) -> str:
+        sections = ("system", "extraction", "schema", "examples")
+        parts = [self._loader.load("planner", section) for section in sections]
+        return "\n\n".join(parts)

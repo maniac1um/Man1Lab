@@ -18,6 +18,51 @@ MOCK_PAPER_JSON = json.dumps(
 )
 
 
+MOCK_PLANNER_JSON = json.dumps(
+    {
+        "paper_title": "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion",
+        "tasks": [
+            {
+                "id": "task_1",
+                "name": "Environment setup",
+                "description": "Create project structure and configure Python environment.",
+                "depends_on": [],
+            },
+            {
+                "id": "task_2",
+                "name": "Dependency installation",
+                "description": "Install PyTorch and required packages.",
+                "depends_on": ["task_1"],
+            },
+            {
+                "id": "task_3",
+                "name": "Dataset preparation",
+                "description": "Load and preprocess Robomimic benchmark tasks.",
+                "depends_on": ["task_2"],
+            },
+            {
+                "id": "task_4",
+                "name": "Model implementation",
+                "description": "Implement the conditional diffusion policy network.",
+                "depends_on": ["task_3"],
+            },
+            {
+                "id": "task_5",
+                "name": "Training",
+                "description": "Train the model with AdamW and behavior cloning diffusion loss.",
+                "depends_on": ["task_4"],
+            },
+            {
+                "id": "task_6",
+                "name": "Evaluation",
+                "description": "Evaluate task success rate on benchmark tasks.",
+                "depends_on": ["task_5"],
+            },
+        ],
+    }
+)
+
+
 class MockLLMProvider(LLMProvider):
     def __init__(self, response: str = MOCK_PAPER_JSON) -> None:
         self._response = response

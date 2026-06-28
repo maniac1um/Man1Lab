@@ -54,6 +54,18 @@ class PromptBuilderTest(unittest.TestCase):
         self.assertLess(extraction_index, schema_index)
         self.assertLess(schema_index, examples_index)
 
+    def test_build_planner_prompt_combines_sections_in_order(self) -> None:
+        planner_dir = self.prompts_dir / "planner"
+        planner_dir.mkdir(parents=True, exist_ok=True)
+        (planner_dir / "system.md").write_text("PSYSTEM", encoding="utf-8")
+        (planner_dir / "extraction.md").write_text("PEXTRACTION", encoding="utf-8")
+        (planner_dir / "schema.md").write_text("PSCHEMA", encoding="utf-8")
+        (planner_dir / "examples.md").write_text("PEXAMPLES", encoding="utf-8")
+        prompt = self.builder.build_planner_prompt()
+        self.assertLess(prompt.index("PSYSTEM"), prompt.index("PEXTRACTION"))
+        self.assertLess(prompt.index("PEXTRACTION"), prompt.index("PSCHEMA"))
+        self.assertLess(prompt.index("PSCHEMA"), prompt.index("PEXAMPLES"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,7 +9,7 @@ from agents.reader import Reader
 from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
-from llm.mock_provider import MockLLMProvider
+from llm.mock_provider import MOCK_PLANNER_JSON, MockLLMProvider
 from llm.openai_provider import OpenAIProvider
 from services.pdf_service import PDFService
 from workflow.orchestrator import WorkflowOrchestrator
@@ -21,6 +21,12 @@ def build_llm_provider():
         return OpenAIProvider()
     logging.warning("OPENAI_API_KEY not set; using MockLLMProvider")
     return MockLLMProvider()
+
+
+def build_planner_llm_provider():
+    if config.OPENAI_API_KEY:
+        return OpenAIProvider()
+    return MockLLMProvider(MOCK_PLANNER_JSON)
 
 
 def main() -> None:
@@ -42,7 +48,7 @@ def main() -> None:
 
     workspace_manager = WorkspaceManager()
     reader = Reader(pdf_service=PDFService(), llm=build_llm_provider())
-    planner = Planner()
+    planner = Planner(llm=build_planner_llm_provider())
     coder = Coder(workspace_manager=workspace_manager)
     runner = Runner()
     reviewer = Reviewer()
