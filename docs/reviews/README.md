@@ -103,7 +103,8 @@ Meta-documentation for documentation structure and maintenance.
 | Phase 1 (audit) | [migration_checklist.md](documentation_governance_phase1/migration_checklist.md) | Migration plan (deferred) | Historical |
 | M7.F | [design_review.md](M7.F/design_review.md) | Documentation governance Phase 1 implementation | Frozen |
 | v1.0.0 release | [documentation_review.md](release_preparation/documentation_review.md) | Release documentation governance pass | Frozen |
-| v1.0.0 packaging | [release_review.md](release_packaging/release_review.md) | GitHub release asset preparation | Active |
+| v1.0.0 packaging | [release_review.md](release_packaging/release_review.md) | GitHub release asset preparation | Frozen |
+| Rebranding | [rebranding_review.md](project_rebranding/rebranding_review.md) | ResearchAgent → Man1Lab public identity | Active |
 
 ---
 

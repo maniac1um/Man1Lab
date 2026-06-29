@@ -1,12 +1,12 @@
 # Development Guide
 
-Engineering workflow and governance for the ResearchAgent repository.
+Engineering workflow and governance for the Man1Lab repository.
 
 ---
 
 ## Project Lifecycle
 
-ResearchAgent follows a milestone-driven lifecycle:
+Man1Lab follows a milestone-driven lifecycle:
 
 ```text
 Design → Implementation → Design Review → Architecture Review → ADR (if required) → Git Commit → Next Milestone

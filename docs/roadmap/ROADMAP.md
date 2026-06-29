@@ -1,6 +1,6 @@
-# ResearchAgent Roadmap
+# Man1Lab Roadmap
 
-Long-term development plan for the ResearchAgent autonomous paper-reproduction framework.
+Long-term development plan for the Man1Lab autonomous paper-reproduction framework.
 
 For milestone workflow and acceptance criteria, see [MILESTONES.md](MILESTONES.md).
 

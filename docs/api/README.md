@@ -1,6 +1,6 @@
 # API Documentation
 
-Public API reference for ResearchAgent MVP v1.0.0.
+Public API reference for Man1Lab v1.0.0.
 
 ## Purpose
 

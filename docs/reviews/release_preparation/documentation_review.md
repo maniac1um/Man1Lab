@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-ResearchAgent MVP v1.0.0 implementation is complete. This governance pass synchronized **current-state documentation** with the implemented system and prepared the repository for a public GitHub release.
+Man1Lab MVP v1.0.0 implementation is complete. This governance pass synchronized **current-state documentation** with the implemented system and prepared the repository for a public GitHub release.
 
 | Area | Before | After |
 |------|--------|-------|

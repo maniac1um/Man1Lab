@@ -1,6 +1,6 @@
 # Milestones
 
-Development workflow and milestone specification for ResearchAgent.
+Development workflow and milestone specification for Man1Lab.
 
 For the high-level timeline, see [ROADMAP.md](ROADMAP.md).
 

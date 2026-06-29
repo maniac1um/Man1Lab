@@ -1,6 +1,6 @@
 # Documentation Index
 
-Navigation hub for ResearchAgent MVP v1.0.0 documentation.
+Navigation hub for Man1Lab v1.0.0 documentation.
 
 **Principle:** Current documents answer *"What does the project do today?"* Historical reviews answer *"How did the project evolve?"*
 
@@ -64,7 +64,8 @@ Milestone design reviews, integration validation, product fixes, and governance 
 |----------|----------|----------|
 | **Current state** | [CURRENT_STATUS.md](CURRENT_STATUS.md) | Understanding today's system |
 | **Release governance** | [reviews/release_preparation/](reviews/release_preparation/) | v1.0.0 documentation audit |
-| **Release packaging** | [reviews/release_packaging/](reviews/release_packaging/) | v1.0.0 GitHub release assets |
+| Release packaging | [reviews/release_packaging/](reviews/release_packaging/) | v1.0.0 GitHub release assets |
+| **Rebranding** | [reviews/project_rebranding/](reviews/project_rebranding/) | Man1Lab public identity |
 | **MVP acceptance** | [reviews/M8.1/](reviews/M8.1/), [reviews/M8.2/](reviews/M8.2/) | Benchmark run evidence |
 | **Product fixes** | [reviews/integration_fix_*](reviews/README.md#integration-fixes) | Tracing defect history |
 | **Milestone delivery** | [reviews/M4.x – M7.F](reviews/README.md#milestone-reviews) | Auditing a specific capability |

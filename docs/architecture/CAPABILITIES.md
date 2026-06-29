@@ -1,6 +1,6 @@
-# ResearchAgent Capability Summary
+# Man1Lab Capability Summary
 
-Implementation status of ResearchAgent MVP v1.0.0 capabilities.
+Implementation status of Man1Lab v1.0.0 capabilities.
 
 For the latest benchmarks and limitations, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). For architecture detail see [ARCHITECTURE.md](ARCHITECTURE.md). For design decisions see [ADR index](../adr/README.md).
 

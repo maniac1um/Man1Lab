@@ -127,7 +127,7 @@ Documented consistently across README, CURRENT_STATUS, CHANGELOG, and release no
 
 1. Ensure all documentation commits are on `main`
 2. Create tag `v1.0.0`
-3. Create GitHub Release with title **ResearchAgent MVP v1.0.0**
+3. Create GitHub Release with title **Man1Lab v1.0.0 (Research Prototype)**
 4. Paste body from `release/v1.0.0.md`
 5. Verify release URL matches `CHANGELOG.md` link
 

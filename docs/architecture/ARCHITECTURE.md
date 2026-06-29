@@ -1,10 +1,10 @@
 # ARCHITECTURE.md
 
-# ResearchAgent MVP v1.0.0
+# Man1Lab v1.0.0
 
 ## 1. Vision
 
-ResearchAgent is an autonomous paper reproduction framework.
+Man1Lab is an autonomous paper reproduction framework.
 
 The objective of MVP v1.0.0 is to reproduce a single research paper through an autonomous workflow.
 

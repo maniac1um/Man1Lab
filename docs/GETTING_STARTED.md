@@ -6,7 +6,7 @@ Quick orientation for running and exploring the prototype. For current implement
 
 ## Project Overview
 
-ResearchAgent MVP v1.0.0 is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, reviews failures, and produces a final report.
+Man1Lab v1.0.0 is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, reviews failures, and produces a final report.
 
 System design and agent boundaries are documented in [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 

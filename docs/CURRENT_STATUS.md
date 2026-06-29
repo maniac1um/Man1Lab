@@ -1,5 +1,6 @@
 # Current Status
 
+**Project:** Man1Lab  
 **Single source of truth for implementation and integration state.**  
 **Last updated:** 2026-06-29  
 **Project version:** v1.0.0 (MVP)  
@@ -127,3 +128,4 @@ For RAG-specific limitations, see [RAG review §7](reviews/repository_acceptance
 | Repository acceptance gate | [RAG implementation review](reviews/repository_acceptance_gate/implementation_review.md) |
 | Release documentation governance | [release_preparation/documentation_review.md](reviews/release_preparation/documentation_review.md) |
 | Release packaging | [release_packaging/release_review.md](reviews/release_packaging/release_review.md) |
+| Project rebranding | [project_rebranding/rebranding_review.md](reviews/project_rebranding/rebranding_review.md) |

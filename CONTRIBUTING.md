@@ -1,6 +1,6 @@
 # Contributing
 
-ResearchAgent MVP is an **active research prototype** for academic demonstration of autonomous paper reproduction. It is maintained as a single-author research project, not as a community-driven open-source program.
+Man1Lab is an **active research prototype** for academic demonstration of autonomous paper reproduction. It is maintained as a single-author research project, not as a community-driven open-source program.
 
 ## Issues
 

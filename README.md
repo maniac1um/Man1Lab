@@ -1,9 +1,11 @@
-# ResearchAgent MVP
+# Man1Lab
+
+An autonomous research paper reproduction pipeline.
 
 **Version:** v1.0.0  
 **Status:** Research prototype — MVP implementation complete
 
-ResearchAgent is an autonomous engineering pipeline for research paper reproduction. Given a PDF research paper, the system extracts structured information, plans engineering tasks, generates a reproduction repository, prepares a Python environment, executes the training script, verifies results, reviews failures, and produces a final report.
+Man1Lab reads a PDF research paper, extracts structured information, plans engineering tasks, generates a reproduction repository, prepares a Python environment, executes the training script, verifies results, reviews failures, and produces a final report.
 
 This release is intended for **academic demonstration**. It is not yet a community-driven open-source project. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -174,9 +176,9 @@ scripts/         # Integration runner
 If you use this prototype in academic work, please cite:
 
 ```bibtex
-@software{researchagent_mvp_2026,
+@software{man1lab_2026,
   author       = {maniac1um},
-  title        = {ResearchAgent MVP: Autonomous Research Paper Reproduction Pipeline},
+  title        = {Man1Lab: An Autonomous Research Paper Reproduction Pipeline},
   year         = {2026},
   version      = {1.0.0},
   url          = {https://github.com/maniac1um/Research_Agent_MVP},
