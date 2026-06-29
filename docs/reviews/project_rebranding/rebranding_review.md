@@ -19,9 +19,9 @@ The public-facing project identity has been renamed from **ResearchAgent** to **
 | Prompts | Unchanged |
 | ADRs | Preserved (historical) |
 | Milestone/integration reports | Preserved (historical) |
-| GitHub URLs | Unchanged (`Research_Agent_MVP`) — actual remote name not yet renamed |
+| GitHub URLs | Updated to `https://github.com/maniac1um/Man1Lab` |
 
-**Branding rule:** Man1Lab is the project name; `Research_Agent_MVP` remains the repository path until GitHub rename is performed.
+**Branding rule:** Man1Lab is the project name and GitHub repository name (`github.com/maniac1um/Man1Lab`).
 
 ---
 
@@ -74,9 +74,9 @@ The public-facing project identity has been renamed from **ResearchAgent** to **
 | Subtitle | "An autonomous research paper reproduction pipeline" |
 | Release title | `Man1Lab v1.0.0 (Research Prototype)` |
 | Citation key | `man1lab_2026` |
-| Repository URLs | Kept as `https://github.com/maniac1um/Research_Agent_MVP` (actual `git remote`) |
-| Clone directory | Kept as `Research_Agent_MVP` in examples until GitHub rename |
-| Filesystem paths in ARCHITECTURE | `Research_Agent_MVP/` directory tree unchanged (physical path) |
+| Repository URLs | `https://github.com/maniac1um/Man1Lab` |
+| Clone directory | `Man1Lab` |
+| Filesystem paths in ARCHITECTURE | `Man1Lab/` directory tree |
 | Python modules/classes/APIs | Unchanged |
 | Prompts | Unchanged (constraint) |
 | Historical reports | Unchanged (constraint) |
@@ -155,15 +155,11 @@ Intentionally unchanged references to ResearchAgent:
 | GitHub Release title | Use **Man1Lab v1.0.0 (Research Prototype)** |
 | Release body | Use updated `release/v1.0.0.md` |
 | Citation | BibTeX uses `man1lab_2026` and Man1Lab title |
-| Repository URL in links | Still `Research_Agent_MVP` until GitHub rename |
+| Repository URL in links | `https://github.com/maniac1um/Man1Lab` |
 | Tag `v1.0.0` | No change required; branding is documentation-level |
 | Code behavior | No impact |
 
-After GitHub repository rename to `Man1Lab`, update:
-
-- `README.md`, `release/v1.0.0.md`, `CHANGELOG.md` URLs
-- `git clone` examples in GETTING_STARTED and README
-- Citation `url` field
+`git remote` updated to `https://github.com/maniac1um/Man1Lab.git`.
 
 ---
 

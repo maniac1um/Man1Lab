@@ -757,7 +757,7 @@ Few-shot examples can be added later without modifying workflow logic.
 # 11. Directory Structure
 
 ```text
-Research_Agent_MVP/
+Man1Lab/
 
 ├── app.py
 ├── config.py

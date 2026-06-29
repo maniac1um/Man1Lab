@@ -22,8 +22,8 @@ System design and agent boundaries are documented in [architecture/ARCHITECTURE.
 ## Installation
 
 ```bash
-git clone <repository-url>
-cd Research_Agent_MVP
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
 pip install -r requirements.txt
 ```
 

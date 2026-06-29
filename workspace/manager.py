@@ -139,7 +139,7 @@ class WorkspaceManager:
     @staticmethod
     def _format_report(report: ReportModel) -> str:
         lines = [
-            "# ResearchAgent Reproduction Report",
+            "# Man1Lab Reproduction Report",
             "",
             "## Reproduction Summary",
             report.reproduction_summary,

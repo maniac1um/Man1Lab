@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Public project identity rebranded from ResearchAgent to **Man1Lab** (documentation only; repository path unchanged until GitHub rename)
+- Public project identity rebranded from ResearchAgent to **Man1Lab**; GitHub repository URL updated to `github.com/maniac1um/Man1Lab`
 
 ## [1.0.0] - 2026-06-29
 
@@ -54,4 +54,4 @@ First public release. MVP implementation complete — autonomous single-paper re
 - LLM API timeouts can fail Reviewer independently of code quality
 - Research prototype — pull requests not accepted; see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-[1.0.0]: https://github.com/maniac1um/Research_Agent_MVP/releases/tag/v1.0.0
+[1.0.0]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.0.0

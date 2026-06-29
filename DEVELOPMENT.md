@@ -212,7 +212,7 @@ See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the capability refe
 ## Repository Layout
 
 ```text
-Research_Agent_MVP/
+Man1Lab/
 ├── app.py                  # Composition root
 ├── config.py               # Configuration constants
 ├── DEVELOPMENT.md          # This file

@@ -42,16 +42,18 @@ Full design: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.
 
 ## Current Capabilities
 
-| Capability | Output | Status |
-|------------|--------|--------|
-| Reader | `PaperModel` | Implemented |
-| Planner | `TaskModel` | Implemented |
-| Coder | `Workspace` | Implemented (includes GQ-1 + RAG) |
-| Runner | `ExecutionResult` | Implemented |
-| Verification | `VerificationResult` | Implemented |
-| Reviewer | `ReviewReport` | Implemented |
-| Patch Planner | `PatchPlan` | Implemented |
-| Reporter | `ReportModel` | Implemented |
+
+| Capability    | Output               | Status                            |
+| ------------- | -------------------- | --------------------------------- |
+| Reader        | `PaperModel`         | Implemented                       |
+| Planner       | `TaskModel`          | Implemented                       |
+| Coder         | `Workspace`          | Implemented (includes GQ-1 + RAG) |
+| Runner        | `ExecutionResult`    | Implemented                       |
+| Verification  | `VerificationResult` | Implemented                       |
+| Reviewer      | `ReviewReport`       | Implemented                       |
+| Patch Planner | `PatchPlan`          | Implemented                       |
+| Reporter      | `ReportModel`        | Implemented                       |
+
 
 Details: [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) · [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md)
 
@@ -78,8 +80,8 @@ Full list: [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md#known-limitations)
 ### Install and test
 
 ```bash
-git clone https://github.com/maniac1um/Research_Agent_MVP.git
-cd Research_Agent_MVP
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
 pip install -r requirements.txt
 PYTHONPATH=. python -m pytest tests/ -v
 ```
@@ -120,11 +122,13 @@ More detail: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
 
 End-to-end runs on real papers with a configured LLM (see [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md)):
 
-| Run | Paper | Pipeline | RAG | Execution |
-|-----|-------|----------|-----|-----------|
-| M8.1 | ResNet | All stages SUCCESS | N/A | FAILED — missing `torch` in requirements |
-| M8.2 | DeiT | All stages SUCCESS | N/A | FAILED — stub `requirements.txt` |
-| RAG re-run | DeiT | Reader–Coder SUCCESS | **ACCEPTED** | FAILED — timm runtime API |
+
+| Run        | Paper  | Pipeline             | RAG          | Execution                                |
+| ---------- | ------ | -------------------- | ------------ | ---------------------------------------- |
+| M8.1       | ResNet | All stages SUCCESS   | N/A          | FAILED — missing `torch` in requirements |
+| M8.2       | DeiT   | All stages SUCCESS   | N/A          | FAILED — stub `requirements.txt`         |
+| RAG re-run | DeiT   | Reader–Coder SUCCESS | **ACCEPTED** | FAILED — timm runtime API                |
+
 
 **Summary:** Delivery quality improved through GQ-1 and RAG; full training reproduction is not yet validated on benchmark papers.
 
@@ -134,18 +138,20 @@ Evidence: [docs/reviews/M8.1/](docs/reviews/M8.1/) · [docs/reviews/M8.2/](docs/
 
 ## Documentation
 
-| Document | Location |
-|----------|----------|
-| **Current status** | [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) |
-| **Getting started** | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
-| Documentation index | [docs/README.md](docs/README.md) |
-| Architecture | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
-| Capabilities | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
-| Release notes | [release/v1.0.0.md](release/v1.0.0.md) |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) |
-| Development (maintainer) | [DEVELOPMENT.md](DEVELOPMENT.md) |
-| Reviews | [docs/reviews/README.md](docs/reviews/README.md) |
-| ADRs | [docs/adr/README.md](docs/adr/README.md) |
+
+| Document                 | Location                                                               |
+| ------------------------ | ---------------------------------------------------------------------- |
+| **Current status**       | [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md)                       |
+| **Getting started**      | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)                     |
+| Documentation index      | [docs/README.md](docs/README.md)                                       |
+| Architecture             | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
+| Capabilities             | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
+| Release notes            | [release/v1.0.0.md](release/v1.0.0.md)                                 |
+| Changelog                | [CHANGELOG.md](CHANGELOG.md)                                           |
+| Development (maintainer) | [DEVELOPMENT.md](DEVELOPMENT.md)                                       |
+| Reviews                  | [docs/reviews/README.md](docs/reviews/README.md)                       |
+| ADRs                     | [docs/adr/README.md](docs/adr/README.md)                               |
+
 
 ---
 
@@ -181,12 +187,12 @@ If you use this prototype in academic work, please cite:
   title        = {Man1Lab: An Autonomous Research Paper Reproduction Pipeline},
   year         = {2026},
   version      = {1.0.0},
-  url          = {https://github.com/maniac1um/Research_Agent_MVP},
-  note         = {Research prototype. v1.0.0 release.}
+  url          = {https://github.com/maniac1um/Man1Lab},
+  note         = {Man1Lab. v1.0.0 release.}
 }
 ```
 
-_Citation metadata is a placeholder for academic use. A formal publication reference may be added in a future release._
+*Citation metadata is a placeholder for academic use. A formal publication reference may be added in a future release.*
 
 ---
 
