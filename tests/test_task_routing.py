@@ -113,6 +113,41 @@ class TaskRouterTest(unittest.TestCase):
             ],
         )
 
+    def test_routes_residual_block_task(self) -> None:
+        step = _step(
+            "model_blocks",
+            "Implement Residual Building Block",
+            "Implement the core residual building block.",
+        )
+        targets = self._router.route_step(step)
+
+        self.assertEqual(len(targets), 1)
+        self.assertEqual(targets[0].relative_path, "src/model.py")
+
+    def test_route_task_deduplicates_duplicate_paths(self) -> None:
+        task = TaskModel(
+            paper_title="Test Paper",
+            steps=[
+                _step("task_3a", "Dataset preparation", "Load CIFAR."),
+                _step("task_3b", "Dataset preparation", "Load ImageNet."),
+                _step("task_5a", "Training", "Train on CIFAR."),
+                _step("task_5b", "Training", "Train on ImageNet."),
+            ],
+        )
+        routing_table = self._router.route_task(task)
+
+        paths = [target.relative_path for target in routing_table.targets]
+        self.assertEqual(
+            paths,
+            [
+                "src/dataset.py",
+                "configs/dataset.yaml",
+                "scripts/train.py",
+                "configs/train.yaml",
+            ],
+        )
+        self.assertEqual(len(paths), len(set(paths)))
+
     def test_unknown_task_returns_empty_targets(self) -> None:
         step = _step("task_x", "Literature review", "Summarize related work.")
         targets = self._router.route_step(step)

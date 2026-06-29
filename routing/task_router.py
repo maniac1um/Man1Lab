@@ -3,8 +3,26 @@ from models.task import TaskModel, TaskStep
 
 _ENVIRONMENT_KEYWORDS = ("environment", "dependency", "dependencies", "setup")
 _DATASET_KEYWORDS = ("dataset",)
-_MODEL_KEYWORDS = ("model",)
-_MODEL_CONTEXT_KEYWORDS = ("implement", "implementation")
+_MODEL_SIGNAL_KEYWORDS = (
+    "model",
+    "architecture",
+    "architectures",
+    "network",
+    "networks",
+    "block",
+    "blocks",
+    "residual",
+    "resnet",
+    "backbone",
+)
+_MODEL_ACTION_KEYWORDS = (
+    "implement",
+    "implementation",
+    "define",
+    "build",
+    "construct",
+    "create",
+)
 _TRAINING_KEYWORDS = ("train", "training")
 _EVALUATION_KEYWORDS = ("evaluat", "evaluation")
 
@@ -15,10 +33,22 @@ class TaskRouter:
         return self._targets_for_type(task_type, step.id)
 
     def route_task(self, task: TaskModel) -> TaskRoutingTable:
-        targets: list[RepositoryTarget] = []
+        targets_by_path: dict[str, RepositoryTarget] = {}
         for step in task.steps:
-            targets.extend(self.route_step(step))
-        return TaskRoutingTable(targets=targets)
+            for target in self.route_step(step):
+                if target.relative_path not in targets_by_path:
+                    targets_by_path[target.relative_path] = target
+        return TaskRoutingTable(targets=list(targets_by_path.values()))
+
+    @staticmethod
+    def unrouted_step_ids(task: TaskModel, routing_table: TaskRoutingTable) -> list[str]:
+        routed_ids = {target.task_id for target in routing_table.targets}
+        covered_ids: set[str] = set()
+        for step in task.steps:
+            step_targets = TaskRouter().route_step(step)
+            if step_targets:
+                covered_ids.add(step.id)
+        return [step.id for step in task.steps if step.id not in covered_ids]
 
     @staticmethod
     def _step_text(step: TaskStep) -> str:
@@ -34,8 +64,8 @@ class TaskRouter:
             return "training"
         if any(keyword in text for keyword in _DATASET_KEYWORDS):
             return "dataset"
-        if any(keyword in text for keyword in _MODEL_KEYWORDS) and any(
-            keyword in text for keyword in _MODEL_CONTEXT_KEYWORDS
+        if any(keyword in text for keyword in _MODEL_SIGNAL_KEYWORDS) and any(
+            keyword in text for keyword in _MODEL_ACTION_KEYWORDS
         ):
             return "model"
         if any(keyword in text for keyword in _ENVIRONMENT_KEYWORDS):

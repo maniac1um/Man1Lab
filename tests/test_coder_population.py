@@ -38,11 +38,11 @@ def _step(task_id: str, name: str, description: str = "") -> TaskStep:
 class RecordingLLMProvider(LLMProvider):
     def __init__(self) -> None:
         self.calls: list[list[LLMMessage]] = []
+        self._delegate = CoderMockLLMProvider()
 
     def complete(self, messages: list[LLMMessage], *, temperature: float = 0.0) -> str:
         self.calls.append(messages)
-        target_path = CoderMockLLMProvider._extract_target_path(messages)
-        return MOCK_FILE_CONTENT.get(target_path, f"# Generated: {target_path}\n")
+        return self._delegate.complete(messages, temperature=temperature)
 
 
 class CoderPopulationTest(unittest.TestCase):
@@ -70,7 +70,7 @@ class CoderPopulationTest(unittest.TestCase):
 
         self._coder.run(_sample_paper(), task)
 
-        self.assertEqual(len(self._recording_llm.calls), 3)
+        self.assertEqual(len(self._recording_llm.calls), 2)
 
     def test_generated_content_written_through_workspace_manager(self) -> None:
         task = TaskModel(
@@ -144,7 +144,51 @@ class CoderPopulationTest(unittest.TestCase):
         self.assertIn('"framework": "PyTorch"', user_prompt)
         self.assertIn('"dataset": "Dataset."', user_prompt)
 
-    def test_generation_order_dependencies_before_scripts(self) -> None:
+    def test_repository_contract_included_in_prompts(self) -> None:
+        task = TaskModel(
+            paper_title="Population Test Paper",
+            steps=[_step("task_4", "Model implementation", "Implement network.")],
+        )
+
+        self._coder.run(_sample_paper(), task)
+
+        user_prompt = self._recording_llm.calls[0][1].content
+        self.assertIn("Repository contract (interface roles):", user_prompt)
+        self.assertIn("module_roles", user_prompt)
+
+    def test_interface_registry_in_train_prompt_after_upstream_files(self) -> None:
+        task = TaskModel(
+            paper_title="Population Test Paper",
+            steps=[
+                _step("task_3", "Dataset preparation", "Load data."),
+                _step("task_5", "Training", "Train the model."),
+            ],
+        )
+
+        self._coder.run(_sample_paper(), task)
+
+        train_prompt = self._recording_llm.calls[-1][1].content
+        self.assertIn("Interface registry", train_prompt)
+        self.assertIn("load_dataloaders", train_prompt)
+        self.assertIn("dataset", train_prompt)
+
+    def test_train_script_imports_registry_symbols(self) -> None:
+        task = TaskModel(
+            paper_title="Population Test Paper",
+            steps=[
+                _step("task_3", "Dataset preparation", "Load data."),
+                _step("task_5", "Training", "Train the model."),
+            ],
+        )
+
+        workspace = self._coder.run(_sample_paper(), task)
+        train_py = self._workspace_manager.read_file(workspace, "scripts/train.py")
+
+        self.assertIn("from src.dataset import load_dataloaders", train_py)
+        self.assertIn('config["dataset"]', train_py)
+        self.assertIn('if __name__ == "__main__":', train_py)
+
+    def test_generation_order_sources_before_scripts_without_requirements_llm(self) -> None:
         task = TaskModel(
             paper_title="Population Test Paper",
             steps=[
@@ -153,7 +197,7 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        self._coder.run(_sample_paper(), task)
+        workspace = self._coder.run(_sample_paper(), task)
 
         target_paths = [
             CoderMockLLMProvider._extract_target_path(call)
@@ -162,11 +206,13 @@ class CoderPopulationTest(unittest.TestCase):
         self.assertEqual(
             target_paths,
             [
-                "requirements.txt",
                 "configs/train.yaml",
                 "scripts/train.py",
             ],
         )
+        requirements = self._workspace_manager.read_file(workspace, "requirements.txt")
+        self.assertIn("torch", requirements)
+        self.assertIn("PyYAML", requirements)
 
     def test_readme_reflects_populated_repository(self) -> None:
         task = TaskModel(

@@ -84,7 +84,8 @@ class CoderWorkspaceTest(unittest.TestCase):
 
         self.assertTrue(requirements_path.is_file())
         content = requirements_path.read_text(encoding="utf-8")
-        self.assertIn("torch>=2.0.0", content)
+        self.assertIn("torch", content)
+        self.assertIn("PyYAML", content)
 
     def test_returns_workspace_object(self) -> None:
         workspace = self._coder.run(_sample_paper(), _sample_task())
