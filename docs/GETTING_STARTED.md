@@ -1,12 +1,12 @@
 # Getting Started
 
-Quick orientation for new contributors. For current implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
+Quick orientation for running and exploring the prototype. For current implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
 
 ---
 
 ## Project Overview
 
-ResearchAgent MVP is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, and produces a final report.
+ResearchAgent MVP v1.0.0 is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, reviews failures, and produces a final report.
 
 System design and agent boundaries are documented in [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 
@@ -40,6 +40,8 @@ Or with unittest:
 ```bash
 PYTHONPATH=. python -m unittest discover -s tests -v
 ```
+
+Current suite: **126 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
@@ -79,11 +81,14 @@ Requires a configured API key. Results are written to `outputs/` and `logs/`.
 
 ## Recommended Reading Order
 
-1. [CURRENT_STATUS.md](CURRENT_STATUS.md) — what is implemented and what is blocked today
-2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system architecture (note: some status tables may lag CURRENT_STATUS)
-3. [DEVELOPMENT.md](../DEVELOPMENT.md) — milestone workflow, freeze policy, commit conventions
-4. [adr/README.md](adr/README.md) — architecture decision records
-5. [reviews/README.md](reviews/README.md) — milestone and integration review index
-6. [roadmap/ROADMAP.md](roadmap/ROADMAP.md) — long-term timeline
+1. [CURRENT_STATUS.md](CURRENT_STATUS.md) — what is implemented, benchmarks, and limitations
+2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system architecture
+3. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) — per-capability component reference
+4. [DEVELOPMENT.md](../DEVELOPMENT.md) — milestone workflow, freeze policy, commit conventions
+5. [adr/README.md](adr/README.md) — architecture decision records
+6. [reviews/README.md](reviews/README.md) — milestone and integration review index
+7. [roadmap/ROADMAP.md](roadmap/ROADMAP.md) — development timeline
+8. [CHANGELOG.md](../CHANGELOG.md) — v1.0.0 release history
+9. [release/v1.0.0.md](../release/v1.0.0.md) — GitHub Release notes
 
-Read individual milestone design reviews only when working on or auditing a specific capability.
+Read individual milestone design reviews only when auditing a specific capability or tracing historical decisions.

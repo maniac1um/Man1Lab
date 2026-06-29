@@ -1,8 +1,8 @@
 # ResearchAgent Capability Summary
 
-Current implementation status of ResearchAgent MVP capabilities as of the M5.F architecture freeze.
+Implementation status of ResearchAgent MVP v1.0.0 capabilities.
 
-For architecture details see [ARCHITECTURE.md](ARCHITECTURE.md). For design decisions see [ADR index](../adr/README.md).
+For the latest benchmarks and limitations, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). For architecture detail see [ARCHITECTURE.md](ARCHITECTURE.md). For design decisions see [ADR index](../adr/README.md).
 
 ---
 
@@ -14,8 +14,12 @@ For architecture details see [ARCHITECTURE.md](ARCHITECTURE.md). For design deci
 | Planner | **Implemented** | `PaperModel` | `TaskModel` |
 | Coder | **Implemented** | `PaperModel`, `TaskModel` | `Workspace` |
 | Runner | **Implemented** | `Workspace` | `ExecutionResult` |
-| Reviewer | **Planned** | `ExecutionResult` | `PatchPlan` |
-| Reporter | **Partial** | `WorkflowHistory` | `ReportModel` |
+| Verification | **Implemented** | `Workspace`, `ExecutionResult` | `VerificationResult` |
+| Reviewer | **Implemented** | `PaperModel`, `TaskModel`, `VerificationResult` | `ReviewReport` |
+| PatchPlanner | **Implemented** | `ReviewReport` | `PatchPlan` |
+| Reporter | **Implemented** | `WorkflowHistory` | `ReportModel` |
+
+Reader, Planner, Coder, and Runner public interfaces are frozen since [M5.F](../reviews/M5.F/design_review.md).
 
 ---
 
@@ -96,6 +100,7 @@ PaperModel → Prompt → LLM → dict → Validation → TaskModel
 | `PromptBuilder` | Per-file category prompts |
 | `LLMProvider` | Per-target file generation |
 | `CoderMockLLMProvider` | Default mock file content (no API key) |
+| `agents/coder_quality.py` | Framework binding, validation, requirements reconciliation, acceptance gate |
 
 **Pipeline:**
 
@@ -103,10 +108,19 @@ PaperModel → Prompt → LLM → dict → Validation → TaskModel
 TaskModel → TaskRouter → TaskRoutingTable
          → WorkspaceManager (skeleton)
          → LLM per RepositoryTarget → WorkspaceManager.write_file
+         → reconcile requirements (GQ-1)
+         → validate + decide_repository_acceptance (RAG)
          → Workspace
 ```
 
 Repository artifacts (`src/`, `configs/`, `scripts/`, `README.md`, `requirements.txt`) are written exclusively through `WorkspaceManager`.
+
+**Delivery quality layers:**
+
+| Layer | Reference |
+|-------|-----------|
+| GQ-1 (generation quality) | [implementation review](../reviews/generation_quality_upgrade_v1/implementation_review.md) |
+| RAG (repository acceptance gate) | [implementation review](../reviews/repository_acceptance_gate/implementation_review.md) |
 
 ---
 
@@ -125,9 +139,9 @@ Repository artifacts (`src/`, `configs/`, `scripts/`, `README.md`, `requirements
 
 | Component | Role |
 |-----------|------|
-| `EnvironmentService` | Virtual environment creation and dependency installation (M5.1) |
-| `ExecutionPlanner` | Build `ExecutionPlan` for `scripts/train.py` (M5.2) |
-| `ExecutionService` | Execute plan, capture output, write `execution.log` (M5.2) |
+| `EnvironmentService` | Virtual environment creation and dependency installation |
+| `ExecutionPlanner` | Build `ExecutionPlan` for `scripts/train.py` |
+| `ExecutionService` | Execute plan, capture output, write `execution.log` |
 
 **Pipeline:**
 
@@ -141,20 +155,54 @@ Runtime artifacts (`.venv/`, `logs/`) are managed by execution services. See [AD
 
 ---
 
-## Reviewer
+## Verification
 
-**Purpose:** Analyze execution failures and produce a repair plan for the review loop.
+**Purpose:** Deterministic checks on execution outcome before LLM review.
 
 | Field | Value |
 |-------|-------|
-| **Input artifact** | `ExecutionResult` |
-| **Output artifact** | `PatchPlan` |
+| **Input artifacts** | `Workspace`, `ExecutionResult` |
+| **Output artifact** | `VerificationResult` |
+| **Service** | `VerificationService` |
+| **Status** | Implemented |
+
+**Module:** `services/verification_service.py`
+
+Invoked by `WorkflowOrchestrator` between Runner and Reviewer. See [M6.1 design review](../reviews/M6.1/design_review.md).
+
+---
+
+## Reviewer
+
+**Purpose:** Analyze execution failures using LLM structured extraction.
+
+| Field | Value |
+|-------|-------|
+| **Input artifacts** | `PaperModel`, `TaskModel`, `VerificationResult` |
+| **Output artifact** | `ReviewReport` |
 | **Agent** | `Reviewer` |
-| **Status** | Planned (mock implementation only) |
+| **Status** | Implemented |
 
-**Current state:** `Reviewer.run()` returns a stub `PatchPlan` with `requires_patch=False`. No failure analysis or repair strategy generation is implemented.
+**Major components:** `PromptBuilder`, `LLMProvider`, `validation/review.py`
 
-**Next milestone:** M6 — Reviewer Capability.
+See [M6.2 design review](../reviews/M6.2/design_review.md).
+
+---
+
+## PatchPlanner
+
+**Purpose:** Convert review findings into a structured repair plan.
+
+| Field | Value |
+|-------|-------|
+| **Input artifact** | `ReviewReport` |
+| **Output artifact** | `PatchPlan` |
+| **Component** | `PatchPlanner` |
+| **Status** | Implemented |
+
+**Module:** `planning/patch_planner.py`
+
+See [M6.3 design review](../reviews/M6.3/design_review.md). The orchestrator does not yet re-invoke Coder/Runner when `requires_patch` is true.
 
 ---
 
@@ -167,19 +215,19 @@ Runtime artifacts (`.venv/`, `logs/`) are managed by execution services. See [AD
 | **Input artifact** | `WorkflowHistory` |
 | **Output artifact** | `ReportModel` |
 | **Agent** | `Reporter` |
-| **Status** | Partial (template-based report generation) |
+| **Status** | Implemented |
 
-**Current state:** `Reporter.run()` produces a template `ReportModel`. `WorkspaceManager.write_report()` persists the report. Full reporting capability is planned under M7.
+`Reporter.run()` produces a `ReportModel`. `WorkspaceManager.write_report()` persists the report to `outputs/report.md`.
 
 ---
 
 ## Capability Freeze (M5.F)
 
-The following capabilities are frozen for MVP baseline before M6:
+The following agent public interfaces are frozen for MVP baseline:
 
 - Reader
 - Planner
 - Coder
 - Runner
 
-Public interfaces for these capabilities are stable. Internal implementation may change only with ADR and architecture review.
+Post-M5 capabilities (Verification, Reviewer, PatchPlanner, Reporter, Coder quality layers) were added without changing these frozen contracts. Internal Coder behavior may evolve; `Coder.run()` signature is unchanged.

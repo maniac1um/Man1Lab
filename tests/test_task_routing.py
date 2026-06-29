@@ -148,6 +148,17 @@ class TaskRouterTest(unittest.TestCase):
         )
         self.assertEqual(len(paths), len(set(paths)))
 
+    def test_environment_setup_not_misclassified_as_evaluation(self) -> None:
+        step = _step(
+            "1",
+            "Environment setup",
+            "Install PyTorch, timm, and other dependencies for training and evaluation.",
+        )
+        targets = self._router.route_step(step)
+
+        self.assertEqual(len(targets), 1)
+        self.assertEqual(targets[0].relative_path, "requirements.txt")
+
     def test_unknown_task_returns_empty_targets(self) -> None:
         step = _step("task_x", "Literature review", "Summarize related work.")
         targets = self._router.route_step(step)
@@ -185,6 +196,7 @@ class CoderRoutingIntegrationTest(unittest.TestCase):
             steps=[
                 _step("task_1", "Environment setup"),
                 _step("task_3", "Dataset preparation"),
+                _step("task_5", "Training", "Train the model."),
             ],
         )
 
@@ -193,7 +205,16 @@ class CoderRoutingIntegrationTest(unittest.TestCase):
 
         self.assertIsNotNone(routing_table)
         paths = [target.relative_path for target in routing_table.targets]
-        self.assertEqual(paths, ["requirements.txt", "src/dataset.py", "configs/dataset.yaml"])
+        self.assertEqual(
+            paths,
+            [
+                "requirements.txt",
+                "src/dataset.py",
+                "configs/dataset.yaml",
+                "scripts/train.py",
+                "configs/train.yaml",
+            ],
+        )
         self.assertTrue((workspace.root_path / "src" / "dataset.py").is_file())
         self.assertTrue((workspace.root_path / "configs" / "dataset.yaml").is_file())
 

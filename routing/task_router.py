@@ -57,7 +57,10 @@ class TaskRouter:
     @classmethod
     def _classify_step(cls, step: TaskStep) -> str:
         text = cls._step_text(step)
+        name = step.name.lower()
 
+        if any(keyword in name for keyword in _ENVIRONMENT_KEYWORDS):
+            return "environment"
         if any(keyword in text for keyword in _EVALUATION_KEYWORDS):
             return "evaluation"
         if any(keyword in text for keyword in _TRAINING_KEYWORDS):
@@ -68,8 +71,6 @@ class TaskRouter:
             keyword in text for keyword in _MODEL_ACTION_KEYWORDS
         ):
             return "model"
-        if any(keyword in text for keyword in _ENVIRONMENT_KEYWORDS):
-            return "environment"
         return "unknown"
 
     @staticmethod

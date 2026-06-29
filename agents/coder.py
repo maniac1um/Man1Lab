@@ -3,9 +3,12 @@ import re
 import sys
 
 from agents.coder_quality import (
+    RepositoryAcceptanceError,
     build_framework_binding,
     collect_python_files,
     collect_required_packages,
+    decide_repository_acceptance,
+    format_acceptance_log,
     format_validation_log,
     reconcile_requirements_content,
     validate_generated_repository,
@@ -87,7 +90,17 @@ class Coder:
             interface_registry,
         )
         routed_paths = {target.relative_path for target in routing_table.targets}
-        if "requirements.txt" in routed_paths:
+        generated_paths = set(populated_paths)
+        if any(path.endswith(".py") for path in generated_paths):
+            reconcile_paths = routed_paths | generated_paths
+            self._reconcile_requirements(
+                workspace,
+                shared_generation_context,
+                reconcile_paths,
+            )
+            if "requirements.txt" not in populated_paths:
+                populated_paths.append("requirements.txt")
+        elif "requirements.txt" in routed_paths:
             self._reconcile_requirements(
                 workspace,
                 shared_generation_context,
@@ -95,9 +108,8 @@ class Coder:
             )
             if "requirements.txt" not in populated_paths:
                 populated_paths.append("requirements.txt")
-        self._validate_and_log(
+        self._validate_and_accept(
             workspace,
-            routing_table,
             shared_generation_context,
             repository_contract,
             interface_registry,
@@ -392,10 +404,10 @@ class Coder:
         self,
         workspace: Workspace,
         shared_generation_context: dict[str, object],
-        routed_paths: set[str],
+        relevant_paths: set[str],
     ) -> None:
         python_paths = sorted(
-            path for path in routed_paths if path.endswith(".py")
+            path for path in relevant_paths if path.endswith(".py")
         )
         python_files = collect_python_files(workspace.root_path, python_paths)
         framework = str(shared_generation_context.get("framework", ""))
@@ -407,15 +419,48 @@ class Coder:
         content = reconcile_requirements_content(existing, required)
         self._workspace_manager.write_file(workspace, "requirements.txt", content)
 
-    def _validate_and_log(
+    def _validate_and_accept(
         self,
         workspace: Workspace,
-        routing_table: TaskRoutingTable,
         shared_generation_context: dict[str, object],
         repository_contract: dict[str, object],
         interface_registry: dict[str, object],
         routed_paths: set[str],
     ) -> None:
+        findings = self._collect_validation_findings(
+            workspace,
+            shared_generation_context,
+            repository_contract,
+            interface_registry,
+            routed_paths,
+        )
+        blocking_errors, warnings = decide_repository_acceptance(findings)
+        logs_dir = workspace.root_path / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        (logs_dir / "generation_validation.log").write_text(
+            format_validation_log(findings),
+            encoding="utf-8",
+        )
+        accepted = not blocking_errors
+        (logs_dir / "repository_acceptance.log").write_text(
+            format_acceptance_log(
+                accepted=accepted,
+                blocking_errors=blocking_errors,
+                warnings=warnings,
+            ),
+            encoding="utf-8",
+        )
+        if blocking_errors:
+            raise RepositoryAcceptanceError(blocking_errors)
+
+    def _collect_validation_findings(
+        self,
+        workspace: Workspace,
+        shared_generation_context: dict[str, object],
+        repository_contract: dict[str, object],
+        interface_registry: dict[str, object],
+        routed_paths: set[str],
+    ) -> list[dict[str, str]]:
         python_paths = sorted(
             path for path in routed_paths if path.endswith(".py")
         )
@@ -429,20 +474,13 @@ class Coder:
             framework_binding = build_framework_binding(
                 str(shared_generation_context.get("framework", ""))
             )
-        findings = validate_generated_repository(
+        return validate_generated_repository(
             workspace_root=workspace.root_path,
             routed_paths=routed_paths,
             python_files=python_files,
             requirements_content=requirements_content,
             framework_binding=framework_binding,
             interface_registry=interface_registry,
-        )
-        log_content = format_validation_log(findings)
-        logs_dir = workspace.root_path / "logs"
-        logs_dir.mkdir(parents=True, exist_ok=True)
-        (logs_dir / "generation_validation.log").write_text(
-            log_content,
-            encoding="utf-8",
         )
 
     def _finalize_readme(

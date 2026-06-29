@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from agents.coder import Coder
+from agents.coder_quality import RepositoryAcceptanceError
 from llm.coder_mock_provider import MOCK_FILE_CONTENT, CoderMockLLMProvider
 from llm.provider import LLMMessage, LLMProvider
 from models.paper import PaperModel
@@ -68,7 +69,8 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        self._coder.run(_sample_paper(), task)
+        with self.assertRaises(RepositoryAcceptanceError):
+            self._coder.run(_sample_paper(), task)
 
         self.assertEqual(len(self._recording_llm.calls), 2)
 
@@ -78,9 +80,12 @@ class CoderPopulationTest(unittest.TestCase):
             steps=[_step("task_4", "Model implementation", "Implement network.")],
         )
 
-        workspace = self._coder.run(_sample_paper(), task)
-        content = self._workspace_manager.read_file(workspace, "src/model.py")
+        with self.assertRaises(RepositoryAcceptanceError):
+            self._coder.run(_sample_paper(), task)
 
+        content = (self._root / "population_test_paper" / "src" / "model.py").read_text(
+            encoding="utf-8"
+        )
         self.assertEqual(content, MOCK_FILE_CONTENT["src/model.py"])
 
     def test_correct_target_file_population(self) -> None:
@@ -104,7 +109,10 @@ class CoderPopulationTest(unittest.TestCase):
     def test_deterministic_repository_population(self) -> None:
         task = TaskModel(
             paper_title="Population Test Paper",
-            steps=[_step("task_3", "Dataset preparation", "Load data.")],
+            steps=[
+                _step("task_3", "Dataset preparation", "Load data."),
+                _step("task_5", "Training", "Train the model."),
+            ],
         )
 
         workspace_one = self._coder.run(_sample_paper(), task)
@@ -118,18 +126,19 @@ class CoderPopulationTest(unittest.TestCase):
         self.assertEqual(dataset_one, dataset_two)
         self.assertEqual(config_one, config_two)
 
-    def test_only_routed_files_are_created(self) -> None:
+    def test_rejects_repository_without_training_entrypoint(self) -> None:
         task = TaskModel(
             paper_title="Population Test Paper",
-            steps=[_step("task_4", "Model implementation")],
+            steps=[_step("task_4", "Model implementation", "Implement network.")],
         )
 
-        workspace = self._coder.run(_sample_paper(), task)
+        with self.assertRaises(RepositoryAcceptanceError):
+            self._coder.run(_sample_paper(), task)
 
-        self.assertTrue((workspace.root_path / "src" / "model.py").is_file())
-        self.assertEqual(list((workspace.root_path / "src").iterdir()), [workspace.root_path / "src" / "model.py"])
-        self.assertEqual(list((workspace.root_path / "scripts").iterdir()), [])
-        self.assertEqual(list((workspace.root_path / "configs").iterdir()), [])
+        slug = "population_test_paper"
+        workspace_root = self._root / slug
+        self.assertTrue((workspace_root / "src" / "model.py").is_file())
+        self.assertFalse((workspace_root / "scripts" / "train.py").exists())
 
     def test_shared_generation_context_included_in_prompts(self) -> None:
         task = TaskModel(
@@ -137,7 +146,8 @@ class CoderPopulationTest(unittest.TestCase):
             steps=[_step("task_4", "Model implementation", "Implement network.")],
         )
 
-        self._coder.run(_sample_paper(), task)
+        with self.assertRaises(RepositoryAcceptanceError):
+            self._coder.run(_sample_paper(), task)
 
         user_prompt = self._recording_llm.calls[0][1].content
         self.assertIn("Shared generation context:", user_prompt)
@@ -150,7 +160,8 @@ class CoderPopulationTest(unittest.TestCase):
             steps=[_step("task_4", "Model implementation", "Implement network.")],
         )
 
-        self._coder.run(_sample_paper(), task)
+        with self.assertRaises(RepositoryAcceptanceError):
+            self._coder.run(_sample_paper(), task)
 
         user_prompt = self._recording_llm.calls[0][1].content
         self.assertIn("Repository contract (interface roles):", user_prompt)
@@ -217,7 +228,10 @@ class CoderPopulationTest(unittest.TestCase):
     def test_readme_reflects_populated_repository(self) -> None:
         task = TaskModel(
             paper_title="Population Test Paper",
-            steps=[_step("task_3", "Dataset preparation", "Load data.")],
+            steps=[
+                _step("task_3", "Dataset preparation", "Load data."),
+                _step("task_5", "Training", "Train the model."),
+            ],
         )
 
         workspace = self._coder.run(_sample_paper(), task)

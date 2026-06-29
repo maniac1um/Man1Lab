@@ -1,12 +1,12 @@
 # ARCHITECTURE.md
 
-# ResearchAgent MVP v0.1
+# ResearchAgent MVP v1.0.0
 
 ## 1. Vision
 
 ResearchAgent is an autonomous paper reproduction framework.
 
-The objective of MVP v0.1 is to reproduce a single research paper through an autonomous workflow.
+The objective of MVP v1.0.0 is to reproduce a single research paper through an autonomous workflow.
 
 The goal is **not** to achieve SOTA reproduction accuracy, but to build a stable, extensible and fully automated research pipeline.
 
@@ -72,14 +72,18 @@ Agents never communicate directly.
 
 ## 3.1 Implementation Status
 
+For the latest integration benchmarks and limitations, see [CURRENT_STATUS.md](../CURRENT_STATUS.md).
+
 | Capability | Status | Output Artifact |
 |------------|--------|-----------------|
 | Reader | **Implemented** | `PaperModel` |
 | Planner | **Implemented** | `TaskModel` |
 | Coder | **Implemented** | `Workspace` |
 | Runner | **Implemented** | `ExecutionResult` |
-| Reviewer | **Planned** | `PatchPlan` |
-| Reporter | **Partial** | `ReportModel` |
+| Verification | **Implemented** | `VerificationResult` |
+| Reviewer | **Implemented** | `ReviewReport` |
+| PatchPlanner | **Implemented** | `PatchPlan` |
+| Reporter | **Implemented** | `ReportModel` |
 
 See [CAPABILITIES.md](CAPABILITIES.md) for component-level detail.
 
@@ -88,26 +92,24 @@ See [CAPABILITIES.md](CAPABILITIES.md) for component-level detail.
 ```text
 Research Paper
         ↓
-Reader
+Reader → PaperModel
         ↓
-PaperModel
+Planner → TaskModel
         ↓
-Planner
+Coder → Workspace
         ↓
-TaskModel
+Runner → ExecutionResult
         ↓
-Coder
+VerificationService → VerificationResult
         ↓
-Workspace
+Reviewer → ReviewReport
         ↓
-Runner
+PatchPlanner → PatchPlan
         ↓
-ExecutionResult
-        ↓
-Reviewer (Planned)
+Reporter → ReportModel
 ```
 
-The full workflow including review loop and reporting is described in Section 4.
+The review loop (Coder/Runner retry) is described in Section 4.2.
 
 ---
 
@@ -152,7 +154,23 @@ ExecutionResult
 
 ↓
 
-Reviewer (Planned)
+VerificationService
+
+↓
+
+VerificationResult
+
+↓
+
+Reviewer
+
+↓
+
+ReviewReport
+
+↓
+
+PatchPlanner
 
 ↓
 
@@ -160,11 +178,11 @@ PatchPlan
 
 ↓
 
-Coder (retry, when review enabled)
+Coder (retry — deferred)
 
 ↓
 
-(repeat)
+(repeat — not yet enabled)
 
 ↓
 
@@ -177,7 +195,7 @@ ReportModel
 
 ## 4.2 Review Loop
 
-When Reviewer is implemented (M6), failed executions will produce a `PatchPlan` that triggers Coder retry. The current Reviewer returns a stub `PatchPlan` with `requires_patch=False`.
+`Reviewer` produces a `ReviewReport` from execution and verification context. `PatchPlanner` converts it into a `PatchPlan`. When `requires_patch` is true, a future milestone will re-invoke Coder and Runner. The current orchestrator does **not** re-run Coder or Runner; it exits the loop after one iteration regardless of `requires_patch`.
 
 ---
 
@@ -345,10 +363,14 @@ WorkspaceManager.initialize_repository()
 for each RepositoryTarget:
     PromptBuilder → LLM → WorkspaceManager.write_file()
   ↓
-Workspace
+reconcile requirements (GQ-1)
+  ↓
+validate_generated_repository() + decide_repository_acceptance() (RAG)
+  ↓
+Workspace (or RepositoryAcceptanceError)
 ```
 
-**Modules:** `WorkspaceManager`, `TaskRouter`, `PromptBuilder`, `LLMProvider`, `CoderMockLLMProvider`
+**Modules:** `WorkspaceManager`, `TaskRouter`, `PromptBuilder`, `LLMProvider`, `CoderMockLLMProvider`, `agents/coder_quality.py`
 
 ---
 
@@ -394,35 +416,77 @@ ExecutionResult
 
 ---
 
-## 5.6 Reviewer
+## 5.6 Verification
 
 Input
 
-ExecutionResult
+`Workspace`, `ExecutionResult`
 
 Output
 
-PatchPlan
+`VerificationResult`
 
 Responsibilities
 
-Analyze
+Deterministic checks on execution outcome (exit code, log signals, artifact presence). Feeds ground truth into Reviewer.
 
-* runtime errors
-* implementation mistakes
-* repair strategy
+### Implementation Status
+
+**Status:** Implemented
+
+**Module:** `VerificationService` (`services/verification_service.py`)
+
+Invoked by `WorkflowOrchestrator` between Runner and Reviewer. Not a separate printed pipeline stage.
+
+---
+
+## 5.7 Reviewer
+
+Input
+
+`PaperModel`, `TaskModel`, `VerificationResult`
+
+Output
+
+`ReviewReport`
+
+Responsibilities
+
+Analyze runtime failures and implementation mistakes using LLM structured extraction. Produces a review report for PatchPlanner.
 
 Reviewer never edits source code.
 
 ### Implementation Status
 
-**Status:** Planned (stub only)
+**Status:** Implemented
 
-The current `Reviewer.run()` returns `requires_patch=False` without analyzing execution output.
+**Modules:** `Reviewer`, `PromptBuilder`, `LLMProvider`, `validation/review.py`
 
 ---
 
-## 5.7 Reporter
+## 5.8 PatchPlanner
+
+Input
+
+`ReviewReport`
+
+Output
+
+`PatchPlan`
+
+Responsibilities
+
+Convert review findings into a structured repair plan (`requires_patch`, targeted changes).
+
+### Implementation Status
+
+**Status:** Implemented
+
+**Module:** `planning/patch_planner.py`
+
+---
+
+## 5.9 Reporter
 
 Input
 
@@ -442,9 +506,9 @@ Generate
 
 ### Implementation Status
 
-**Status:** Partial (template report generation)
+**Status:** Implemented
 
-`Reporter.run()` produces a template `ReportModel`. `WorkspaceManager.write_report()` persists the report to project `outputs/`.
+`Reporter.run()` produces a `ReportModel` from `WorkflowHistory`. `WorkspaceManager.write_report()` persists the report to project `outputs/report.md`.
 
 ---
 
@@ -463,7 +527,11 @@ Workspace
         ↓
 ExecutionResult
         ↓
-PatchPlan (planned — Reviewer capability)
+VerificationResult
+        ↓
+ReviewReport
+        ↓
+PatchPlan
         ↓
 ReportModel
 ```
@@ -477,14 +545,16 @@ ReportModel
 | `TaskModel` | Pydantic model | Planner | Ordered engineering tasks |
 | `Workspace` | Pydantic model + directory | Coder | Reproduction project root |
 | `ExecutionResult` | Pydantic model | Runner | Script execution outcome |
-| `PatchPlan` | Pydantic model | Reviewer (planned) | Repair strategy for retry loop |
+| `VerificationResult` | Pydantic model | VerificationService | Deterministic execution checks |
+| `ReviewReport` | Pydantic model | Reviewer | LLM failure analysis |
+| `PatchPlan` | Pydantic model | PatchPlanner | Repair strategy for retry loop |
 | `ReportModel` | Pydantic model | Reporter | Final workflow report |
 
 ## 6.2 On-Disk Artifact Evolution
 
 | Stage | Repository artifacts | Runtime artifacts |
 |-------|---------------------|-------------------|
-| After Coder | `src/`, `configs/`, `scripts/`, `README.md`, `requirements.txt` | — |
+| After Coder | `src/`, `configs/`, `scripts/`, `README.md`, `requirements.txt`, `logs/generation_validation.log`, `logs/repository_acceptance.log` | — |
 | After Runner (prep) | unchanged | `.venv/`, `logs/environment_preparation.log` |
 | After Runner (execute) | unchanged | `logs/execution.log` |
 
@@ -701,6 +771,7 @@ Research_Agent_MVP/
 │   ├── reader.py
 │   ├── planner.py
 │   ├── coder.py
+│   ├── coder_quality.py
 │   ├── runner.py
 │   ├── reviewer.py
 │   └── reporter.py
@@ -722,6 +793,9 @@ Research_Agent_MVP/
 │
 ├── execution/
 │   └── execution_planner.py
+│
+├── planning/
+│   └── patch_planner.py
 │
 ├── routing/
 │   └── task_router.py
@@ -777,6 +851,10 @@ Future modules should integrate without redesigning the architecture.
 ---
 
 # 13. Future Roadmap
+
+See [docs/roadmap/ROADMAP.md](../roadmap/ROADMAP.md) for the current milestone timeline and post-MVP plans.
+
+The original vision below is retained for historical context:
 
 v0.1
 

@@ -138,27 +138,77 @@ Architecture documentation consolidation before M6.
 
 ---
 
-## M6 — Reviewer
+## M6 — Post-Freeze Capabilities
 
-**Status:** Next
+**Status:** Completed
 
-Analyze execution failures and produce `PatchPlan` for automated repair iterations.
+Verification, Reviewer, PatchPlanner, and Reporter capabilities.
+
+### M6.1 — Verification
+
+**Status:** Completed
+
+`VerificationService` provides deterministic execution checks.
+
+### M6.2 — Reviewer
+
+**Status:** Completed
+
+LLM-based `ReviewReport` generation from verification context.
+
+### M6.3 — Patch Planner
+
+**Status:** Completed
+
+`PatchPlanner` converts `ReviewReport` into `PatchPlan`.
 
 ---
 
-## M7 — Reporter
+## M7 — Integration and Documentation
 
-**Status:** Planned
+**Status:** Completed
 
-Generate structured final reports from `WorkflowHistory`; persist via `WorkspaceManager`.
+### M7.1 — Integration Validation
+
+**Status:** Completed
+
+First end-to-end pipeline validation. See [integration report](../reviews/M7.1/integration_report.md).
+
+### M7.F — Documentation Governance (Phase 1)
+
+**Status:** Completed
+
+Documentation index, `CURRENT_STATUS.md`, `GETTING_STARTED.md`. See [M7.F design review](../reviews/M7.F/design_review.md).
 
 ---
 
 ## M8 — MVP Release
 
-**Status:** Planned
+**Status:** Completed (v1.0.0)
 
-Deliver a stable single-paper autonomous reproduction pipeline with real LLM integration, code execution, review loop, and final reporting.
+### M8.1 — MVP Acceptance Run
+
+**Status:** Completed
+
+ResNet paper acceptance observation. See [acceptance report](../reviews/M8.1/acceptance_report.md).
+
+### M8.2 — Cross-Paper Verification
+
+**Status:** Completed
+
+DeiT paper cross-paper run. See [cross-paper report](../reviews/M8.2/cross_paper_acceptance_report.md).
+
+### Generation Quality Upgrade (GQ-1)
+
+**Status:** Completed
+
+Coder framework binding, requirements reconciliation, validation. See [implementation review](../reviews/generation_quality_upgrade_v1/implementation_review.md).
+
+### Repository Acceptance Gate (RAG)
+
+**Status:** Completed
+
+Coder delivery gate before Runner invocation. See [implementation review](../reviews/repository_acceptance_gate/implementation_review.md).
 
 ---
 
@@ -166,11 +216,10 @@ Deliver a stable single-paper autonomous reproduction pipeline with real LLM int
 
 | Version | Focus |
 |---------|-------|
-| v0.2 | GitHub repository initialization |
-| v0.3 | Multi-model LLM support |
-| v0.4 | Memory and retrieval |
-| v0.5 | Human-in-the-loop |
-| v0.6 | Multi-agent collaboration |
-| v1.0 | Autonomous AI Research Assistant |
+| v1.0.0 | **Current** — Single-paper autonomous reproduction MVP |
+| v1.1 | Review loop iteration (Coder/Runner retry) |
+| v1.2 | GitHub repository initialization |
+| v1.3 | Multi-model LLM support |
+| v2.0 | Memory, human-in-the-loop, multi-agent collaboration |
 
 See [docs/architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md) Section 12 for the original vision roadmap.

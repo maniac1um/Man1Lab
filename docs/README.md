@@ -1,6 +1,8 @@
 # Documentation Index
 
-Navigation hub for ResearchAgent MVP documentation.
+Navigation hub for ResearchAgent MVP v1.0.0 documentation.
+
+**Principle:** Current documents answer *"What does the project do today?"* Historical reviews answer *"How did the project evolve?"*
 
 ---
 
@@ -9,7 +11,10 @@ Navigation hub for ResearchAgent MVP documentation.
 | Document | Purpose |
 |----------|---------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Install, run tests, configure API keys, reading order |
-| [CURRENT_STATUS.md](CURRENT_STATUS.md) | **Single source of truth** — implemented capabilities, pipeline, integration result, active issues |
+| [CURRENT_STATUS.md](CURRENT_STATUS.md) | **Single source of truth** — capabilities, pipeline, benchmarks, limitations |
+| [CHANGELOG.md](../CHANGELOG.md) | v1.0.0 version history |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Research prototype — issues welcome, PRs not accepted |
+| [release/v1.0.0.md](../release/v1.0.0.md) | GitHub Release notes |
 | [DEVELOPMENT.md](../DEVELOPMENT.md) | Engineering workflow, architecture freeze, commit policy |
 
 ---
@@ -18,8 +23,8 @@ Navigation hub for ResearchAgent MVP documentation.
 
 | Document | Purpose |
 |----------|---------|
-| [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Canonical system architecture, agent boundaries, pipeline design |
-| [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) | Per-capability component reference (frozen at M5.F — see CURRENT_STATUS for latest) |
+| [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) | System architecture, agent boundaries, pipeline design |
+| [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) | Per-capability component reference (v1.0.0) |
 
 Root pointer: [ARCHITECTURE.md](../ARCHITECTURE.md)
 
@@ -29,7 +34,7 @@ Root pointer: [ARCHITECTURE.md](../ARCHITECTURE.md)
 
 | Document | Purpose |
 |----------|---------|
-| [roadmap/ROADMAP.md](roadmap/ROADMAP.md) | Long-term milestone timeline and phase narrative |
+| [roadmap/ROADMAP.md](roadmap/ROADMAP.md) | Milestone timeline (M1–M8 completed) |
 | [roadmap/MILESTONES.md](roadmap/MILESTONES.md) | Milestone lifecycle, templates, and acceptance criteria |
 
 ---
@@ -47,19 +52,22 @@ Architecture Decision Records document significant design choices.
 
 ## Reviews
 
-Milestone design reviews, integration validation, and governance audits.
+Milestone design reviews, integration validation, product fixes, and governance audits.
 
 | Resource | Purpose |
 |----------|---------|
 | [reviews/README.md](reviews/README.md) | Master index of all review documents with lifecycle labels |
 
----
+### Current vs Historical
 
-## Development Guide
-
-| Document | Purpose |
-|----------|---------|
-| [DEVELOPMENT.md](../DEVELOPMENT.md) | How to work on the project: design → implement → review → commit |
+| Category | Location | Use when |
+|----------|----------|----------|
+| **Current state** | [CURRENT_STATUS.md](CURRENT_STATUS.md) | Understanding today's system |
+| **Release governance** | [reviews/release_preparation/](reviews/release_preparation/) | v1.0.0 documentation audit |
+| **Release packaging** | [reviews/release_packaging/](reviews/release_packaging/) | v1.0.0 GitHub release assets |
+| **MVP acceptance** | [reviews/M8.1/](reviews/M8.1/), [reviews/M8.2/](reviews/M8.2/) | Benchmark run evidence |
+| **Product fixes** | [reviews/integration_fix_*](reviews/README.md#integration-fixes) | Tracing defect history |
+| **Milestone delivery** | [reviews/M4.x – M7.F](reviews/README.md#milestone-reviews) | Auditing a specific capability |
 
 ---
 
@@ -67,9 +75,7 @@ Milestone design reviews, integration validation, and governance audits.
 
 | Resource | Purpose |
 |----------|---------|
-| [api/README.md](api/README.md) | Placeholder for future public API reference |
-
-Public contracts today are defined in source code, ADRs, and milestone design reviews.
+| [api/README.md](api/README.md) | Public API contract summary (v1.0.0) |
 
 ---
 
@@ -85,4 +91,4 @@ Public contracts today are defined in source code, ADRs, and milestone design re
 
 | Document | Purpose |
 |----------|---------|
-| [README.md](../README.md) | Short project introduction and quick links |
+| [README.md](../README.md) | Project introduction and quick links |

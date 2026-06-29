@@ -6,6 +6,40 @@ import ast
 import re
 from pathlib import Path
 
+_TRAIN_ENTRYPOINT = "scripts/train.py"
+
+# Finding codes that cause repository rejection at the acceptance gate.
+_BLOCKING_FINDING_CODES = frozenset(
+    {
+        "import_not_in_requirements",
+        "forbidden_framework_import",
+        "framework_mixing",
+        "framework_binding_violation",
+        "import_not_in_registry",
+        "missing_training_entrypoint",
+    }
+)
+
+# Maps validation finding codes to acceptance gate categories.
+_BLOCKING_CATEGORY_BY_CODE = {
+    "import_not_in_requirements": "import_closure_failure",
+    "forbidden_framework_import": "framework_binding_failure",
+    "framework_mixing": "framework_binding_failure",
+    "framework_binding_violation": "framework_binding_failure",
+    "import_not_in_registry": "broken_internal_import",
+    "missing_training_entrypoint": "missing_training_entrypoint",
+}
+
+
+class RepositoryAcceptanceError(Exception):
+    """Raised when a generated repository fails deterministic acceptance checks."""
+
+    def __init__(self, blocking_errors: list[dict[str, str]]) -> None:
+        self.blocking_errors = blocking_errors
+        summary = "; ".join(error["message"] for error in blocking_errors)
+        super().__init__(f"Repository acceptance failed: {summary}")
+
+
 _CONFIG_KEY_PATTERN = re.compile(
     r"""config(?:\[[^\]]+\]|\.get\(\s*['"]([A-Za-z_][A-Za-z0-9_]*)['"])"""
 )
@@ -60,6 +94,7 @@ _FRAMEWORK_PROFILES: dict[str, dict[str, object]] = {
 
 _STDLIB_ROOTS = frozenset(
     {
+        "__future__",
         "abc",
         "argparse",
         "collections",
@@ -237,13 +272,25 @@ def validate_generated_repository(
             continue
         full_path = workspace_root / path
         if not full_path.is_file():
+            code = (
+                "missing_training_entrypoint"
+                if path == _TRAIN_ENTRYPOINT
+                else "missing_routed_file"
+            )
+            severity = "error" if code == "missing_training_entrypoint" else "warning"
             findings.append(
                 {
-                    "severity": "error",
-                    "code": "missing_routed_file",
+                    "severity": severity,
+                    "code": code,
                     "message": f"Routed file missing: {path}",
                 }
             )
+
+    _append_training_entrypoint_findings(
+        workspace_root,
+        findings,
+    )
+    _append_framework_mixing_findings(python_files, findings)
 
     req_packages = parse_requirements_packages(requirements_content)
     for relative_path, content in sorted(python_files.items()):
@@ -289,8 +336,8 @@ def validate_generated_repository(
         if not any(root in all_roots for root in required_roots if isinstance(root, str)):
             findings.append(
                 {
-                    "severity": "warning",
-                    "code": "framework_import_missing",
+                    "severity": "error",
+                    "code": "framework_binding_violation",
                     "message": (
                         f"No Python file imports required framework roots: "
                         f"{list(required_roots)}"
@@ -358,6 +405,55 @@ def validate_generated_repository(
     return findings
 
 
+def decide_repository_acceptance(
+    findings: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    blocking_errors: list[dict[str, str]] = []
+    warnings: list[dict[str, str]] = []
+    for finding in findings:
+        code = finding.get("code", "")
+        if code in _BLOCKING_FINDING_CODES:
+            category = _BLOCKING_CATEGORY_BY_CODE.get(code, code)
+            blocking_errors.append(
+                {
+                    "category": category,
+                    "code": code,
+                    "message": finding.get("message", ""),
+                }
+            )
+        else:
+            warnings.append(finding)
+    return blocking_errors, warnings
+
+
+def format_acceptance_log(
+    *,
+    accepted: bool,
+    blocking_errors: list[dict[str, str]],
+    warnings: list[dict[str, str]],
+) -> str:
+    status = "ACCEPTED" if accepted else "REJECTED"
+    lines = [f"Repository acceptance gate: {status}", ""]
+    if blocking_errors:
+        lines.append("Blocking errors:")
+        for error in blocking_errors:
+            lines.append(
+                f"  [{error['category']}] {error['code']}: {error['message']}"
+            )
+        lines.append("")
+    if warnings:
+        lines.append("Warnings (non-blocking):")
+        for warning in warnings:
+            lines.append(
+                f"  [{warning.get('severity', 'warning').upper()}] "
+                f"{warning.get('code', 'unknown')}: {warning.get('message', '')}"
+            )
+        lines.append("")
+    if accepted and not warnings:
+        lines.append("No warnings.")
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def format_validation_log(findings: list[dict[str, str]]) -> str:
     if not findings:
         return "Generation validation: PASS (no findings)\n"
@@ -367,6 +463,61 @@ def format_validation_log(findings: list[dict[str, str]]) -> str:
             f"[{finding['severity'].upper()}] {finding['code']}: {finding['message']}"
         )
     return "\n".join(lines) + "\n"
+
+
+def _append_training_entrypoint_findings(
+    workspace_root: Path,
+    findings: list[dict[str, str]],
+) -> None:
+    train_path = workspace_root / _TRAIN_ENTRYPOINT
+    if not train_path.is_file():
+        findings.append(
+            {
+                "severity": "error",
+                "code": "missing_training_entrypoint",
+                "message": (
+                    f"Training entrypoint not found: {_TRAIN_ENTRYPOINT}"
+                ),
+            }
+        )
+        return
+    if not train_path.read_text(encoding="utf-8").strip():
+        findings.append(
+            {
+                "severity": "error",
+                "code": "missing_training_entrypoint",
+                "message": f"Training entrypoint is empty: {_TRAIN_ENTRYPOINT}",
+            }
+        )
+
+
+def _append_framework_mixing_findings(
+    python_files: dict[str, str],
+    findings: list[dict[str, str]],
+) -> None:
+    all_roots = {
+        root
+        for content in python_files.values()
+        for root in extract_python_import_roots(content)
+    }
+    frameworks_present: list[str] = []
+    for profile_key, profile in _FRAMEWORK_PROFILES.items():
+        required_roots = profile.get("required_import_roots", [])
+        if not isinstance(required_roots, list):
+            continue
+        if any(root in all_roots for root in required_roots if isinstance(root, str)):
+            frameworks_present.append(profile_key)
+    if len(frameworks_present) > 1:
+        findings.append(
+            {
+                "severity": "error",
+                "code": "framework_mixing",
+                "message": (
+                    "Repository mixes multiple deep-learning frameworks: "
+                    f"{frameworks_present}"
+                ),
+            }
+        )
 
 
 def _extract_local_imports(content: str) -> dict[str, list[str]]:

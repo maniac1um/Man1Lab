@@ -57,6 +57,19 @@ class CoderQualityTest(unittest.TestCase):
         codes = {finding["code"] for finding in findings}
         self.assertIn("import_not_in_requirements", codes)
 
+    def test_validate_detects_framework_binding_violation(self) -> None:
+        findings = validate_generated_repository(
+            workspace_root=__import__("pathlib").Path("."),
+            routed_paths={"scripts/train.py", "requirements.txt"},
+            python_files={"scripts/train.py": "import numpy\n"},
+            requirements_content="numpy\n",
+            framework_binding=build_framework_binding("PyTorch"),
+            interface_registry={},
+        )
+
+        codes = {finding["code"] for finding in findings}
+        self.assertIn("framework_binding_violation", codes)
+
     def test_validate_generated_repository_detects_forbidden_framework(self) -> None:
         findings = validate_generated_repository(
             workspace_root=__import__("pathlib").Path("."),

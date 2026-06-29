@@ -203,9 +203,9 @@ As of M5.F, the following capabilities are considered complete for MVP baseline:
 
 Public interfaces for these frozen capabilities must not change without ADR and architecture review.
 
-Post-M5 capabilities (Verification, Reviewer, PatchPlanner, Reporter) and current integration status are documented in [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md).
+Post-M5 capabilities (Verification, Reviewer, PatchPlanner, Reporter, Coder quality layers) are documented in [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) and [CAPABILITIES.md](docs/architecture/CAPABILITIES.md).
 
-See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the M5.F capability reference (note: status tables there may lag CURRENT_STATUS).
+See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the capability reference. Status tables in ARCHITECTURE.md are synchronized with CURRENT_STATUS during release governance; historical milestone reviews remain frozen snapshots.
 
 ---
 
@@ -232,6 +232,7 @@ Research_Agent_MVP/
 ├── workflow/               # Orchestrator and pipeline
 ├── services/               # Cross-cutting services (PDF, environment, execution)
 ├── execution/              # ExecutionPlanner
+├── planning/               # PatchPlanner
 ├── routing/                # TaskRouter
 ├── prompt/                 # Prompt loader and builder
 ├── prompts/                # Prompt resource files
