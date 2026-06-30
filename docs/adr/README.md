@@ -28,6 +28,11 @@ Do not create an ADR for routine bug fixes, internal refactors that preserve int
 | [ADR-0005](ADR-0005-Planner-Capability.md) | Planner Capability | Accepted |
 | [ADR-0006](ADR-0006-Runtime-Artifact-Ownership.md) | Runtime Artifact Ownership | Accepted |
 | [ADR-0007](ADR-0007-Execution-Capability.md) | Execution Capability | Accepted |
+| [ADR-0008](ADR-0008-Document-Parsing-Docling.md) | Document Parsing with Docling | Accepted |
+| [ADR-0009](ADR-0009-Analysis-Canonical-Artifact.md) | Analysis Canonical Artifact | Accepted |
+| [ADR-0010](ADR-0010-Hydra-Configuration.md) | Hydra Configuration | Accepted |
+| [ADR-0011](ADR-0011-Pixi-Environment.md) | Pixi Environment | Accepted |
+| [ADR-0012](ADR-0012-Experiment-Tracking-MLflow.md) | Experiment Tracking with MLflow | Accepted |
 
 ## Template
 

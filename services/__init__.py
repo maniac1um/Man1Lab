@@ -10,6 +10,7 @@ from services.exceptions import (
     PDFNotFoundError,
     RequirementsNotFoundError,
 )
+from services.pdf_service import PDFService
 from services.verification_service import VerificationService
 
 __all__ = [

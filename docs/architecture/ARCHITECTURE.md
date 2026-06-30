@@ -1,897 +1,410 @@
-# ARCHITECTURE.md
+# Man1Lab Architecture
 
-# Man1Lab v1.0.0
+**Version:** v1.1.0  
+**Status:** Living document — platform-level design  
+**Audience:** Architects, contributors, and long-term maintainers  
+**Horizon:** 3–5 years
+
+This document describes **what Man1Lab is**, how its layers relate, and where responsibility boundaries lie. It is the highest-level architecture reference for the project.
+
+For **specific decisions** (orchestrator ownership, parsing backend, canonical analysis artifact), see [Architecture Decision Records](../adr/README.md). ADRs record *why* a choice was made; this document records *what the system is*.
+
+For **implementation status and benchmarks**, see [CURRENT_STATUS.md](../CURRENT_STATUS.md) and [CAPABILITIES.md](CAPABILITIES.md).
+
+For **infrastructure governance** (Hydra, Pixi, adoption matrix), see [infrastructure.md](infrastructure.md).
+
+---
 
 ## 1. Vision
 
-Man1Lab is an autonomous paper reproduction framework.
+### What Man1Lab Is
 
-The objective of MVP v1.0.0 is to reproduce a single research paper through an autonomous workflow.
+Man1Lab is an **AI-native research engineering platform** whose primary job is to turn a research paper into a **reproducible engineering outcome** — structured understanding, an executable plan, generated artifacts, runtime execution, and verified results.
 
-The goal is **not** to achieve SOTA reproduction accuracy, but to build a stable, extensible and fully automated research pipeline.
+The platform treats a paper as the **source of truth** for what should be reproduced, then applies AI at each engineering stage while keeping stages **independent, replaceable, and boundary-respecting**.
 
-The architecture should remain scalable for future support of multi-agent collaboration, memory systems and autonomous research.
+### What Man1Lab Is Not
 
----
+| Misclassification | Why it does not fit |
+|-------------------|---------------------|
+| **AI coding agent** | Code generation is one layer among many. Man1Lab does not start from a chat prompt; it starts from a paper and a canonical analysis artifact that downstream stages share. |
+| **Workflow engine** | Orchestration exists, but the product is not generic DAG execution. The workflow is domain-specific: paper → analysis → engineering → execution → verification. |
+| **Auto research system** | Man1Lab does not invent research questions, run open-ended exploration, or close the scientific loop autonomously. It **reproduces and engineers** what a paper already claims. |
 
-# 2. MVP Scope
+### Current Focus and Platform Trajectory
 
-## Included
+| Horizon | Focus |
+|---------|--------|
+| **v1.0.x** | **MVP** — one paper in, one reproduction pipeline out |
+| **v1.1.x (now)** | **Platform Foundation** — infrastructure adoption, canonical analysis artifact, governance |
+| **v1.2+ (next)** | **Platform Capability** — repository discovery, environment generation, verification, failure recovery |
 
-* Read one research paper (PDF)
-* Extract structured paper information
-* Generate a reproduction plan
-* Generate project source code
-* Execute generated code
-* Analyze runtime failures
-* Automatically revise implementation
-* Generate a final report
-
-## Excluded
-
-* Multi-agent collaboration
-* Memory / RAG
-* Human feedback
-* Cloud execution
-* Distributed execution
-* GUI
-* Benchmark management
+The architecture is intentionally **paper-first** and **analysis-first** so that future capabilities attach to stable layers rather than re-implementing paper understanding in every feature.
 
 ---
 
-# 3. High-Level Architecture
+## 2. Core Design Philosophy
+
+| Principle | Meaning |
+|-----------|---------|
+| **Paper-first** | The PDF and its stated content anchor every stage. External knowledge does not override what the paper says unless a dedicated future layer (e.g. repository discovery) explicitly adds it. |
+| **Analysis-first** | Structured paper understanding is produced once and reused. Downstream stages consume analysis; they do not re-read the PDF for the same facts. |
+| **Engineering-oriented** | Outputs are actionable for implementation and execution — not literature summaries or open-ended reasoning. |
+| **Native AI workflow** | LLM-assisted extraction and generation live **inside** bounded stages, each with explicit inputs, outputs, and forbidden behaviors. |
+| **Ports & adapters** | Swappable backends (e.g. document parsers) sit behind stable interfaces. Parsing technology can change without rewriting analysis or planning. |
+| **Single domain object** | After analysis, the pipeline shares one canonical artifact — `PaperReproductionAnalysis` — avoiding duplicate understanding and divergent prompts. |
+| **Module independence** | Each layer has a single responsibility. Stages do not call each other directly; a coordinator schedules them and passes typed artifacts. |
+| **Long-term evolvability** | Layers, artifact versioning, and ADRs allow extension (new backends, new post-analysis stages) without collapsing boundaries. |
+
+---
+
+## 3. Layered Architecture
+
+Man1Lab is organized as a **vertical pipeline** of layers. Each layer transforms or consumes **typed artifacts**. A workflow coordinator schedules stages; layers themselves do not embed scheduling logic.
 
 ```text
-                     User
-                       │
-                       ▼
-                  paper.pdf
-                       │
-                       ▼
-             Workflow Orchestrator
-                       │
- ┌───────────────┬───────────────┬───────────────┐
- │               │               │               │
- ▼               ▼               ▼               ▼
-Reader        Planner        Coder         Reporter
-                    │
-                    ▼
-                Runner
-                    │
-                    ▼
-                Reviewer
-                    │
-                    └───────────────┐
-                                    ▼
-                                Coder
+Paper (PDF)
+    ↓
+Parsing Layer
+    ↓
+Analysis Layer
+    ↓
+Planning Layer
+    ↓
+Implementation Layer
+    ↓
+Execution Layer
+    ↓
+Verification Layer
+    ↓
+Reporting Layer
 ```
 
-The Orchestrator is the only component responsible for scheduling agents.
+Cross-cutting concerns — orchestration, prompt infrastructure, validation — support layers but are not substitutes for them.
 
-Agents never communicate directly.
+---
 
-## 3.1 Implementation Status
+### Parsing Layer
 
-For the latest integration benchmarks and limitations, see [CURRENT_STATUS.md](../CURRENT_STATUS.md).
+| | |
+|--|--|
+| **Responsibility** | Convert a paper file into a structured document representation suitable for analysis |
+| **Input** | Paper PDF |
+| **Output** | `ParsedDocument` (primary field today: structured markdown; reserved fields for richer structure) |
+| **Does** | Layout-aware extraction, reading order, tables and headings where supported |
+| **Does NOT** | Understand the paper, extract reproduction facts, plan tasks, search the web, or execute code |
 
-| Capability | Status | Output Artifact |
-|------------|--------|-----------------|
-| Reader | **Implemented** | `PaperModel` |
-| Planner | **Implemented** | `TaskModel` |
-| Coder | **Implemented** | `Workspace` |
-| Runner | **Implemented** | `ExecutionResult` |
-| Verification | **Implemented** | `VerificationResult` |
-| Reviewer | **Implemented** | `ReviewReport` |
-| PatchPlanner | **Implemented** | `PatchPlan` |
-| Reporter | **Implemented** | `ReportModel` |
+Default backend: **Docling**. Legacy fallback: **PyMuPDF**. Backend selection is a parsing concern only — see [ADR-0008](../adr/ADR-0008-Document-Parsing-Docling.md).
 
-See [CAPABILITIES.md](CAPABILITIES.md) for component-level detail.
+---
 
-### Canonical Pipeline (Implemented)
+### Analysis Layer
+
+| | |
+|--|--|
+| **Responsibility** | Extract **paper-stated** reproduction information and record **reproduction gaps** (what the paper omits) |
+| **Input** | `ParsedDocument` |
+| **Output** | `PaperReproductionAnalysis` — the platform's **canonical domain object** |
+| **Does** | Populate goal, resources, method, evaluation, and gaps from paper text; assign reproduction scope when the paper states it |
+| **Does NOT** | Search for repositories, order engineering tasks, generate code, create environments, run experiments, or infer facts not grounded in the paper |
+
+Analysis answers: *What does the paper say is needed to reproduce its claims, and what does it fail to state?*
+
+It is **not** a task plan, specification for code generation, or execution result.
+
+---
+
+### Planning Layer
+
+| | |
+|--|--|
+| **Responsibility** | Transform analysis into an **ordered engineering task graph** |
+| **Input** | `PaperReproductionAnalysis` |
+| **Output** | `TaskModel` — executable engineering steps with dependencies |
+| **Does** | Decompose reproduction into concrete steps (environment, data, model, training, evaluation, etc.) |
+| **Does NOT** | Re-read the PDF, rediscover paper facts, write source code, or execute scripts |
+
+Planning answers: *In what order should engineering work happen?*  
+It does **not** re-understand the paper — that belongs to Analysis.
+
+See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md) and [ADR-0005](../adr/ADR-0005-Planner-Capability.md).
+
+---
+
+### Implementation Layer
+
+| | |
+|--|--|
+| **Responsibility** | Generate the reproduction **repository** — structure, source, configs, scripts, dependencies |
+| **Input** | `PaperReproductionAnalysis`, `TaskModel`, optional repair plan from review |
+| **Output** | `Workspace` — on-disk project plus workspace metadata |
+| **Does** | Map tasks to files, generate implementation artifacts, validate repository coherence before execution |
+| **Does NOT** | Execute training, install runtime environments beyond declaration, or reinterpret the paper independently of analysis |
+
+Implementation **consumes** analysis modules (goal, resources, method, evaluation) as generation context; it does not replace analysis.
+
+---
+
+### Execution Layer
+
+| | |
+|--|--|
+| **Responsibility** | Run the reproduction project in a prepared runtime |
+| **Input** | `Workspace` |
+| **Output** | `ExecutionResult` — exit status, logs, duration |
+| **Does** | Prepare environment (e.g. virtualenv, dependencies), plan invocation, execute entrypoint scripts |
+| **Does NOT** | Generate or modify repository source, parse papers, or perform LLM-based paper analysis |
+
+Execution is **runtime-only**. Repository artifacts and runtime artifacts have distinct ownership — see [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md) and [ADR-0007](../adr/ADR-0007-Execution-Capability.md).
+
+---
+
+### Verification Layer
+
+| | |
+|--|--|
+| **Responsibility** | Deterministically check whether execution outcomes meet expectations derived from analysis |
+| **Input** | `Workspace`, `ExecutionResult`, and implicitly the **goal** and **evaluation** modules of analysis |
+| **Output** | `VerificationResult` — structured pass/fail signals |
+| **Does** | Inspect logs, exit codes, artifact presence, and other objective checks |
+| **Does NOT** | Replace human judgment on scientific validity; LLM review is a separate review stage |
+
+Verification provides **ground truth** for the review stage. It verifies against **stated** success criteria — not against novel inference.
+
+A **review sub-loop** (review report → patch plan → optional re-implementation) sits after verification. In v1.x the loop is partially wired: patch planning exists; automatic re-coding is not yet enabled.
+
+---
+
+### Reporting Layer
+
+| | |
+|--|--|
+| **Responsibility** | Consolidate workflow history into a final human-readable outcome |
+| **Input** | Workflow history (analysis, tasks, workspace, execution, verification, reviews) |
+| **Output** | `ReportModel` / persisted report |
+| **Does** | Summarize reproduction attempt, implementation location, execution history, and final status |
+| **Does NOT** | Change plans, regenerate code, or alter analysis |
+
+Reporting is **descriptive**, not decision-making.
+
+---
+
+## 4. Canonical Domain Object
+
+### One Object, Many Consumers
+
+After Parsing, Man1Lab standardizes on a **single canonical domain object**:
+
+**`PaperReproductionAnalysis`**
+
+All agents and services downstream of Analysis consume this object (directly or through derived context views). There is no parallel “flat paper model” or permanent adapter projection in the runtime pipeline.
+
+| Module | Question it answers |
+|--------|---------------------|
+| **metadata** | Which paper? |
+| **goal** | What to reproduce? (includes reproduction scope) |
+| **resources** | What to prepare? (datasets, models, dependencies, links, artifacts) |
+| **method** | How to engineer it? (framework, architecture, procedure, hyperparameters) |
+| **evaluation** | How to judge success? (metrics, benchmarks, protocol, baselines) |
+| **reproduction_gaps** | What does the paper **not** provide? |
+
+### Why a Single Object
+
+| Benefit | Explanation |
+|---------|-------------|
+| **No duplicate understanding** | The paper is interpreted once at Analysis; Planner and Implementation read the same facts |
+| **Consistent prompts** | Context builders derive views from one schema instead of ad hoc field subsets |
+| **Clear boundaries** | Parsing output (`ParsedDocument`) and planning output (`TaskModel`) remain separate artifact types |
+| **Future extensibility** | Repository discovery, environment discovery, and benchmark modules attach to analysis modules and gaps — not a second paper parse |
+
+Schema versioning (`schema_version`) allows evolution without breaking the architectural rule: **one canonical analysis artifact per paper run**.
+
+See [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
+
+---
+
+## 5. End-to-End Data Flow
 
 ```text
-Research Paper
-        ↓
-Reader → PaperModel
-        ↓
-Planner → TaskModel
-        ↓
-Coder → Workspace
-        ↓
-Runner → ExecutionResult
-        ↓
-VerificationService → VerificationResult
-        ↓
-Reviewer → ReviewReport
-        ↓
-PatchPlanner → PatchPlan
-        ↓
-Reporter → ReportModel
+┌─────────────────────────────────────────────────────────────────────────┐
+│  INPUT: Research paper (PDF)                                          │
+└───────────────────────────────────┬─────────────────────────────────────┘
+                                    ↓
+                          ┌─────────────────┐
+                          │ Parsing Layer   │
+                          └────────┬────────┘
+                                   ↓
+                          ParsedDocument
+                                   ↓
+                          ┌─────────────────┐
+                          │ Analysis Layer  │
+                          └────────┬────────┘
+                                   ↓
+                    PaperReproductionAnalysis  ← canonical domain object
+                                   ↓
+                          ┌─────────────────┐
+                          │ Planning Layer  │
+                          └────────┬────────┘
+                                   ↓
+                              TaskModel
+                         (engineering task graph)
+                                   ↓
+                          ┌─────────────────────┐
+                          │ Implementation Layer│
+                          └────────┬────────────┘
+                                   ↓
+                              Workspace
+                                   ↓
+                          ┌─────────────────┐
+                          │ Execution Layer │
+                          └────────┬────────┘
+                                   ↓
+                           ExecutionResult
+                                   ↓
+                          ┌───────────────────┐
+                          │ Verification Layer│
+                          └────────┬──────────┘
+                                   ↓
+                          VerificationResult
+                                   ↓
+                    Review → PatchPlan (optional retry path)
+                                   ↓
+                          ┌─────────────────┐
+                          │ Reporting Layer │
+                          └────────┬────────┘
+                                   ↓
+                              Report
 ```
 
-The review loop (Coder/Runner retry) is described in Section 4.2.
+### Step-by-step: produces and consumes
+
+| Step | Produces | Consumes |
+|------|----------|----------|
+| **Parsing** | `ParsedDocument` | PDF bytes |
+| **Analysis** | `PaperReproductionAnalysis` | `ParsedDocument` |
+| **Planning** | `TaskModel` | `PaperReproductionAnalysis` |
+| **Implementation** | `Workspace` | `PaperReproductionAnalysis`, `TaskModel` |
+| **Execution** | `ExecutionResult` | `Workspace` |
+| **Verification** | `VerificationResult` | `Workspace`, `ExecutionResult`, analysis goal/evaluation (criteria) |
+| **Review** | Review report, patch plan | Analysis (context), tasks, verification result |
+| **Reporting** | Final report | Full workflow history |
+
+**Invariant:** No stage below Analysis re-parses the PDF for reproduction facts. No stage above Implementation executes code. No stage in Analysis searches outside the paper.
 
 ---
 
-# 4. Workflow
+## 6. Current Scope (v1.x)
 
-## 4.1 Primary Pipeline
+### Completed
 
-```text
-Research Paper (paper.pdf)
+| Layer | Status | Notes |
+|-------|--------|-------|
+| **Parsing** | ✅ Complete | Docling default; PyMuPDF fallback; adapter architecture |
+| **Analysis** | ✅ Complete | `PaperReproductionAnalysis`; pipeline-wide migration (Phase 2.4) |
+| **Planning** | ✅ Implemented | Consumes modular analysis; produces `TaskModel` |
+| **Implementation** | ✅ Implemented | Repository generation with validation and acceptance gate |
+| **Execution** | ✅ Implemented | Environment prep + script execution |
+| **Verification** | ✅ Implemented | Deterministic checks feeding review |
+| **Reporting** | ✅ Implemented | Workflow summary report |
+| **Experiment tracking** | ✅ Implemented | MLflow via `ExperimentTracker` port; optional noop backend |
 
-↓
+### In progress / partial
 
-Reader
+| Item | Status |
+|------|--------|
+| Review loop re-implementation | Patch plan produced; automatic Citation retry not enabled |
+| Analysis prompt alignment | Schema landed; prompt refinement for gaps/scope ongoing |
+| Full training reproduction success | Pipeline runs end-to-end; successful training not guaranteed |
 
-↓
+### Planned (architecture reserved, not yet productized)
 
-PaperModel
-
-↓
-
-Planner
-
-↓
-
-TaskModel
-
-↓
-
-Coder
-
-↓
-
-Workspace
-
-↓
-
-Runner
-
-↓
-
-ExecutionResult
-
-↓
-
-VerificationService
-
-↓
-
-VerificationResult
-
-↓
-
-Reviewer
-
-↓
-
-ReviewReport
-
-↓
-
-PatchPlanner
-
-↓
-
-PatchPlan
-
-↓
-
-Coder (retry — deferred)
-
-↓
-
-(repeat — not yet enabled)
-
-↓
-
-Reporter
-
-↓
-
-ReportModel
-```
-
-## 4.2 Review Loop
-
-`Reviewer` produces a `ReviewReport` from execution and verification context. `PatchPlanner` converts it into a `PatchPlan`. When `requires_patch` is true, a future milestone will re-invoke Coder and Runner. The current orchestrator does **not** re-run Coder or Runner; it exits the loop after one iteration regardless of `requires_patch`.
+| Capability | Relationship to architecture |
+|------------|------------------------------|
+| **Repository discovery** | Consumes `reproduction_gaps` + metadata; does not replace Analysis |
+| **Environment discovery** | Resolves dependencies at runtime; does not rewrite analysis |
+| **Continuous research** | Lineage and iteration atop existing artifacts |
+| **Benchmark analysis** | Extends evaluation module consumption |
 
 ---
 
-# 5. Core Components
+## 7. Future Extensions
 
-## 5.1 Workflow Orchestrator
+Future capabilities **attach to the same layer cake**. They consume `PaperReproductionAnalysis`; they do not require re-designing Parsing or re-defining the canonical object.
 
-Responsibilities
+| Extension | Layer | Consumes from analysis |
+|-----------|-------|----------------------|
+| **Repository discovery** | Post-analysis, pre- or co-planning | `reproduction_gaps` (repository), `resources.external_resources`, metadata |
+| **Environment discovery** | Execution support | `resources.dependencies`, method framework |
+| **Benchmark evaluation** | Evaluation + verification | `evaluation.metrics`, `evaluation.benchmarks`, `goal.scope` |
+| **Paper extension** | New workflow variant | `goal`, `evaluation`, lineage fields (future) |
+| **Continuous research** | Orchestration + history | Versioned analysis snapshots |
 
-* Execute workflow
-* Control execution order
-* Retry failed stages
-* Maintain workflow state
-* Record execution history
-
-The Orchestrator is the brain of the system.
-
-Agents never know each other.
+**Parsing Layer remains stable** when these features ship: discovery and extension operate on analysis output, not on re-extracting markdown from PDF unless the user explicitly re-runs Analysis.
 
 ---
 
-## 5.2 Reader
+## 8. Architecture Decisions
 
-Input
+This document states **structure and boundaries**. Detailed rationale lives in ADRs:
 
-paper.pdf
+| ADR | Topic | Relevance here |
+|-----|-------|----------------|
+| [ADR-0001](../adr/ADR-0001-Workflow-Orchestrator.md) | Workflow orchestrator owns scheduling | Agents never call each other; coordinator passes artifacts |
+| [ADR-0002](../adr/ADR-0002-Stable-Reader-Interface.md) | Reader public interface stability | `read_text()` + `run()` frozen; return type superseded by ADR-0009 |
+| [ADR-0003](../adr/ADR-0003-Prompt-Infrastructure.md) | Prompt loading infrastructure | Per-stage prompts; not duplicated in this doc |
+| [ADR-0004](../adr/ADR-0004-Planning-Strategy.md) | Planner produces engineering tasks, not summaries | Planning layer boundary |
+| [ADR-0005](../adr/ADR-0005-Planner-Capability.md) | Planner capability decomposition | Planning layer behavior |
+| [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md) | Repository vs runtime artifact ownership | Execution layer boundaries |
+| [ADR-0007](../adr/ADR-0007-Execution-Capability.md) | Runner as execution coordinator | Execution layer decomposition |
+| [ADR-0008](../adr/ADR-0008-Document-Parsing-Docling.md) | Docling as default parser; ports & adapters | Parsing layer design |
+| [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md) | `PaperReproductionAnalysis` as sole pipeline domain object | Section 4 and data flow |
+| [ADR-0010](../adr/ADR-0010-Hydra-Configuration.md) | Hydra at configuration layer only | Infrastructure; not duplicated here — see [infrastructure.md](infrastructure.md) |
+| [ADR-0011](../adr/ADR-0011-Pixi-Environment.md) | Pixi at repository environment layer only | Infrastructure; not duplicated here — see [infrastructure.md](infrastructure.md) |
+| [ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md) | MLflow at experiment tracking layer only | Infrastructure; thin wrapper at composition root |
 
-Output
-
-PaperModel
-
-Responsibilities
-
-Extract structured information from paper.
-
-Examples
-
-* title
-* abstract
-* method
-* dataset
-* model
-* framework
-* optimizer
-* loss
-* training pipeline
-* evaluation metric
-
-Reader never generates code.
-
-### Implementation Status
-
-**Status:** Completed
-
-**Pipeline:**
-
-```text
-PDF
-  ↓
-Raw Text
-  ↓
-Prompt
-  ↓
-LLM
-  ↓
-Structured dict
-  ↓
-Validation
-  ↓
-PaperModel
-```
-
-**Modules:** `PDFService`, `PromptBuilder`, `LLMProvider`, `ResponseParser`, `validation/paper.py`
+When this document and an ADR disagree, **the ADR wins** for the specific decision; update this document in the same documentation pass.
 
 ---
 
-## 5.3 Planner
+## Version History
 
-Input
+| Version | Name | Summary |
+|---------|------|---------|
+| **v1.1.0** | Foundation Release | Platform foundation complete. Analysis layer canonical artifact is `PaperReproductionAnalysis`. Infrastructure (Docling, Hydra, Pixi, MLflow) adopted via Provider / Adapter ports. Documentation and infrastructure governance established. |
+| v1.0.0 | MVP | End-to-end single-paper reproduction pipeline with real LLM integration, repository generation, execution, verification, review, and reporting. |
 
-PaperModel
-
-Output
-
-TaskModel
-
-Responsibilities
-
-Convert research ideas into executable engineering tasks.
-
-Example
-
-* Build model
-* Implement dataset
-* Train model
-* Evaluate metrics
-
-Planner never writes code.
-
-### Implementation Status
-
-**Status:** Completed
-
-**Pipeline:**
-
-```text
-PaperModel
-  ↓
-Prompt
-  ↓
-LLM
-  ↓
-Structured dict
-  ↓
-Validation
-  ↓
-TaskModel
-```
-
-**Modules:** `PromptBuilder`, `LLMProvider`, `ResponseParser`, `validation/task.py`
+Release notes: [releases/v1.1.0.md](../releases/v1.1.0.md) · [release/v1.0.0.md](../../release/v1.0.0.md)
 
 ---
 
-## 5.4 Coder
+## 9. Non-Goals
 
-Input
+Man1Lab v1.x explicitly **does not** aim to:
 
-PaperModel
+| Non-goal | Clarification |
+|----------|---------------|
+| **Autonomously generate research ideas** | It reproduces existing papers; it does not propose new research agendas |
+| **Close the scientific loop** | It does not autonomously iterate hypothesis → experiment → publication |
+| **Replace researcher judgment** | Verification checks engineering signals; scientific validity remains human-owned |
+| **Open-ended exploration** | Stages are bounded; there is no free-form “research agent” browsing literature |
+| **Infer beyond the paper** | Analysis records gaps instead of inventing missing hyperparameters, URLs, or methods |
+| **Search the open web during analysis** | Repository and resource discovery are separate future layers |
+| **Guarantee SOTA reproduction accuracy** | The platform targets engineering reproducibility infrastructure, not benchmark leadership |
+| **Multi-paper autonomous research programs** | v1.x is single-paper reproduction; multi-paper orchestration is out of scope |
+| **Human-in-the-loop product UX** | Not a collaborative IDE; interactive steering is future work |
+| **Cloud-scale distributed execution** | Execution is local workspace–scoped in v1.x |
 
-TaskModel
-
-Optional PatchPlan
-
-Output
-
-Workspace
-
-Responsibilities
-
-Generate
-
-* project structure
-* source code
-* configs
-* scripts
-* README
-
-Coder never executes code.
-
-### Implementation Status
-
-**Status:** Implemented
-
-**Pipeline:**
-
-```text
-PaperModel + TaskModel
-  ↓
-WorkspaceManager.create_workspace()
-  ↓
-TaskRouter.route_task() → TaskRoutingTable
-  ↓
-WorkspaceManager.initialize_repository()
-  ↓
-for each RepositoryTarget:
-    PromptBuilder → LLM → WorkspaceManager.write_file()
-  ↓
-reconcile requirements (GQ-1)
-  ↓
-validate_generated_repository() + decide_repository_acceptance() (RAG)
-  ↓
-Workspace (or RepositoryAcceptanceError)
-```
-
-**Modules:** `WorkspaceManager`, `TaskRouter`, `PromptBuilder`, `LLMProvider`, `CoderMockLLMProvider`, `agents/coder_quality.py`
+Non-goals are **features intentionally deferred or excluded**, not missing bugs. They protect layer boundaries and keep the platform focused on **paper-grounded research engineering**.
 
 ---
 
-## 5.5 Runner
-
-Input
-
-Workspace
-
-Output
-
-ExecutionResult
-
-Responsibilities
-
-Coordinate execution:
-
-* environment preparation (`EnvironmentService`)
-* execution planning (`ExecutionPlanner`)
-* script execution (`ExecutionService`)
-
-Runner never modifies repository source files. Runtime artifact creation is delegated to execution services (see ADR-0006, ADR-0007).
-
-### Implementation Status
-
-**Status:** Implemented
-
-**Pipeline:**
-
-```text
-Workspace
-  ↓
-EnvironmentService.prepare()     → .venv, pip install, environment_preparation.log
-  ↓
-ExecutionPlanner.plan()        → ExecutionPlan (scripts/train.py)
-  ↓
-ExecutionService.execute()     → subprocess, execution.log
-  ↓
-ExecutionResult
-```
-
-**Modules:** `EnvironmentService`, `ExecutionPlanner`, `ExecutionService`, `ExecutionPlan`
-
----
-
-## 5.6 Verification
-
-Input
-
-`Workspace`, `ExecutionResult`
-
-Output
-
-`VerificationResult`
-
-Responsibilities
-
-Deterministic checks on execution outcome (exit code, log signals, artifact presence). Feeds ground truth into Reviewer.
-
-### Implementation Status
-
-**Status:** Implemented
-
-**Module:** `VerificationService` (`services/verification_service.py`)
-
-Invoked by `WorkflowOrchestrator` between Runner and Reviewer. Not a separate printed pipeline stage.
-
----
-
-## 5.7 Reviewer
-
-Input
-
-`PaperModel`, `TaskModel`, `VerificationResult`
-
-Output
-
-`ReviewReport`
-
-Responsibilities
-
-Analyze runtime failures and implementation mistakes using LLM structured extraction. Produces a review report for PatchPlanner.
-
-Reviewer never edits source code.
-
-### Implementation Status
-
-**Status:** Implemented
-
-**Modules:** `Reviewer`, `PromptBuilder`, `LLMProvider`, `validation/review.py`
-
----
-
-## 5.8 PatchPlanner
-
-Input
-
-`ReviewReport`
-
-Output
-
-`PatchPlan`
-
-Responsibilities
-
-Convert review findings into a structured repair plan (`requires_patch`, targeted changes).
-
-### Implementation Status
-
-**Status:** Implemented
-
-**Module:** `planning/patch_planner.py`
-
----
-
-## 5.9 Reporter
-
-Input
-
-Workflow history
-
-Output
-
-report.md
-
-Generate
-
-* reproduction summary
-* implementation summary
-* execution history
-* debugging history
-* final status
-
-### Implementation Status
-
-**Status:** Implemented
-
-`Reporter.run()` produces a `ReportModel` from `WorkflowHistory`. `WorkspaceManager.write_report()` persists the report to project `outputs/report.md`.
-
----
-
-# 6. Artifact Pipeline
-
-Artifacts evolve through the pipeline as typed domain models and on-disk workspace content.
-
-```text
-Research Paper (PDF)
-        ↓
-PaperModel
-        ↓
-TaskModel
-        ↓
-Workspace
-        ↓
-ExecutionResult
-        ↓
-VerificationResult
-        ↓
-ReviewReport
-        ↓
-PatchPlan
-        ↓
-ReportModel
-```
-
-## 6.1 Artifact Definitions
-
-| Artifact | Type | Produced by | Description |
-|----------|------|-------------|-------------|
-| Research Paper | File (`paper.pdf`) | User input | Source PDF document |
-| `PaperModel` | Pydantic model | Reader | Structured paper fields |
-| `TaskModel` | Pydantic model | Planner | Ordered engineering tasks |
-| `Workspace` | Pydantic model + directory | Coder | Reproduction project root |
-| `ExecutionResult` | Pydantic model | Runner | Script execution outcome |
-| `VerificationResult` | Pydantic model | VerificationService | Deterministic execution checks |
-| `ReviewReport` | Pydantic model | Reviewer | LLM failure analysis |
-| `PatchPlan` | Pydantic model | PatchPlanner | Repair strategy for retry loop |
-| `ReportModel` | Pydantic model | Reporter | Final workflow report |
-
-## 6.2 On-Disk Artifact Evolution
-
-| Stage | Repository artifacts | Runtime artifacts |
-|-------|---------------------|-------------------|
-| After Coder | `src/`, `configs/`, `scripts/`, `README.md`, `requirements.txt`, `logs/generation_validation.log`, `logs/repository_acceptance.log` | — |
-| After Runner (prep) | unchanged | `.venv/`, `logs/environment_preparation.log` |
-| After Runner (execute) | unchanged | `logs/execution.log` |
-
-Repository and runtime artifact ownership is defined in [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md).
-
----
-
-# 7. Domain Models
-
-Every stage communicates through strongly typed models.
-
-Recommended implementation
-
-Pydantic
-
-Examples
-
-PaperModel
-
-TaskModel
-
-ExecutionResult
-
-PatchPlan
-
-ReportModel
-
-No raw dictionaries should be passed between agents.
-
----
-
-# 8. Workspace
-
-Every reproduction task owns an independent workspace.
-
-Example
-
-workspace/
-
-```
-paper_name/
-
-    src/
-
-    configs/
-
-    scripts/
-
-    logs/
-
-    outputs/
-
-    .venv/
-```
-
-A workspace contains two categories of on-disk content with different ownership boundaries. See [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md).
-
-Agents never manipulate files directly. Repository writes go through `WorkspaceManager`. Runtime writes go through execution services invoked by `Runner`.
-
-## 8.1 Repository Artifact Lifecycle
-
-Repository artifacts are the files that constitute the reproduction project design.
-
-**Owner:** `WorkspaceManager`
-
-**Orchestrated by:** `Coder`
-
-**Lifecycle:**
-
-```text
-TaskModel
-  ↓
-Coder.run()
-  ↓
-WorkspaceManager.create_workspace()        → directory skeleton
-WorkspaceManager.store_routing_table()     → routing metadata (in-memory)
-WorkspaceManager.initialize_repository()   → README.md, requirements.txt stub
-WorkspaceManager.write_file()              → per-target generated files (M4.3)
-  ↓
-Repository artifacts on disk
-```
-
-**Repository artifact paths:**
-
-| Path | Purpose |
-|------|---------|
-| `src/` | Source modules |
-| `configs/` | Configuration files |
-| `scripts/` | Executable scripts |
-| `README.md` | Project documentation |
-| `requirements.txt` | Dependency declaration |
-
-Repository artifacts evolve when `Coder.run()` is invoked, including during review-loop retries.
-
-`WorkspaceManager` methods used: `create_workspace`, `initialize_repository`, `write_file`, `read_file`, `write_output`.
-
-## 8.2 Runtime Artifact Lifecycle
-
-Runtime artifacts are files created when a workspace is prepared or executed.
-
-**Owner:** Runtime services (`EnvironmentService`, `ExecutionService`)
-
-**Orchestrated by:** `Runner`
-
-**Lifecycle:**
-
-```text
-Workspace
-  ↓
-Runner.run()
-  ↓
-EnvironmentService.prepare()
-  ↓
-.venv/, logs/environment_preparation.log
-  ↓
-ExecutionPlanner.plan() → ExecutionPlan
-  ↓
-ExecutionService.execute()
-  ↓
-logs/execution.log
-  ↓
-ExecutionResult
-```
-
-**Runtime artifact paths:**
-
-| Path | Purpose | Status |
-|------|---------|--------|
-| `.venv/` | Python virtual environment | Implemented (M5.1) |
-| `logs/environment_preparation.log` | Environment prep log | Implemented (M5.1) |
-| `logs/execution.log` | Script execution log | Implemented (M5.2) |
-| `outputs/` | Execution run outputs | Reserved |
-| `checkpoints/` | Model checkpoints | Reserved |
-| `tensorboard/` | Training telemetry | Reserved |
-
-Runtime artifacts evolve when `Runner.run()` is invoked. They are not created or modified by `WorkspaceManager` or `Coder`.
-
-**Note:** `WorkspaceManager.write_output()` writes to `workspace/outputs/` as a repository-scoped output path. Future execution services may also write runtime outputs under `outputs/`. Callers must use the API matching the artifact category.
-
----
-
-# 9. LLM Layer
-
-The system should never call an LLM SDK directly inside an Agent.
-
-Architecture
-
-```text
-Agent
-
-↓
-
-LLM Interface
-
-↓
-
-OpenAI
-
-Claude
-
-Gemini
-
-DeepSeek
-
-...
-```
-
-Every model provider should implement the same interface.
-
-Future provider replacement should require zero changes to Agent logic.
-
----
-
-# 10. Prompt System
-
-Each Agent owns an independent prompt directory.
-
-Example
-
-prompts/
-
-```
-reader/
-
-    system.md
-
-    output.md
-
-planner/
-
-coder/
-
-reviewer/
-```
-
-Few-shot examples can be added later without modifying workflow logic.
-
----
-
-# 11. Directory Structure
-
-```text
-Man1Lab/
-
-├── app.py
-├── config.py
-├── README.md
-│
-├── workflow/
-│   ├── orchestrator.py
-│   └── pipeline.py
-│
-├── agents/
-│   ├── reader.py
-│   ├── planner.py
-│   ├── coder.py
-│   ├── coder_quality.py
-│   ├── runner.py
-│   ├── reviewer.py
-│   └── reporter.py
-│
-├── models/
-│   ├── paper.py
-│   ├── task.py
-│   ├── workspace.py
-│   ├── routing.py
-│   ├── execution.py
-│   ├── execution_plan.py
-│   ├── review.py
-│   └── report.py
-│
-├── services/
-│   ├── pdf_service.py
-│   ├── environment_service.py
-│   └── execution_service.py
-│
-├── execution/
-│   └── execution_planner.py
-│
-├── planning/
-│   └── patch_planner.py
-│
-├── routing/
-│   └── task_router.py
-│
-├── validation/
-│
-├── llm/
-│
-├── workspace/
-│   └── manager.py
-│
-├── prompt/
-│
-├── prompts/
-│
-├── docs/
-│
-└── tests/
-```
-
----
-
-# 12. Design Principles
-
-1. Single Responsibility
-
-Each component has one responsibility.
-
-2. Stateless Agents
-
-Agents never share internal state.
-
-3. Artifact-based Communication
-
-Agents communicate only through typed artifacts.
-
-4. Replaceability
-
-Any component can be replaced independently.
-
-5. Reproducibility
-
-Every execution should be reproducible.
-
-6. Traceability
-
-Every decision should be recorded.
-
-7. Extensibility
-
-Future modules should integrate without redesigning the architecture.
-
----
-
-# 13. Future Roadmap
-
-See [docs/roadmap/ROADMAP.md](../roadmap/ROADMAP.md) for the current milestone timeline and post-MVP plans.
-
-The original vision below is retained for historical context:
-
-v0.1
-
-Single-paper autonomous reproduction
-
-↓
-
-v0.2
-
-GitHub repository initialization
-
-↓
-
-v0.3
-
-Multi-model support
-
-↓
-
-v0.4
-
-Memory & Retrieval
-
-↓
-
-v0.5
-
-Human-in-the-loop
-
-↓
-
-v0.6
-
-Multi-agent collaboration
-
-↓
-
-v1.0
-
-Autonomous AI Research Assistant
+## Document Maintenance
+
+| Change type | Update here | Update ADR |
+|-------------|-------------|------------|
+| New platform layer | Yes | Yes, if decision is non-obvious |
+| New canonical artifact field | Brief mention in §4 | Yes, if breaking or boundary-related |
+| Backend swap (e.g. parser) | §3 Parsing only | Yes |
+| Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
+
+**Last aligned with:** Man1Lab v1.1.0 — Foundation Release (Parsing + Analysis + Infrastructure adoption)

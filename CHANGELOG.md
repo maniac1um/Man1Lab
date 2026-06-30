@@ -7,9 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-30
+
+**Foundation Release** — platform infrastructure complete. Not a feature-expansion release.
+
+### Added
+
+- **Analysis pipeline refactor** — `PaperReproductionAnalysis` replaces `PaperModel` as canonical domain object ([ADR-0009](docs/adr/ADR-0009-Analysis-Canonical-Artifact.md))
+- **Docling parsing** — default document parser via ports & adapters ([ADR-0008](docs/adr/ADR-0008-Document-Parsing-Docling.md))
+- **Hydra configuration** — composed settings behind `SettingsProvider` ([ADR-0010](docs/adr/ADR-0010-Hydra-Configuration.md))
+- **Pixi environment** — lockfile-driven developer environment ([ADR-0011](docs/adr/ADR-0011-Pixi-Environment.md))
+- **MLflow experiment tracking** — thin tracking via `ExperimentTracker` port ([ADR-0012](docs/adr/ADR-0012-Experiment-Tracking-MLflow.md))
+- **Documentation governance** — public `docs/` for decisions; local `private/` for research process
+- **Infrastructure governance** — [infrastructure.md](docs/architecture/infrastructure.md) adoption matrix
+- Release notes: [docs/releases/v1.1.0.md](docs/releases/v1.1.0.md)
+
 ### Changed
 
 - Public project identity rebranded from ResearchAgent to **Man1Lab**; GitHub repository URL updated to `github.com/maniac1um/Man1Lab`
+- `WorkflowHistory.paper` removed; use `WorkflowHistory.analysis`
+- Work documents (reviews, audits, benchmarks, roadmaps) migrated to local `private/` (gitignored)
+
+### Breaking
+
+- `Reader.run()` returns `PaperReproductionAnalysis` (supersedes ADR-0002 return type for analysis pipeline)
+- `PaperModel` removed from runtime pipeline
+
+### Tests
+
+- 172 unit tests passing
+
+[1.1.0]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.1.0
 
 ## [1.0.0] - 2026-06-29
 

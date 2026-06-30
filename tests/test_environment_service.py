@@ -17,7 +17,7 @@ from services.environment_service import (
     EnvironmentService,
 )
 from services.execution_service import ExecutionService
-from services.pdf_service import PDFService
+from adapters.pymupdf_parser import PyMuPDFParser
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
@@ -138,7 +138,7 @@ class EnvironmentWorkflowTest(unittest.TestCase):
                 outputs_dir=temp_path / "outputs",
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(

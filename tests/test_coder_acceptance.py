@@ -10,24 +10,13 @@ from agents.coder_quality import (
     validate_generated_repository,
 )
 from llm.coder_mock_provider import CoderMockLLMProvider
-from models.paper import PaperModel
 from models.task import TaskModel, TaskStep
+from tests.fixtures import sample_reproduction_analysis
 from workspace.manager import WorkspaceManager
 
 
-def _sample_paper() -> PaperModel:
-    return PaperModel(
-        title="Acceptance Gate Test Paper",
-        abstract="Abstract.",
-        method="Method.",
-        dataset="Dataset.",
-        model="Model.",
-        framework="PyTorch",
-        optimizer="AdamW",
-        loss="Loss.",
-        training_pipeline="Pipeline.",
-        evaluation_metric="Metric.",
-    )
+def _sample_analysis():
+    return sample_reproduction_analysis()
 
 
 def _training_task() -> TaskModel:
@@ -55,7 +44,7 @@ class CoderAcceptanceGateTest(unittest.TestCase):
         self._temp_dir.cleanup()
 
     def test_accepted_repository_returns_workspace(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _training_task())
+        workspace = self._coder.run(_sample_analysis(), _training_task())
 
         self.assertTrue((workspace.root_path / "scripts" / "train.py").is_file())
         acceptance_log = (
@@ -70,7 +59,7 @@ class CoderAcceptanceGateTest(unittest.TestCase):
         )
 
         with self.assertRaises(RepositoryAcceptanceError) as ctx:
-            self._coder.run(_sample_paper(), task)
+            self._coder.run(_sample_analysis(), task)
 
         categories = {error["category"] for error in ctx.exception.blocking_errors}
         self.assertIn("missing_training_entrypoint", categories)

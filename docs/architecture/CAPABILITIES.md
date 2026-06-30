@@ -1,6 +1,6 @@
 # Man1Lab Capability Summary
 
-Implementation status of Man1Lab v1.0.0 capabilities.
+Implementation status of Man1Lab v1.1.0 capabilities.
 
 For the latest benchmarks and limitations, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). For architecture detail see [ARCHITECTURE.md](ARCHITECTURE.md). For design decisions see [ADR index](../adr/README.md).
 
@@ -10,16 +10,16 @@ For the latest benchmarks and limitations, see [CURRENT_STATUS.md](../CURRENT_ST
 
 | Capability | Status | Input | Output |
 |------------|--------|-------|--------|
-| Reader | **Implemented** | Research paper (PDF) | `PaperModel` |
-| Planner | **Implemented** | `PaperModel` | `TaskModel` |
-| Coder | **Implemented** | `PaperModel`, `TaskModel` | `Workspace` |
+| Reader | **Implemented** | Research paper (PDF) | `PaperReproductionAnalysis` |
+| Planner | **Implemented** | `PaperReproductionAnalysis` | `TaskModel` |
+| Coder | **Implemented** | `PaperReproductionAnalysis`, `TaskModel` | `Workspace` |
 | Runner | **Implemented** | `Workspace` | `ExecutionResult` |
 | Verification | **Implemented** | `Workspace`, `ExecutionResult` | `VerificationResult` |
-| Reviewer | **Implemented** | `PaperModel`, `TaskModel`, `VerificationResult` | `ReviewReport` |
+| Reviewer | **Implemented** | `PaperReproductionAnalysis`, `TaskModel`, `VerificationResult` | `ReviewReport` |
 | PatchPlanner | **Implemented** | `ReviewReport` | `PatchPlan` |
 | Reporter | **Implemented** | `WorkflowHistory` | `ReportModel` |
 
-Reader, Planner, Coder, and Runner public interfaces are frozen since [M5.F](../reviews/M5.F/design_review.md).
+Reader, Planner, Coder, and Runner public interfaces are governed by [ADR-0001](../adr/ADR-0001-Workflow-Orchestrator.md) through [ADR-0007](../adr/ADR-0007-Execution-Capability.md). Milestone freeze records: `private/design/drafts/milestones/M5.F/` (local).
 
 ---
 
@@ -30,7 +30,7 @@ Reader, Planner, Coder, and Runner public interfaces are frozen since [M5.F](../
 | Field | Value |
 |-------|-------|
 | **Input artifact** | Research paper (`paper.pdf`) |
-| **Output artifact** | `PaperModel` |
+| **Output artifact** | `PaperReproductionAnalysis` |
 | **Agent** | `Reader` |
 | **Status** | Implemented |
 
@@ -38,16 +38,16 @@ Reader, Planner, Coder, and Runner public interfaces are frozen since [M5.F](../
 
 | Component | Role |
 |-----------|------|
-| `PDFService` | PDF text extraction |
+| `DocumentParser` (Docling / PyMuPDF) | PDF → structured markdown |
 | `PromptBuilder` | Reader prompt assembly |
 | `LLMProvider` | Structured extraction |
 | `ResponseParser` | JSON parsing |
-| `validation/paper.py` | Validation and `PaperModel` construction |
+| `validation/analysis.py` | Validation and `PaperReproductionAnalysis` construction |
 
 **Pipeline:**
 
 ```text
-PDF → PDFService → Prompt → LLM → dict → Validation → PaperModel
+PDF → DocumentParser → ParsedDocument → Prompt → LLM → dict → Validation → PaperReproductionAnalysis
 ```
 
 ---
@@ -58,7 +58,7 @@ PDF → PDFService → Prompt → LLM → dict → Validation → PaperModel
 
 | Field | Value |
 |-------|-------|
-| **Input artifact** | `PaperModel` |
+| **Input artifact** | `PaperReproductionAnalysis` |
 | **Output artifact** | `TaskModel` |
 | **Agent** | `Planner` |
 | **Status** | Implemented |
@@ -75,7 +75,7 @@ PDF → PDFService → Prompt → LLM → dict → Validation → PaperModel
 **Pipeline:**
 
 ```text
-PaperModel → Prompt → LLM → dict → Validation → TaskModel
+PaperReproductionAnalysis → Prompt → LLM → dict → Validation → TaskModel
 ```
 
 ---
@@ -86,7 +86,7 @@ PaperModel → Prompt → LLM → dict → Validation → TaskModel
 
 | Field | Value |
 |-------|-------|
-| **Input artifact** | `PaperModel`, `TaskModel` |
+| **Input artifact** | `PaperReproductionAnalysis`, `TaskModel` |
 | **Output artifact** | `Workspace` |
 | **Agent** | `Coder` |
 | **Status** | Implemented |
@@ -119,8 +119,8 @@ Repository artifacts (`src/`, `configs/`, `scripts/`, `README.md`, `requirements
 
 | Layer | Reference |
 |-------|-----------|
-| GQ-1 (generation quality) | [implementation review](../reviews/generation_quality_upgrade_v1/implementation_review.md) |
-| RAG (repository acceptance gate) | [implementation review](../reviews/repository_acceptance_gate/implementation_review.md) |
+| GQ-1 (generation quality) | `private/audit/quality/gq1-implementation-review.md` (local) |
+| RAG (repository acceptance gate) | `private/audit/quality/rag-implementation-review.md` (local) |
 
 ---
 
@@ -168,7 +168,7 @@ Runtime artifacts (`.venv/`, `logs/`) are managed by execution services. See [AD
 
 **Module:** `services/verification_service.py`
 
-Invoked by `WorkflowOrchestrator` between Runner and Reviewer. See [M6.1 design review](../reviews/M6.1/design_review.md).
+Invoked by `WorkflowOrchestrator` between Runner and Reviewer. Milestone record: `private/design/drafts/milestones/M6.1/` (local).
 
 ---
 
@@ -178,14 +178,14 @@ Invoked by `WorkflowOrchestrator` between Runner and Reviewer. See [M6.1 design 
 
 | Field | Value |
 |-------|-------|
-| **Input artifacts** | `PaperModel`, `TaskModel`, `VerificationResult` |
+| **Input artifacts** | `PaperReproductionAnalysis`, `TaskModel`, `VerificationResult` |
 | **Output artifact** | `ReviewReport` |
 | **Agent** | `Reviewer` |
 | **Status** | Implemented |
 
 **Major components:** `PromptBuilder`, `LLMProvider`, `validation/review.py`
 
-See [M6.2 design review](../reviews/M6.2/design_review.md).
+Milestone record: `private/design/drafts/milestones/M6.2/` (local).
 
 ---
 
@@ -202,7 +202,7 @@ See [M6.2 design review](../reviews/M6.2/design_review.md).
 
 **Module:** `planning/patch_planner.py`
 
-See [M6.3 design review](../reviews/M6.3/design_review.md). The orchestrator does not yet re-invoke Coder/Runner when `requires_patch` is true.
+Milestone record: `private/design/drafts/milestones/M6.3/` (local). The orchestrator does not yet re-invoke Coder/Runner when `requires_patch` is true.
 
 ---
 

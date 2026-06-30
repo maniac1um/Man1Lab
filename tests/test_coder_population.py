@@ -6,30 +6,21 @@ from agents.coder import Coder
 from agents.coder_quality import RepositoryAcceptanceError
 from llm.coder_mock_provider import MOCK_FILE_CONTENT, CoderMockLLMProvider
 from llm.provider import LLMMessage, LLMProvider
-from models.paper import PaperModel
 from models.task import TaskModel, TaskStep
 from agents.runner import Runner
 from services.environment_service import EnvironmentService
 from services.execution_service import ExecutionService
-from services.pdf_service import PDFService
-from tests.fixtures import create_sample_paper_pdf
+from adapters.pymupdf_parser import PyMuPDFParser
+from tests.fixtures import create_sample_paper_pdf, sample_reproduction_analysis
 from tests.runner_mocks import mock_command_runner
 from workspace.manager import WorkspaceManager
 
 
-def _sample_paper() -> PaperModel:
-    return PaperModel(
-        title="Population Test Paper",
-        abstract="Abstract.",
-        method="Method.",
-        dataset="Dataset.",
-        model="Model.",
-        framework="PyTorch",
-        optimizer="AdamW",
-        loss="Loss.",
-        training_pipeline="Pipeline.",
-        evaluation_metric="Metric.",
-    )
+def _sample_analysis():
+    return sample_reproduction_analysis()
+
+
+_ANALYSIS_SLUG = "diffusion_policy_visuomotor_policy_learning"
 
 
 def _step(task_id: str, name: str, description: str = "") -> TaskStep:
@@ -70,7 +61,7 @@ class CoderPopulationTest(unittest.TestCase):
         )
 
         with self.assertRaises(RepositoryAcceptanceError):
-            self._coder.run(_sample_paper(), task)
+            self._coder.run(_sample_analysis(), task)
 
         self.assertEqual(len(self._recording_llm.calls), 2)
 
@@ -81,11 +72,11 @@ class CoderPopulationTest(unittest.TestCase):
         )
 
         with self.assertRaises(RepositoryAcceptanceError):
-            self._coder.run(_sample_paper(), task)
+            self._coder.run(_sample_analysis(), task)
 
-        content = (self._root / "population_test_paper" / "src" / "model.py").read_text(
-            encoding="utf-8"
-        )
+        content = (
+            self._root / _ANALYSIS_SLUG / "src" / "model.py"
+        ).read_text(encoding="utf-8")
         self.assertEqual(content, MOCK_FILE_CONTENT["src/model.py"])
 
     def test_correct_target_file_population(self) -> None:
@@ -98,7 +89,7 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        workspace = self._coder.run(_sample_paper(), task)
+        workspace = self._coder.run(_sample_analysis(), task)
 
         self.assertTrue((workspace.root_path / "requirements.txt").is_file())
         self.assertTrue((workspace.root_path / "scripts/train.py").is_file())
@@ -115,8 +106,8 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        workspace_one = self._coder.run(_sample_paper(), task)
-        workspace_two = self._coder.run(_sample_paper(), task)
+        workspace_one = self._coder.run(_sample_analysis(), task)
+        workspace_two = self._coder.run(_sample_analysis(), task)
 
         dataset_one = self._workspace_manager.read_file(workspace_one, "src/dataset.py")
         dataset_two = self._workspace_manager.read_file(workspace_two, "src/dataset.py")
@@ -133,9 +124,9 @@ class CoderPopulationTest(unittest.TestCase):
         )
 
         with self.assertRaises(RepositoryAcceptanceError):
-            self._coder.run(_sample_paper(), task)
+            self._coder.run(_sample_analysis(), task)
 
-        slug = "population_test_paper"
+        slug = _ANALYSIS_SLUG
         workspace_root = self._root / slug
         self.assertTrue((workspace_root / "src" / "model.py").is_file())
         self.assertFalse((workspace_root / "scripts" / "train.py").exists())
@@ -147,12 +138,12 @@ class CoderPopulationTest(unittest.TestCase):
         )
 
         with self.assertRaises(RepositoryAcceptanceError):
-            self._coder.run(_sample_paper(), task)
+            self._coder.run(_sample_analysis(), task)
 
         user_prompt = self._recording_llm.calls[0][1].content
         self.assertIn("Shared generation context:", user_prompt)
         self.assertIn('"framework": "PyTorch"', user_prompt)
-        self.assertIn('"dataset": "Dataset."', user_prompt)
+        self.assertIn('"dataset": "Robomimic."', user_prompt)
 
     def test_repository_contract_included_in_prompts(self) -> None:
         task = TaskModel(
@@ -161,7 +152,7 @@ class CoderPopulationTest(unittest.TestCase):
         )
 
         with self.assertRaises(RepositoryAcceptanceError):
-            self._coder.run(_sample_paper(), task)
+            self._coder.run(_sample_analysis(), task)
 
         user_prompt = self._recording_llm.calls[0][1].content
         self.assertIn("Repository contract (interface roles):", user_prompt)
@@ -176,7 +167,7 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        self._coder.run(_sample_paper(), task)
+        self._coder.run(_sample_analysis(), task)
 
         train_prompt = self._recording_llm.calls[-1][1].content
         self.assertIn("Interface registry", train_prompt)
@@ -192,7 +183,7 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        workspace = self._coder.run(_sample_paper(), task)
+        workspace = self._coder.run(_sample_analysis(), task)
         train_py = self._workspace_manager.read_file(workspace, "scripts/train.py")
 
         self.assertIn("from src.dataset import load_dataloaders", train_py)
@@ -208,7 +199,7 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        workspace = self._coder.run(_sample_paper(), task)
+        workspace = self._coder.run(_sample_analysis(), task)
 
         target_paths = [
             CoderMockLLMProvider._extract_target_path(call)
@@ -234,7 +225,7 @@ class CoderPopulationTest(unittest.TestCase):
             ],
         )
 
-        workspace = self._coder.run(_sample_paper(), task)
+        workspace = self._coder.run(_sample_analysis(), task)
         readme = self._workspace_manager.read_file(workspace, "README.md")
 
         self.assertIn("## Generated Files", readme)
@@ -251,7 +242,7 @@ class CoderPopulationWorkflowTest(unittest.TestCase):
         from agents.reporter import Reporter
         from agents.reviewer import Reviewer
         from agents.runner import Runner
-        from services.pdf_service import PDFService
+        from adapters.pymupdf_parser import PyMuPDFParser
         from workflow.orchestrator import WorkflowOrchestrator
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -264,7 +255,7 @@ class CoderPopulationWorkflowTest(unittest.TestCase):
                 outputs_dir=temp_path / "outputs",
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(

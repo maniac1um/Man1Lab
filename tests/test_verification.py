@@ -16,7 +16,7 @@ from services.environment_service import EnvironmentService, LOG_FILENAME as ENV
 from services.environment_service import VENV_DIRNAME
 from services.execution_service import LOG_FILENAME as EXEC_LOG, ExecutionService
 from llm.mock_provider import MOCK_REVIEWER_FAIL_JSON, MockLLMProvider
-from services.pdf_service import PDFService
+from adapters.pymupdf_parser import PyMuPDFParser
 from services.verification_service import VerificationService
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import failing_train_command_runner, mock_command_runner
@@ -201,7 +201,7 @@ class VerificationWorkflowTest(unittest.TestCase):
                     return super().run(history)
 
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(
@@ -250,7 +250,7 @@ class VerificationWorkflowTest(unittest.TestCase):
                     return super().run(history)
 
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(

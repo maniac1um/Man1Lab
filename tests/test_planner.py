@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from agents.planner import Planner
 from llm.mock_provider import MOCK_PLANNER_JSON
-from models.paper import PaperModel
+from tests.fixtures import sample_reproduction_analysis
 from validation.exceptions import TaskValidationError
 
 
@@ -47,20 +47,8 @@ class FakeResponseParser:
         }
 
 
-def _sample_paper() -> PaperModel:
-    return PaperModel(
-        title="Diffusion Policy",
-        abstract="Abstract.",
-        method="Method.",
-        dataset="Dataset.",
-        model="Model.",
-        framework="PyTorch",
-        optimizer="AdamW",
-        loss="Loss.",
-        training_pipeline="Pipeline.",
-        evaluation_metric="Metric.",
-        source_path=Path("paper.pdf"),
-    )
+def _sample_analysis():
+    return sample_reproduction_analysis(source_path=Path("paper.pdf"))
 
 
 class InvalidDependencyParser:
@@ -89,7 +77,7 @@ class PlannerTest(unittest.TestCase):
         builder = FakePromptBuilder()
         llm = FakeLLMProvider()
         planner = Planner(prompt_builder=builder, llm=llm)
-        planner.run(_sample_paper())
+        planner.run(_sample_analysis())
         self.assertEqual(planner._last_prompt, "PLANNER SYSTEM PROMPT")
 
     def test_planner_invokes_llm_and_response_parser(self) -> None:
@@ -100,9 +88,12 @@ class PlannerTest(unittest.TestCase):
             llm=llm,
             response_parser=parser,
         )
-        task = planner.run(_sample_paper())
+        task = planner.run(_sample_analysis())
 
         self.assertTrue(llm.complete_called)
+        self.assertIn("Goal:", llm.messages[1].content)
+        self.assertIn("Reproduction gaps:", llm.messages[1].content)
+        self.assertNotIn('"abstract"', llm.messages[1].content)
         self.assertTrue(parser.parse_called)
         self.assertEqual(planner._last_extracted["paper_title"], "Test Paper")
         self.assertEqual(len(planner._last_extracted["tasks"]), 1)
@@ -118,11 +109,11 @@ class PlannerTest(unittest.TestCase):
             response_parser=InvalidDependencyParser(),
         )
         with self.assertRaises(TaskValidationError):
-            planner.run(_sample_paper())
+            planner.run(_sample_analysis())
 
     def test_planner_produces_structured_task_dict_with_mock_llm(self) -> None:
         planner = Planner()
-        planner.run(_sample_paper())
+        planner.run(_sample_analysis())
         extracted = planner._last_extracted
 
         self.assertEqual(
@@ -142,7 +133,7 @@ class PlannerTest(unittest.TestCase):
             llm=FakeLLMProvider(),
         )
         with patch("pathlib.Path.read_text") as read_text:
-            planner.run(_sample_paper())
+            planner.run(_sample_analysis())
             read_text.assert_not_called()
 
 

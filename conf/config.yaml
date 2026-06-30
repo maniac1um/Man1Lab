@@ -1,0 +1,19 @@
+defaults:
+  - parser: default
+  - analysis: default
+  - planner: default
+  - coder: default
+  - runner: default
+  - reviewer: default
+  - reporter: default
+  - workflow: default
+  - llm: default
+  - logging: default
+  - tracking: default
+  - _self_
+
+workspace_root: workspace/tasks
+outputs_dir: outputs
+logs_dir: logs
+prompts_dir: prompts
+paper_path: ${oc.env:PAPER_PATH,paper.pdf}

@@ -1,7 +1,8 @@
+from agents.analysis_context import build_reviewer_user_content
 from llm.mock_provider import MOCK_REVIEWER_PASS_JSON, MockLLMProvider
 from llm.provider import LLMMessage, LLMProvider
 from llm.response_parser import ResponseParser
-from models.paper import PaperModel
+from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.review import PatchPlan
 from models.review_report import ReviewReport
 from models.task import TaskModel
@@ -29,19 +30,12 @@ class Reviewer:
 
     def run(
         self,
-        paper: PaperModel,
+        analysis: PaperReproductionAnalysis,
         task: TaskModel,
         verification_result: VerificationResult,
     ) -> ReviewReport:
         self._last_prompt = self._prompt_builder.build_reviewer_prompt()
-        user_content = (
-            "Paper information:\n"
-            f"{paper.model_dump_json(indent=2)}\n\n"
-            "Task plan:\n"
-            f"{task.model_dump_json(indent=2)}\n\n"
-            "VerificationResult (ground truth):\n"
-            f"{verification_result.model_dump_json(indent=2)}"
-        )
+        user_content = build_reviewer_user_content(analysis, task, verification_result)
         messages = [
             LLMMessage(role="system", content=self._last_prompt),
             LLMMessage(role="user", content=user_content),

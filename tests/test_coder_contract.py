@@ -1,25 +1,15 @@
 import unittest
 
+from agents.analysis_context import build_coder_shared_context
 from agents.coder import Coder
-from models.paper import PaperModel
 from models.routing import RepositoryTarget, TaskRoutingTable
 from models.task import TaskModel, TaskStep
 from routing.task_router import TaskRouter
+from tests.fixtures import sample_reproduction_analysis
 
 
-def _sample_paper() -> PaperModel:
-    return PaperModel(
-        title="Contract Test Paper",
-        abstract="Abstract.",
-        method="Method.",
-        dataset="ImageNet",
-        model="ResNet",
-        framework="PyTorch",
-        optimizer="SGD",
-        loss="Cross entropy",
-        training_pipeline="Train and evaluate.",
-        evaluation_metric="Top-1 error",
-    )
+def _sample_analysis():
+    return sample_reproduction_analysis()
 
 
 class CoderContractTest(unittest.TestCase):
@@ -32,8 +22,8 @@ class CoderContractTest(unittest.TestCase):
             ],
         )
         routing_table = TaskRouter().route_task(task)
-        shared_context = Coder._build_shared_generation_context(
-            _sample_paper(),
+        shared_context = build_coder_shared_context(
+            _sample_analysis(),
             task,
             routing_table,
         )
@@ -50,8 +40,8 @@ class CoderContractTest(unittest.TestCase):
             steps=[TaskStep(id="task_3", name="Dataset preparation", description="Load.")],
         )
         routing_table = TaskRouter().route_task(task)
-        shared_context = Coder._build_shared_generation_context(
-            _sample_paper(),
+        shared_context = build_coder_shared_context(
+            _sample_analysis(),
             task,
             routing_table,
         )
@@ -122,8 +112,8 @@ training:
             )
         ]
         routing_table = TaskRoutingTable(targets=targets)
-        shared_context = Coder._build_shared_generation_context(
-            _sample_paper(),
+        shared_context = build_coder_shared_context(
+            _sample_analysis(),
             TaskModel(paper_title="Contract Test Paper", steps=[]),
             routing_table,
         )

@@ -2,13 +2,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from adapters.pymupdf_parser import PyMuPDFParser
 from agents.coder import Coder
 from models.task import TaskModel, TaskStep
 from routing.task_router import TaskRouter
 from agents.runner import Runner
 from services.environment_service import EnvironmentService
 from services.execution_service import ExecutionService
-from services.pdf_service import PDFService
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import mock_command_runner
 from workspace.manager import WorkspaceManager
@@ -177,20 +177,9 @@ class CoderRoutingIntegrationTest(unittest.TestCase):
         self._temp_dir.cleanup()
 
     def test_coder_stores_routing_table_and_populates_routed_files(self) -> None:
-        from models.paper import PaperModel
+        from tests.fixtures import sample_reproduction_analysis
 
-        paper = PaperModel(
-            title="Routing Test Paper",
-            abstract="",
-            method="",
-            dataset="",
-            model="",
-            framework="",
-            optimizer="",
-            loss="",
-            training_pipeline="",
-            evaluation_metric="",
-        )
+        analysis = sample_reproduction_analysis()
         task = TaskModel(
             paper_title="Routing Test Paper",
             steps=[
@@ -200,7 +189,7 @@ class CoderRoutingIntegrationTest(unittest.TestCase):
             ],
         )
 
-        workspace = self._coder.run(paper, task)
+        workspace = self._coder.run(analysis, task)
         routing_table = self._workspace_manager.get_routing_table(workspace)
 
         self.assertIsNotNone(routing_table)
@@ -226,7 +215,6 @@ class TaskRoutingWorkflowTest(unittest.TestCase):
         from agents.reporter import Reporter
         from agents.reviewer import Reviewer
         from agents.runner import Runner
-        from services.pdf_service import PDFService
         from workflow.orchestrator import WorkflowOrchestrator
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -239,7 +227,7 @@ class TaskRoutingWorkflowTest(unittest.TestCase):
                 outputs_dir=temp_path / "outputs",
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(

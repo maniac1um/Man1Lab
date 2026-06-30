@@ -6,9 +6,9 @@ from pathlib import Path
 
 from agents.reviewer import Reviewer
 from llm.mock_provider import MOCK_REVIEWER_FAIL_JSON, MOCK_REVIEWER_PASS_JSON
-from models.paper import PaperModel
 from models.review_report import ReviewReport
 from models.task import TaskModel, TaskStep
+from tests.fixtures import sample_reproduction_analysis
 from models.verification import (
     VERIFICATION_FAIL,
     VERIFICATION_PASS,
@@ -49,20 +49,8 @@ class FakeResponseParser:
         return json.loads(MOCK_REVIEWER_PASS_JSON)
 
 
-def _sample_paper() -> PaperModel:
-    return PaperModel(
-        title="Diffusion Policy",
-        abstract="Abstract.",
-        method="Method.",
-        dataset="Dataset.",
-        model="Model.",
-        framework="PyTorch",
-        optimizer="AdamW",
-        loss="Loss.",
-        training_pipeline="Pipeline.",
-        evaluation_metric="Metric.",
-        source_path=Path("paper.pdf"),
-    )
+def _sample_analysis():
+    return sample_reproduction_analysis(source_path=Path("paper.pdf"))
 
 
 def _sample_task() -> TaskModel:
@@ -153,7 +141,7 @@ class ReviewerIntegrationTest(unittest.TestCase):
             response_parser=parser,
         )
 
-        report = reviewer.run(_sample_paper(), _sample_task(), _pass_verification())
+        report = reviewer.run(_sample_analysis(), _sample_task(), _pass_verification())
 
         self.assertTrue(llm.complete_called)
         self.assertTrue(parser.parse_called)
@@ -167,7 +155,7 @@ class ReviewerIntegrationTest(unittest.TestCase):
             llm=FakeLLMProvider(MOCK_REVIEWER_FAIL_JSON),
         )
 
-        report = reviewer.run(_sample_paper(), _sample_task(), _fail_verification())
+        report = reviewer.run(_sample_analysis(), _sample_task(), _fail_verification())
 
         self.assertEqual(report.risk_level, "HIGH")
         self.assertTrue(report.identified_issues)
@@ -176,7 +164,7 @@ class ReviewerIntegrationTest(unittest.TestCase):
         llm = FakeLLMProvider()
         reviewer = Reviewer(prompt_builder=FakePromptBuilder(), llm=llm)
 
-        reviewer.run(_sample_paper(), _sample_task(), _pass_verification())
+        reviewer.run(_sample_analysis(), _sample_task(), _pass_verification())
 
         user_message = llm.messages[1].content
         self.assertIn("VerificationResult (ground truth)", user_message)

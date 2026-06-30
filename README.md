@@ -2,8 +2,8 @@
 
 An autonomous research paper reproduction pipeline.
 
-**Version:** v1.0.0  
-**Status:** Research prototype — MVP implementation complete
+**Version:** v1.1.0  
+**Status:** Foundation Release — platform infrastructure complete
 
 Man1Lab reads a PDF research paper, extracts structured information, plans engineering tasks, generates a reproduction repository, prepares a Python environment, executes the training script, verifies results, reviews failures, and produces a final report.
 
@@ -18,7 +18,9 @@ A single `WorkflowOrchestrator` schedules isolated agents. Agents communicate on
 ```text
 Research Paper (PDF)
         ↓
-Reader → PaperModel
+Parsing → ParsedDocument
+        ↓
+Reader → PaperReproductionAnalysis
         ↓
 Planner → TaskModel
         ↓
@@ -45,7 +47,7 @@ Full design: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.
 
 | Capability    | Output               | Status                            |
 | ------------- | -------------------- | --------------------------------- |
-| Reader        | `PaperModel`         | Implemented                       |
+| Reader        | `PaperReproductionAnalysis` | Implemented                       |
 | Planner       | `TaskModel`          | Implemented                       |
 | Coder         | `Workspace`          | Implemented (includes GQ-1 + RAG) |
 | Runner        | `ExecutionResult`    | Implemented                       |
@@ -74,10 +76,29 @@ Full list: [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md#known-limitations)
 
 ### Requirements
 
-- Python 3.10+
-- Dependencies in `requirements.txt`
+- Python 3.10+ (Pixi installs **3.12** by default)
+- Dependencies in `requirements.txt` (legacy pip) or `pixi.toml` (recommended)
 
-### Install and test
+### Install (recommended — Pixi)
+
+[Pixi](https://pixi.sh/) is the official environment manager for this repository.
+
+```bash
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
+pixi install
+pixi run test
+```
+
+Common tasks:
+
+```bash
+pixi run run          # PYTHONPATH=. python app.py
+pixi run test         # unit tests
+pixi run integration  # full pipeline (requires API key)
+```
+
+### Install (legacy — pip)
 
 ```bash
 git clone https://github.com/maniac1um/Man1Lab.git
@@ -89,10 +110,20 @@ PYTHONPATH=. python -m pytest tests/ -v
 ### Run on a paper
 
 ```bash
-PYTHONPATH=. python app.py
+pixi run run
+# or: PYTHONPATH=. python app.py
 ```
 
 Set `PAPER_PATH` to your PDF (default: `paper.pdf`).
+
+### Experiment tracking (optional)
+
+`pixi run run` records each reproduction as one MLflow experiment run (nested runs per pipeline stage).  
+Default store: `sqlite:///mlruns/mlflow.db`. Disable with `TRACKING_BACKEND=noop`.
+
+```bash
+mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
+```
 
 ### LLM configuration (optional)
 
@@ -109,7 +140,8 @@ Without `OPENAI_API_KEY`, mock providers return deterministic fixtures.
 ### Full integration run
 
 ```bash
-PYTHONPATH=. python scripts/run_integration_m7_1.py
+pixi run integration
+# or: PYTHONPATH=. python scripts/run_integration_m7_1.py
 ```
 
 Requires an API key. Results: `outputs/` and `logs/`.
@@ -132,7 +164,7 @@ End-to-end runs on real papers with a configured LLM (see [docs/CURRENT_STATUS.m
 
 **Summary:** Delivery quality improved through GQ-1 and RAG; full training reproduction is not yet validated on benchmark papers.
 
-Evidence: [docs/reviews/M8.1/](docs/reviews/M8.1/) · [docs/reviews/M8.2/](docs/reviews/M8.2/) · [RAG review](docs/reviews/repository_acceptance_gate/implementation_review.md)
+Benchmark summary: [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md#benchmark-status). Full reports: `private/benchmark/` (local).
 
 ---
 
@@ -146,10 +178,10 @@ Evidence: [docs/reviews/M8.1/](docs/reviews/M8.1/) · [docs/reviews/M8.2/](docs/
 | Documentation index      | [docs/README.md](docs/README.md)                                       |
 | Architecture             | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
 | Capabilities             | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
-| Release notes            | [release/v1.0.0.md](release/v1.0.0.md)                                 |
+| Release notes            | [docs/releases/v1.1.0.md](docs/releases/v1.1.0.md) · [release/v1.0.0.md](release/v1.0.0.md) |
 | Changelog                | [CHANGELOG.md](CHANGELOG.md)                                           |
 | Development (maintainer) | [DEVELOPMENT.md](DEVELOPMENT.md)                                       |
-| Reviews                  | [docs/reviews/README.md](docs/reviews/README.md)                       |
+| Reviews (private)        | [docs/reviews/README.md](docs/reviews/README.md) — migration pointer   |
 | ADRs                     | [docs/adr/README.md](docs/adr/README.md)                               |
 
 
@@ -169,7 +201,9 @@ workspace/       # WorkspaceManager
 prompt/          # Prompt loader and builder
 prompts/         # Agent prompt resources
 llm/             # LLM provider abstraction
-tests/           # Unit tests (126 passing)
+pixi.toml        # Official Pixi environment
+requirements.txt # Legacy pip compatibility
+tests/           # Unit tests (172 passing)
 docs/            # Architecture, roadmap, ADRs, reviews
 release/         # GitHub release notes
 scripts/         # Integration runner
@@ -186,9 +220,9 @@ If you use this prototype in academic work, please cite:
   author       = {maniac1um},
   title        = {Man1Lab: An Autonomous Research Paper Reproduction Pipeline},
   year         = {2026},
-  version      = {1.0.0},
+  version      = {1.1.0},
   url          = {https://github.com/maniac1um/Man1Lab},
-  note         = {Man1Lab. v1.0.0 release.}
+  note         = {Man1Lab. v1.1.0 Foundation Release.}
 }
 ```
 

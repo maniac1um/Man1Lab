@@ -6,7 +6,7 @@ Quick orientation for running and exploring the prototype. For current implement
 
 ## Project Overview
 
-Man1Lab v1.0.0 is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, reviews failures, and produces a final report.
+Man1Lab v1.1.0 is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, reviews failures, and produces a final report. v1.1.0 completes **Platform Foundation** — infrastructure adoption and analysis pipeline refactor.
 
 System design and agent boundaries are documented in [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 
@@ -14,12 +14,22 @@ System design and agent boundaries are documented in [architecture/ARCHITECTURE.
 
 ## Prerequisites
 
-- Python 3.10+
-- `pip` and a virtual environment (recommended)
+- Python 3.10+ (Pixi installs **3.12** by default)
+- **Pixi** (recommended) or `pip` + virtual environment (legacy)
 
 ---
 
 ## Installation
+
+### Recommended — Pixi
+
+```bash
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
+pixi install
+```
+
+### Legacy — pip
 
 ```bash
 git clone https://github.com/maniac1um/Man1Lab.git
@@ -32,6 +42,12 @@ pip install -r requirements.txt
 ## Running Tests
 
 ```bash
+pixi run test
+```
+
+Or with pip:
+
+```bash
 PYTHONPATH=. python -m pytest tests/ -v
 ```
 
@@ -41,11 +57,17 @@ Or with unittest:
 PYTHONPATH=. python -m unittest discover -s tests -v
 ```
 
-Current suite: **126 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
+Current suite: **165 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
 ## Running the Application
+
+```bash
+pixi run run
+```
+
+Or with pip:
 
 ```bash
 PYTHONPATH=. python app.py
@@ -72,6 +94,12 @@ OPENAI_MODEL=deepseek-v4-pro
 ### Integration run (full pipeline)
 
 ```bash
+pixi run integration
+```
+
+Or with pip:
+
+```bash
 PYTHONPATH=. python scripts/run_integration_m7_1.py
 ```
 
@@ -86,9 +114,9 @@ Requires a configured API key. Results are written to `outputs/` and `logs/`.
 3. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) — per-capability component reference
 4. [DEVELOPMENT.md](../DEVELOPMENT.md) — milestone workflow, freeze policy, commit conventions
 5. [adr/README.md](adr/README.md) — architecture decision records
-6. [reviews/README.md](reviews/README.md) — milestone and integration review index
-7. [roadmap/ROADMAP.md](roadmap/ROADMAP.md) — development timeline
-8. [CHANGELOG.md](../CHANGELOG.md) — v1.0.0 release history
-9. [release/v1.0.0.md](../release/v1.0.0.md) — GitHub Release notes
+6. [reviews/README.md](reviews/README.md) — pointer to private work documents
+7. [CHANGELOG.md](../CHANGELOG.md) — release history
+8. [releases/v1.1.0.md](releases/v1.1.0.md) — v1.1.0 Foundation Release notes
+9. [release/v1.0.0.md](../release/v1.0.0.md) — v1.0.0 MVP release notes
 
-Read individual milestone design reviews only when auditing a specific capability or tracing historical decisions.
+Working roadmaps and milestone design reviews are in `private/` (local). See [CONTRIBUTING.md § Documentation Policy](../CONTRIBUTING.md#documentation-policy).

@@ -24,7 +24,7 @@ from prompt.builder import PromptBuilder
 from prompt.loader import PromptLoader
 from services.environment_service import EnvironmentService
 from services.execution_service import ExecutionService
-from services.pdf_service import PDFService
+from adapters.pymupdf_parser import PyMuPDFParser
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import failing_train_command_runner, mock_command_runner
 from validation.exceptions import PatchValidationError
@@ -120,23 +120,11 @@ class ReviewerPatchPlannerIntegrationTest(unittest.TestCase):
                 llm=MockLLMProvider(MOCK_PATCH_NO_ITERATION_JSON),
             ),
         )
-        from models.paper import PaperModel
         from models.task import TaskModel, TaskStep
         from models.verification import VERIFICATION_PASS, VerificationResult
+        from tests.fixtures import sample_reproduction_analysis
 
-        paper = PaperModel(
-            title="Paper",
-            abstract="",
-            method="",
-            dataset="",
-            model="",
-            framework="",
-            optimizer="",
-            loss="",
-            training_pipeline="",
-            evaluation_metric="",
-            source_path=Path("paper.pdf"),
-        )
+        analysis = sample_reproduction_analysis(source_path=Path("paper.pdf"))
         task = TaskModel(
             paper_title="Paper",
             steps=[TaskStep(id="task_1", name="Train", description="Train.")],
@@ -149,7 +137,7 @@ class ReviewerPatchPlannerIntegrationTest(unittest.TestCase):
             overall_status=VERIFICATION_PASS,
         )
 
-        review_report = reviewer.run(paper, task, verification)
+        review_report = reviewer.run(analysis, task, verification)
         patch_plan = reviewer.plan_patch(review_report)
 
         self.assertFalse(patch_plan.requires_patch)
@@ -200,7 +188,7 @@ class PatchWorkflowBranchTest(unittest.TestCase):
                 else mock_command_runner
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(

@@ -39,6 +39,7 @@ class PromptBuilderTest(unittest.TestCase):
         (reader_dir / "extraction.md").write_text("EXTRACTION", encoding="utf-8")
         (reader_dir / "schema.md").write_text("SCHEMA", encoding="utf-8")
         (reader_dir / "examples.md").write_text("EXAMPLES", encoding="utf-8")
+        (reader_dir / "output.md").write_text("OUTPUT", encoding="utf-8")
         self.builder = PromptBuilder(PromptLoader(prompts_dir=self.prompts_dir))
 
     def tearDown(self) -> None:
@@ -50,9 +51,11 @@ class PromptBuilderTest(unittest.TestCase):
         extraction_index = prompt.index("EXTRACTION")
         schema_index = prompt.index("SCHEMA")
         examples_index = prompt.index("EXAMPLES")
+        output_index = prompt.index("OUTPUT")
         self.assertLess(system_index, extraction_index)
         self.assertLess(extraction_index, schema_index)
         self.assertLess(schema_index, examples_index)
+        self.assertLess(examples_index, output_index)
 
     def test_build_planner_prompt_combines_sections_in_order(self) -> None:
         planner_dir = self.prompts_dir / "planner"

@@ -3,24 +3,13 @@ import unittest
 from pathlib import Path
 
 from agents.coder import Coder
-from models.paper import PaperModel
 from models.task import TaskModel, TaskStep
+from tests.fixtures import sample_reproduction_analysis
 from workspace.manager import REPOSITORY_SUBDIRS, WorkspaceManager
 
 
-def _sample_paper() -> PaperModel:
-    return PaperModel(
-        title="Diffusion Policy: Visuomotor Policy Learning",
-        abstract="Abstract.",
-        method="Action diffusion.",
-        dataset="Robomimic.",
-        model="Diffusion policy.",
-        framework="PyTorch",
-        optimizer="AdamW",
-        loss="BC loss.",
-        training_pipeline="Train and evaluate.",
-        evaluation_metric="Success rate",
-    )
+def _sample_analysis():
+    return sample_reproduction_analysis()
 
 
 def _sample_task() -> TaskModel:
@@ -52,20 +41,20 @@ class CoderWorkspaceTest(unittest.TestCase):
         self._temp_dir.cleanup()
 
     def test_creates_workspace_directory(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _sample_task())
+        workspace = self._coder.run(_sample_analysis(), _sample_task())
 
         expected_path = self._root / "diffusion_policy_visuomotor_policy_learning"
         self.assertEqual(workspace.root_path, expected_path)
         self.assertTrue(workspace.root_path.is_dir())
 
     def test_required_folders_exist(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _sample_task())
+        workspace = self._coder.run(_sample_analysis(), _sample_task())
 
         for subdir in REPOSITORY_SUBDIRS:
             self.assertTrue((workspace.root_path / subdir).is_dir())
 
     def test_readme_generated(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _sample_task())
+        workspace = self._coder.run(_sample_analysis(), _sample_task())
         readme_path = workspace.root_path / "README.md"
 
         self.assertTrue(readme_path.is_file())
@@ -79,7 +68,7 @@ class CoderWorkspaceTest(unittest.TestCase):
         self.assertNotIn("have not been generated yet", content)
 
     def test_requirements_txt_generated(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _sample_task())
+        workspace = self._coder.run(_sample_analysis(), _sample_task())
         requirements_path = workspace.root_path / "requirements.txt"
 
         self.assertTrue(requirements_path.is_file())
@@ -88,13 +77,13 @@ class CoderWorkspaceTest(unittest.TestCase):
         self.assertIn("PyYAML", content)
 
     def test_returns_workspace_object(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _sample_task())
+        workspace = self._coder.run(_sample_analysis(), _sample_task())
 
         self.assertEqual(workspace.paper_slug, "diffusion_policy_visuomotor_policy_learning")
         self.assertEqual(workspace.root_path.parent, self._root)
 
     def test_routed_files_populated(self) -> None:
-        workspace = self._coder.run(_sample_paper(), _sample_task())
+        workspace = self._coder.run(_sample_analysis(), _sample_task())
 
         self.assertTrue((workspace.root_path / "requirements.txt").is_file())
         self.assertTrue((workspace.root_path / "scripts" / "train.py").is_file())

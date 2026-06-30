@@ -1,6 +1,6 @@
 # API Documentation
 
-Public API reference for Man1Lab v1.0.0.
+Public API reference for Man1Lab v1.1.0.
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Document stable contracts for contributors and integrators:
 
 Detailed API reference pages (`agents.md`, `models.md`, etc.) are not yet written. Public contracts are defined in source code and summarized below.
 
-For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABILITIES.md). For frozen interface policy, see [DEVELOPMENT.md](../../DEVELOPMENT.md).
+For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABILITIES.md). For frozen interface policy, see [DEVELOPMENT.md](../../DEVELOPMENT.md). Analysis artifact migration: [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
 
 ---
 
@@ -24,7 +24,8 @@ For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABI
 | Component | Contract |
 |-----------|----------|
 | `WorkflowOrchestrator` | `run(paper_path: Path) -> ReportModel` |
-| `app.py` | Composition root; wires agents and services |
+| `TrackedWorkflowOrchestrator` | Wraps orchestrator; records MLflow runs ([ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md)) |
+| `app.py` | Composition root; wires agents, services, and tracking |
 
 ---
 
@@ -32,12 +33,12 @@ For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABI
 
 | Agent | Public method | Input | Output |
 |-------|---------------|-------|--------|
-| `Reader` | `run(paper_path)` | `Path` | `PaperModel` |
+| `Reader` | `run(paper_path)` | `Path` | `PaperReproductionAnalysis` |
 | `Reader` | `read_text(paper_path)` | `Path` | `str` |
-| `Planner` | `run(paper)` | `PaperModel` | `TaskModel` |
-| `Coder` | `run(paper, task, patch_plan=None)` | `PaperModel`, `TaskModel` | `Workspace` |
+| `Planner` | `run(analysis)` | `PaperReproductionAnalysis` | `TaskModel` |
+| `Coder` | `run(analysis, task, patch_plan=None)` | `PaperReproductionAnalysis`, `TaskModel` | `Workspace` |
 | `Runner` | `run(workspace)` | `Workspace` | `ExecutionResult` |
-| `Reviewer` | `run(paper, task, verification_result)` | `PaperModel`, `TaskModel`, `VerificationResult` | `ReviewReport` |
+| `Reviewer` | `run(analysis, task, verification_result)` | `PaperReproductionAnalysis`, `TaskModel`, `VerificationResult` | `ReviewReport` |
 | `Reporter` | `run(history)` | `WorkflowHistory` | `ReportModel` |
 
 **Coder internal:** `RepositoryAcceptanceError` is raised from `agents/coder_quality.py` when the repository acceptance gate rejects a workspace. Not part of the public agent contract.
@@ -48,7 +49,7 @@ For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABI
 
 | Service | Key method | Purpose |
 |---------|------------|---------|
-| `PDFService` | `extract_text(path)` | PDF text extraction |
+| `PDFService` | `extract_text(path)` | PDF text extraction (legacy; parsing via `DocumentParser` port) |
 | `PromptLoader` | `load(agent, section)` | Load prompt markdown |
 | `PromptBuilder` | `build_*_prompt()` | Assemble agent prompts |
 | `WorkspaceManager` | `create_workspace`, `write_file`, `read_file`, `write_report` | Repository filesystem |
@@ -74,7 +75,7 @@ Located in `models/`:
 
 | Model | Produced by |
 |-------|-------------|
-| `PaperModel` | Reader |
+| `PaperReproductionAnalysis` | Reader |
 | `TaskModel` | Planner |
 | `Workspace` | Coder |
 | `ExecutionResult` | Runner |
@@ -82,6 +83,8 @@ Located in `models/`:
 | `ReviewReport` | Reviewer |
 | `PatchPlan` | PatchPlanner |
 | `ReportModel` | Reporter |
+
+`PaperModel` is retained for legacy unit tests only — not part of the runtime pipeline ([ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md)).
 
 ---
 
@@ -96,4 +99,4 @@ api/
     workflow.md        # (future)
 ```
 
-API reference pages will be added when interfaces stabilize beyond v1.0.0.
+API reference pages will be added as Platform Capability (v1.2) stabilizes public contracts.

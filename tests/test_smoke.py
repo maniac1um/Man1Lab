@@ -10,7 +10,7 @@ from agents.reviewer import Reviewer
 from agents.runner import Runner
 from services.environment_service import EnvironmentService
 from services.execution_service import ExecutionService
-from services.pdf_service import PDFService
+from adapters.pymupdf_parser import PyMuPDFParser
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
@@ -28,7 +28,7 @@ class SmokeTest(unittest.TestCase):
                 root=temp_path / "workspace/tasks",
                 outputs_dir=temp_path / "outputs",
             )
-            reader = Reader(pdf_service=PDFService())
+            reader = Reader(document_parser=PyMuPDFParser())
 
             orchestrator = WorkflowOrchestrator(
                 reader=reader,

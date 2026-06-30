@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from models.execution import ExecutionResult
-from models.paper import PaperModel
+from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.review import PatchPlan
 from models.review_report import ReviewReport
 from models.task import TaskModel
@@ -19,7 +19,7 @@ class StageRecord(BaseModel):
 
 class WorkflowHistory(BaseModel):
     stages: list[StageRecord] = Field(default_factory=list)
-    paper: PaperModel | None = None
+    analysis: PaperReproductionAnalysis | None = None
     task: TaskModel | None = None
     workspace: Workspace | None = None
     execution_results: list[ExecutionResult] = Field(default_factory=list)

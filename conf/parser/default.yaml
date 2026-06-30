@@ -1,0 +1,2 @@
+backend: ${oc.env:PARSER_BACKEND,docling}
+max_paper_text_chars: ${oc.env:MAX_PAPER_TEXT_CHARS,80000}

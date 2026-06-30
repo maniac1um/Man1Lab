@@ -1,7 +1,7 @@
 import json
 import re
-import sys
 
+from agents.analysis_context import build_coder_shared_context
 from agents.coder_quality import (
     RepositoryAcceptanceError,
     build_framework_binding,
@@ -15,7 +15,7 @@ from agents.coder_quality import (
 )
 from llm.coder_mock_provider import CoderMockLLMProvider
 from llm.provider import LLMMessage, LLMProvider
-from models.paper import PaperModel
+from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.review import PatchPlan
 from models.routing import RepositoryTarget, TaskRoutingTable
 from models.task import TaskModel, TaskStep
@@ -57,22 +57,22 @@ class Coder:
 
     def run(
         self,
-        paper: PaperModel,
+        analysis: PaperReproductionAnalysis,
         task: TaskModel,
         patch_plan: PatchPlan | None = None,
     ) -> Workspace:
-        slug = self._paper_slug(paper.title)
+        slug = self._paper_slug(analysis.metadata.title)
         workspace = self._workspace_manager.create_workspace(slug)
         routing_table = self._task_router.route_task(task)
         self._workspace_manager.store_routing_table(workspace, routing_table)
         self._workspace_manager.initialize_repository(
             workspace,
-            paper.title,
+            analysis.metadata.title,
             task,
             patch_plan,
         )
-        shared_generation_context = self._build_shared_generation_context(
-            paper,
+        shared_generation_context = build_coder_shared_context(
+            analysis,
             task,
             routing_table,
         )
@@ -117,74 +117,13 @@ class Coder:
         )
         self._finalize_readme(
             workspace,
-            paper.title,
+            analysis.metadata.title,
             task,
             patch_plan,
             shared_generation_context,
             populated_paths,
         )
         return workspace
-
-    @staticmethod
-    def _build_shared_generation_context(
-        paper: PaperModel,
-        task: TaskModel,
-        routing_table: TaskRoutingTable,
-    ) -> dict[str, object]:
-        targets = routing_table.targets
-        routing_coverage = Coder._compute_routing_coverage(task, routing_table)
-        framework_binding = build_framework_binding(paper.framework)
-        return {
-            "paper_title": paper.title,
-            "framework": paper.framework,
-            "framework_binding": framework_binding,
-            "dataset": paper.dataset,
-            "model": paper.model,
-            "optimizer": paper.optimizer,
-            "loss": paper.loss,
-            "training_pipeline": paper.training_pipeline,
-            "evaluation_metric": paper.evaluation_metric,
-            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
-            "repository_files": [target.relative_path for target in targets],
-            "source_modules": [
-                target.relative_path.removesuffix(".py").replace("/", ".")
-                for target in targets
-                if target.file_category == "source"
-            ],
-            "config_files": [
-                target.relative_path
-                for target in targets
-                if target.file_category == "config"
-            ],
-            "script_files": [
-                target.relative_path
-                for target in targets
-                if target.file_category == "script"
-            ],
-            "train_entrypoint": "scripts/train.py",
-            "eval_entrypoint": "scripts/evaluate.py",
-            "engineering_tasks": [
-                {"id": step.id, "name": step.name, "description": step.description}
-                for step in task.steps
-            ],
-            "routing_coverage": routing_coverage,
-        }
-
-    @staticmethod
-    def _compute_routing_coverage(
-        task: TaskModel,
-        routing_table: TaskRoutingTable,
-    ) -> dict[str, object]:
-        covered_ids: set[str] = set()
-        router = TaskRouter()
-        for step in task.steps:
-            if router.route_step(step):
-                covered_ids.add(step.id)
-        unrouted = [step.id for step in task.steps if step.id not in covered_ids]
-        return {
-            "routed_step_ids": sorted(covered_ids),
-            "unrouted_step_ids": unrouted,
-        }
 
     @staticmethod
     def _build_repository_contract(

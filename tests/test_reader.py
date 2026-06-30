@@ -1,3 +1,4 @@
+import json
 import logging
 import tempfile
 import unittest
@@ -5,10 +6,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agents.reader import Reader
-from llm.mock_provider import MOCK_PAPER_JSON
-from services.pdf_service import PDFService
+from llm.mock_provider import MOCK_REPRODUCTION_ANALYSIS_JSON
+from models.paper_reproduction_analysis import PaperReproductionAnalysis, ReproductionScope
+from adapters.pymupdf_parser import PyMuPDFParser
 from tests.fixtures import create_sample_paper_pdf
-from validation.exceptions import PaperValidationError
+from validation.exceptions import AnalysisValidationError
 
 
 class FakePromptBuilder:
@@ -21,7 +23,7 @@ class FakePromptBuilder:
 
 
 class FakeLLMProvider:
-    def __init__(self, response: str = MOCK_PAPER_JSON) -> None:
+    def __init__(self, response: str = MOCK_REPRODUCTION_ANALYSIS_JSON) -> None:
         self.complete_called = False
         self.messages = None
         self._response = response
@@ -36,7 +38,10 @@ class FakeResponseParser:
     def __init__(self, data: dict | None = None) -> None:
         self.parse_called = False
         self.raw_input = None
-        self._data = data or {"title": "Parsed Title"}
+        self._data = data or {
+            "metadata": {"title": "Parsed Title"},
+            "goal": {"research_goal": "Parsed reproduction goal."},
+        }
 
     def parse(self, raw_response: str) -> dict:
         self.parse_called = True
@@ -50,7 +55,7 @@ class ReaderTest(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.paper_path = Path(self.temp_dir.name) / "sample.pdf"
         create_sample_paper_pdf(self.paper_path)
-        self.reader = Reader(pdf_service=PDFService())
+        self.reader = Reader(document_parser=PyMuPDFParser())
 
     def tearDown(self) -> None:
         logging.disable(logging.NOTSET)
@@ -66,7 +71,7 @@ class ReaderTest(unittest.TestCase):
         builder = FakePromptBuilder()
         llm = FakeLLMProvider()
         reader = Reader(
-            pdf_service=PDFService(),
+            document_parser=PyMuPDFParser(),
             prompt_builder=builder,
             llm=llm,
         )
@@ -78,7 +83,7 @@ class ReaderTest(unittest.TestCase):
         builder = FakePromptBuilder()
         llm = FakeLLMProvider()
         reader = Reader(
-            pdf_service=PDFService(),
+            document_parser=PyMuPDFParser(),
             prompt_builder=builder,
             llm=llm,
         )
@@ -86,33 +91,75 @@ class ReaderTest(unittest.TestCase):
             reader.run(self.paper_path)
             read_text.assert_not_called()
 
-    def test_reader_invokes_llm_and_response_parser(self) -> None:
-        llm = FakeLLMProvider(response='{"title": "From LLM"}')
-        parser = FakeResponseParser({"title": "From LLM", "abstract": "Parsed abstract."})
+    def test_run_returns_paper_reproduction_analysis(self) -> None:
+        llm = FakeLLMProvider()
+        parser = FakeResponseParser(
+            {
+                "metadata": {"title": "From LLM"},
+                "goal": {"research_goal": "Parsed reproduction goal."},
+            }
+        )
         reader = Reader(
-            pdf_service=PDFService(),
+            document_parser=PyMuPDFParser(),
             prompt_builder=FakePromptBuilder(),
             llm=llm,
             response_parser=parser,
         )
-        paper = reader.run(self.paper_path)
+        analysis = reader.run(self.paper_path)
 
         self.assertTrue(llm.complete_called)
         self.assertTrue(parser.parse_called)
-        self.assertEqual(reader._last_extracted, {"title": "From LLM", "abstract": "Parsed abstract."})
-        self.assertEqual(paper.title, "From LLM")
-        self.assertEqual(paper.abstract, "Parsed abstract.")
+        self.assertIsInstance(analysis, PaperReproductionAnalysis)
+        self.assertEqual(analysis.metadata.title, "From LLM")
+        self.assertEqual(analysis.goal.research_goal, "Parsed reproduction goal.")
+        self.assertEqual(analysis.metadata.source_path, self.paper_path)
+        self.assertEqual(reader.last_analysis, analysis)
 
     def test_reader_validation_failure_raises(self) -> None:
-        parser = FakeResponseParser({"abstract": "No title field."})
+        parser = FakeResponseParser({"goal": {"research_goal": "No title field."}})
         reader = Reader(
-            pdf_service=PDFService(),
+            document_parser=PyMuPDFParser(),
             prompt_builder=FakePromptBuilder(),
             llm=FakeLLMProvider(),
             response_parser=parser,
         )
-        with self.assertRaises(PaperValidationError):
+        with self.assertRaises(AnalysisValidationError):
             reader.run(self.paper_path)
+
+    def test_analysis_snapshot_round_trip(self) -> None:
+        reader = Reader(
+            document_parser=PyMuPDFParser(),
+            prompt_builder=FakePromptBuilder(),
+            llm=FakeLLMProvider(),
+        )
+        reader.run(self.paper_path)
+        snapshot = reader.analysis_snapshot()
+        self.assertIsNotNone(snapshot)
+        restored = PaperReproductionAnalysis.model_validate(snapshot)
+        self.assertEqual(restored.metadata.title, reader.last_analysis.metadata.title)
+
+    def test_save_analysis_snapshot_writes_file(self) -> None:
+        reader = Reader(
+            document_parser=PyMuPDFParser(),
+            prompt_builder=FakePromptBuilder(),
+            llm=FakeLLMProvider(),
+        )
+        reader.run(self.paper_path)
+        snapshot_path = Path(self.temp_dir.name) / "analysis_snapshot.json"
+        reader.save_analysis_snapshot(snapshot_path)
+        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        self.assertEqual(payload["metadata"]["title"], reader.last_analysis.metadata.title)
+
+    def test_mock_llm_native_analysis_shape(self) -> None:
+        reader = Reader(
+            document_parser=PyMuPDFParser(),
+            prompt_builder=FakePromptBuilder(),
+            llm=FakeLLMProvider(),
+        )
+        analysis = reader.run(self.paper_path)
+        self.assertEqual(analysis.goal.scope, ReproductionScope.FULL_REPRODUCTION)
+        self.assertEqual(analysis.method.framework, "PyTorch")
+        self.assertEqual(analysis.resources.datasets[0].name, "Robomimic benchmark tasks")
 
 
 if __name__ == "__main__":

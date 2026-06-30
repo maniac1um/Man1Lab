@@ -14,7 +14,7 @@ from models.workspace import Workspace
 from services.environment_service import EnvironmentService, VENV_DIRNAME
 from services.exceptions import ExecutionPlanError
 from services.execution_service import LOG_FILENAME, ExecutionService
-from services.pdf_service import PDFService
+from adapters.pymupdf_parser import PyMuPDFParser
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import failing_train_command_runner, mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
@@ -128,7 +128,7 @@ class ScriptExecutionWorkflowTest(unittest.TestCase):
                 outputs_dir=temp_path / "outputs",
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(pdf_service=PDFService()),
+                reader=Reader(document_parser=PyMuPDFParser()),
                 planner=Planner(),
                 coder=Coder(workspace_manager=workspace_manager),
                 runner=Runner(

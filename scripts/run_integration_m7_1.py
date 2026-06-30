@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 import config
+from configuration.bootstrap import initialize_app_configuration
 from agents.coder import Coder
 from agents.planner import Planner
 from agents.reader import Reader
@@ -16,8 +17,9 @@ from agents.reviewer import Reviewer
 from agents.runner import Runner
 from llm.factory import build_llm_provider, build_planner_llm_provider
 from planning.patch_planner import PatchPlanner
-from services.pdf_service import PDFService
-from workflow.orchestrator import WorkflowOrchestrator
+from adapters import build_document_parser
+from tracking.bootstrap import initialize_experiment_tracking
+from tracking.workflow import TrackedWorkflowOrchestrator
 from workspace.manager import WorkspaceManager
 
 PAPER_PATH = Path(__file__).resolve().parent.parent / "1512.03385v1.pdf"
@@ -34,6 +36,9 @@ def main() -> int:
             logging.FileHandler(INTEGRATION_LOG, mode="w"),
         ],
     )
+
+    settings = initialize_app_configuration()
+    tracker = initialize_experiment_tracking(settings)
 
     if not PAPER_PATH.exists():
         logging.error("Paper not found: %s", PAPER_PATH)
@@ -53,8 +58,8 @@ def main() -> int:
         llm = build_llm_provider()
         patch_planner = PatchPlanner(llm=llm)
         workspace_manager = WorkspaceManager()
-        orchestrator = WorkflowOrchestrator(
-            reader=Reader(pdf_service=PDFService(), llm=llm),
+        orchestrator = TrackedWorkflowOrchestrator(
+            reader=Reader(document_parser=build_document_parser(), llm=llm),
             planner=Planner(llm=build_planner_llm_provider()),
             coder=Coder(workspace_manager=workspace_manager, llm=llm),
             runner=Runner(),
@@ -62,6 +67,7 @@ def main() -> int:
             reporter=CapturingReporter(),
             workspace_manager=workspace_manager,
             patch_planner=patch_planner,
+            experiment_tracker=tracker,
         )
         report = orchestrator.run(PAPER_PATH)
     except Exception as exc:
@@ -121,7 +127,9 @@ def _build_snapshot(*, paper_path, history, report, failure, duration_seconds):
     }
     if history is not None:
         data["stages"] = [stage.model_dump() for stage in history.stages]
-        data["paper"] = history.paper.model_dump(mode="json") if history.paper else None
+        data["analysis"] = (
+            history.analysis.model_dump(mode="json") if history.analysis else None
+        )
         data["task"] = history.task.model_dump(mode="json") if history.task else None
         data["workspace"] = (
             {

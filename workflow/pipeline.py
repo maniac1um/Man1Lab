@@ -3,7 +3,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from models.execution import ExecutionResult
-from models.paper import PaperModel
+from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.report import WorkflowHistory
 from models.review import PatchPlan
 from models.task import TaskModel
@@ -22,7 +22,7 @@ class PipelineStage(str, Enum):
 
 class PipelineContext(BaseModel):
     paper_path: str
-    paper: PaperModel | None = None
+    analysis: PaperReproductionAnalysis | None = None
     task: TaskModel | None = None
     workspace: Workspace | None = None
     execution_result: ExecutionResult | None = None

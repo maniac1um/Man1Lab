@@ -1,6 +1,6 @@
 # Documentation Index
 
-Navigation hub for Man1Lab v1.0.0 documentation.
+Navigation hub for Man1Lab v1.1.0 documentation.
 
 **Principle:** Current documents answer *"What does the project do today?"* Historical reviews answer *"How did the project evolve?"*
 
@@ -12,9 +12,11 @@ Navigation hub for Man1Lab v1.0.0 documentation.
 |----------|---------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Install, run tests, configure API keys, reading order |
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **Single source of truth** — capabilities, pipeline, benchmarks, limitations |
-| [CHANGELOG.md](../CHANGELOG.md) | v1.0.0 version history |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.1.0) |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Research prototype — issues welcome, PRs not accepted |
-| [release/v1.0.0.md](../release/v1.0.0.md) | GitHub Release notes |
+| [releases/README.md](releases/README.md) | Release history |
+| [releases/v1.1.0.md](releases/v1.1.0.md) | v1.1.0 Foundation Release notes |
+| [release/v1.0.0.md](../release/v1.0.0.md) | v1.0.0 MVP release notes |
 | [DEVELOPMENT.md](../DEVELOPMENT.md) | Engineering workflow, architecture freeze, commit policy |
 
 ---
@@ -24,18 +26,10 @@ Navigation hub for Man1Lab v1.0.0 documentation.
 | Document | Purpose |
 |----------|---------|
 | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) | System architecture, agent boundaries, pipeline design |
-| [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) | Per-capability component reference (v1.0.0) |
+| [architecture/infrastructure.md](architecture/infrastructure.md) | Infrastructure governance, adoption matrix, native vs external boundaries |
+| [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) | Per-capability component reference (v1.1.0) |
 
 Root pointer: [ARCHITECTURE.md](../ARCHITECTURE.md)
-
----
-
-## Roadmap
-
-| Document | Purpose |
-|----------|---------|
-| [roadmap/ROADMAP.md](roadmap/ROADMAP.md) | Milestone timeline (M1–M8 completed) |
-| [roadmap/MILESTONES.md](roadmap/MILESTONES.md) | Milestone lifecycle, templates, and acceptance criteria |
 
 ---
 
@@ -46,29 +40,20 @@ Architecture Decision Records document significant design choices.
 | Resource | Purpose |
 |----------|---------|
 | [adr/README.md](adr/README.md) | ADR index, template, and when to write an ADR |
-| [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) – [ADR-0007](adr/ADR-0007-Execution-Capability.md) | Accepted decisions |
+| [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) – [ADR-0011](adr/ADR-0011-Pixi-Environment.md) | Accepted decisions |
 
 ---
 
-## Reviews
+## Private work documents
 
-Milestone design reviews, integration validation, product fixes, and governance audits.
+Milestone reviews, audits, benchmarks, roadmaps, and adoption research live in **`private/`** (local, gitignored). See [reviews/README.md](reviews/README.md) for the migration pointer and [CONTRIBUTING.md § Documentation Policy](../CONTRIBUTING.md#documentation-policy).
 
-| Resource | Purpose |
-|----------|---------|
-| [reviews/README.md](reviews/README.md) | Master index of all review documents with lifecycle labels |
-
-### Current vs Historical
-
-| Category | Location | Use when |
-|----------|----------|----------|
-| **Current state** | [CURRENT_STATUS.md](CURRENT_STATUS.md) | Understanding today's system |
-| **Release governance** | [reviews/release_preparation/](reviews/release_preparation/) | v1.0.0 documentation audit |
-| Release packaging | [reviews/release_packaging/](reviews/release_packaging/) | v1.0.0 GitHub release assets |
-| **Rebranding** | [reviews/project_rebranding/](reviews/project_rebranding/) | Man1Lab public identity |
-| **MVP acceptance** | [reviews/M8.1/](reviews/M8.1/), [reviews/M8.2/](reviews/M8.2/) | Benchmark run evidence |
-| **Product fixes** | [reviews/integration_fix_*](reviews/README.md#integration-fixes) | Tracing defect history |
-| **Milestone delivery** | [reviews/M4.x – M7.F](reviews/README.md#milestone-reviews) | Auditing a specific capability |
+| Category | Local path |
+|----------|------------|
+| Roadmaps | `private/roadmap/` |
+| Benchmarks | `private/benchmark/` |
+| Audits | `private/audit/` |
+| Adoption reviews | `private/adoption-review/` |
 
 ---
 
@@ -76,15 +61,7 @@ Milestone design reviews, integration validation, product fixes, and governance 
 
 | Resource | Purpose |
 |----------|---------|
-| [api/README.md](api/README.md) | Public API contract summary (v1.0.0) |
-
----
-
-## Notes
-
-| Resource | Purpose |
-|----------|---------|
-| [notes/README.md](notes/README.md) | Informal engineering notes (experiments, observations) |
+| [api/README.md](api/README.md) | Public API contract summary (v1.1.0) |
 
 ---
 
@@ -93,3 +70,51 @@ Milestone design reviews, integration validation, product fixes, and governance 
 | Document | Purpose |
 |----------|---------|
 | [README.md](../README.md) | Project introduction and quick links |
+
+---
+
+## Documentation Classification
+
+Man1Lab separates **public documentation** (committed to GitHub) from **private documentation** (local `private/`, gitignored).
+
+### Public documentation (GitHub)
+
+Formal decisions and maintained project docs:
+
+```text
+docs/
+├── architecture/     → Platform design (ARCHITECTURE.md, infrastructure.md)
+├── adr/              → Accepted architecture decisions (ADR)
+├── api/              → Public API contracts
+├── GETTING_STARTED.md
+├── CURRENT_STATUS.md
+└── …
+DEVELOPMENT.md        → Developer guide
+release/              → Release notes
+```
+
+**Principle:** GitHub stores **final decisions** and **formal documentation** only.
+
+### Private documentation (local only)
+
+Research process, audits, benchmarks, and drafts — **not** in Git:
+
+```text
+private/
+├── adoption-review/  → Technology Adoption Reviews (Docling, MLflow, …)
+├── audit/            → Architecture audit reports
+├── benchmark/        → Benchmark run reports
+├── design/
+│   ├── drafts/       → Draft designs
+│   ├── migrations/   → Phase migration reports
+│   ├── future/       → Future architecture explorations
+│   └── experiments/  → Experimental design spikes
+├── meeting/          → Meeting notes
+├── notes/            → Research notes
+├── roadmap/          → Working roadmap drafts
+└── scratch/          → Temporary scratch
+```
+
+**Principle:** Reviews inform ADRs; ADRs record accepted decisions. Do not treat a Technology Review as a substitute for an ADR.
+
+Full policy: [CONTRIBUTING.md](../CONTRIBUTING.md#documentation-policy)

@@ -2,20 +2,78 @@ import json
 
 from llm.provider import LLMMessage, LLMProvider
 
-MOCK_PAPER_JSON = json.dumps(
+MOCK_REPRODUCTION_ANALYSIS_JSON = json.dumps(
     {
-        "title": "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion",
-        "abstract": "Mock abstract for skeleton execution.",
-        "method": "Action diffusion for visuomotor control.",
-        "dataset": "Robomimic benchmark tasks.",
-        "model": "Conditional diffusion policy network.",
-        "framework": "PyTorch",
-        "optimizer": "AdamW",
-        "loss": "Behavior cloning diffusion loss.",
-        "training_pipeline": "Collect demos, train diffusion policy, evaluate success rate.",
-        "evaluation_metric": "Task success rate",
+        "schema_version": "1.0",
+        "metadata": {
+            "title": "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion",
+            "authors": [],
+            "venue": "",
+            "year": None,
+            "arxiv_id": "",
+        },
+        "goal": {
+            "scope": "full_reproduction",
+            "research_goal": (
+                "Reproduce visuomotor policy learning via action diffusion "
+                "for robotic control."
+            ),
+            "target_experiment": "Train and evaluate diffusion policy on Robomimic tasks.",
+            "expected_outcome": "Match task success rate reported in the paper.",
+        },
+        "resources": {
+            "datasets": [
+                {
+                    "name": "Robomimic benchmark tasks",
+                    "description": "Demonstration dataset for visuomotor control.",
+                    "link": "",
+                    "split_or_variant": "",
+                }
+            ],
+            "models": [
+                {
+                    "name": "Conditional diffusion policy network",
+                    "description": "Diffusion-based visuomotor policy.",
+                    "role": "primary model",
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "PyTorch",
+                    "version": "",
+                    "purpose": "training framework",
+                }
+            ],
+            "external_resources": [],
+            "artifacts": [],
+        },
+        "method": {
+            "framework": "PyTorch",
+            "architecture": "Conditional diffusion policy network for action prediction.",
+            "training_pipeline": "Collect demos, train diffusion policy, evaluate success rate.",
+            "optimizer": "AdamW",
+            "loss": "Behavior cloning diffusion loss",
+            "hyperparameters": [],
+            "data_processing": "",
+        },
+        "evaluation": {
+            "metrics": [
+                {
+                    "name": "task success rate",
+                    "definition": "Success rate on benchmark tasks",
+                    "reported_value": "",
+                }
+            ],
+            "benchmarks": ["Robomimic benchmark tasks"],
+            "evaluation_protocol": "",
+            "baselines": [],
+        },
+        "reproduction_gaps": [],
     }
 )
+
+# Backward-compatible alias for tests that import the old constant name.
+MOCK_PAPER_JSON = MOCK_REPRODUCTION_ANALYSIS_JSON
 
 
 MOCK_PLANNER_JSON = json.dumps(
@@ -138,7 +196,7 @@ MOCK_PATCH_ITERATION_JSON = json.dumps(
 
 
 class MockLLMProvider(LLMProvider):
-    def __init__(self, response: str = MOCK_PAPER_JSON) -> None:
+    def __init__(self, response: str = MOCK_REPRODUCTION_ANALYSIS_JSON) -> None:
         self._response = response
 
     def complete(self, messages: list[LLMMessage], *, temperature: float = 0.0) -> str:

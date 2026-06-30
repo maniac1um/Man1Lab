@@ -12,7 +12,7 @@ Man1Lab follows a milestone-driven lifecycle:
 Design → Implementation → Design Review → Architecture Review → ADR (if required) → Git Commit → Next Milestone
 ```
 
-Each milestone is scoped, implemented, reviewed, and committed before the next begins. See [docs/roadmap/MILESTONES.md](docs/roadmap/MILESTONES.md) for the full specification.
+Each milestone is scoped, implemented, reviewed, and committed before the next begins. Milestone specification: `private/roadmap/MILESTONES.md` (local).
 
 ---
 
@@ -24,7 +24,7 @@ Before writing code:
 
 - Read [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
 - Check [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) for current implementation state
-- Check [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) for milestone timeline
+- Check `private/roadmap/ROADMAP.md` (local) for milestone timeline
 - Identify affected frozen interfaces (see Architecture Freeze below)
 - Define goal, scope, acceptance criteria, and deliverables
 
@@ -46,7 +46,7 @@ Produce a factual design review report covering:
 - Current limitations
 - Changed files
 
-Store under `docs/reviews/{milestone}/`.
+Store under `private/design/drafts/milestones/{milestone}/` (local, gitignored).
 
 ### 4. Architecture Review
 
@@ -68,7 +68,7 @@ Commit using Conventional Commits (see Commit Policy below).
 
 ### 7. Next Milestone
 
-Update milestone status in `docs/roadmap/ROADMAP.md`.
+Update milestone status in `private/roadmap/ROADMAP.md` (local).
 
 ---
 
@@ -86,7 +86,7 @@ A code review should verify:
 | Tests | Do all tests pass? Are new behaviors tested? |
 | Documentation | Are ADRs, roadmap, and reviews updated? |
 
-Review artifacts are stored in `docs/reviews/`.
+Review artifacts are stored in `private/` per [Documentation Policy](CONTRIBUTING.md#documentation-policy).
 
 ---
 
@@ -168,9 +168,9 @@ Changing a frozen interface requires:
 | `PromptBuilder` | Public builder methods (e.g. `build_reader_prompt() -> str`) |
 | `PromptLoader` | `load(agent: str, section: str) -> str` |
 | `WorkspaceManager` | `create_workspace`, `write_file`, `read_file`, `write_output`, `write_report` |
-| `Reader` | `read_text(paper_path: Path) -> str`; `run(paper_path: Path) -> PaperModel` |
-| `Planner` | `run(paper: PaperModel) -> TaskModel` |
-| `Coder` | `run(paper, task, patch_plan=None) -> Workspace` |
+| `Reader` | `read_text(paper_path: Path) -> str`; `run(paper_path: Path) -> PaperReproductionAnalysis` ([ADR-0009](docs/adr/ADR-0009-Analysis-Canonical-Artifact.md)) |
+| `Planner` | `run(analysis: PaperReproductionAnalysis) -> TaskModel` |
+| `Coder` | `run(analysis, task, patch_plan=None) -> Workspace` |
 | `Runner` | `run(workspace: Workspace) -> ExecutionResult` |
 
 ### Not Frozen
@@ -196,7 +196,7 @@ See [ADR-0006](docs/adr/ADR-0006-Runtime-Artifact-Ownership.md) and [Architectur
 
 As of M5.F, the following capabilities are considered complete for MVP baseline:
 
-- **Reader** — `PaperModel` extraction pipeline
+- **Reader** — `PaperReproductionAnalysis` extraction pipeline
 - **Planner** — `TaskModel` planning pipeline
 - **Coder** — workspace construction and population
 - **Runner** — environment preparation and script execution
@@ -215,6 +215,9 @@ See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the capability refe
 Man1Lab/
 ├── app.py                  # Composition root
 ├── config.py               # Configuration constants
+├── pixi.toml               # Official environment (Pixi)
+├── requirements.txt        # Legacy pip compatibility layer
+├── tracking/               # Experiment tracking (MLflow adapter)
 ├── DEVELOPMENT.md          # This file
 ├── ARCHITECTURE.md         # Pointer to canonical architecture doc
 ├── docs/
@@ -222,11 +225,10 @@ Man1Lab/
 │   ├── GETTING_STARTED.md  # Contributor quick start
 │   ├── CURRENT_STATUS.md   # Implementation status (single source of truth)
 │   ├── architecture/       # Architecture document
-│   ├── roadmap/            # Roadmap and milestone specs
 │   ├── adr/                # Architecture Decision Records
-│   ├── reviews/            # Milestone review reports
-│   ├── notes/              # Informal engineering notes
-│   └── api/                # Future API reference
+│   ├── reviews/            # Migration pointer (work docs in private/)
+│   └── api/                # API reference
+├── private/                # Local work documents (gitignored)
 ├── agents/                 # Agent implementations
 ├── models/                 # Pydantic domain models
 ├── workflow/               # Orchestrator and pipeline
@@ -245,10 +247,20 @@ Man1Lab/
 
 ## Running the Project
 
+### Recommended — Pixi
+
+```bash
+pixi install
+pixi run test
+pixi run run
+```
+
+### Legacy — pip
+
 ```bash
 pip install -r requirements.txt
-python -m unittest discover -s tests -v
-python app.py
+PYTHONPATH=. python -m pytest tests/ -v
+PYTHONPATH=. python app.py
 ```
 
 Set `PAPER_PATH` to override the default `paper.pdf` location.
@@ -264,7 +276,6 @@ Set `PAPER_PATH` to override the default `paper.pdf` location.
 | Documentation index | [docs/README.md](docs/README.md) |
 | Architecture | [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) |
 | Capabilities | [docs/architecture/CAPABILITIES.md](docs/architecture/CAPABILITIES.md) |
-| Roadmap | [docs/roadmap/ROADMAP.md](docs/roadmap/ROADMAP.md) |
-| Milestones | [docs/roadmap/MILESTONES.md](docs/roadmap/MILESTONES.md) |
 | ADRs | [docs/adr/README.md](docs/adr/README.md) |
-| Reviews | [docs/reviews/README.md](docs/reviews/README.md) |
+| Private work docs | [CONTRIBUTING.md § Documentation Policy](CONTRIBUTING.md#documentation-policy) |
+| Reviews pointer | [docs/reviews/README.md](docs/reviews/README.md) |

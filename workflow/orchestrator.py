@@ -42,7 +42,7 @@ class WorkflowOrchestrator:
         context = PipelineContext(paper_path=str(paper_path))
         history = context.history
 
-        history.paper = self._run_stage(
+        history.analysis = self._run_stage(
             PipelineStage.READER,
             history,
             lambda: self._reader.run(paper_path),
@@ -50,12 +50,12 @@ class WorkflowOrchestrator:
         history.task = self._run_stage(
             PipelineStage.PLANNER,
             history,
-            lambda: self._planner.run(history.paper),
+            lambda: self._planner.run(history.analysis),
         )
         history.workspace = self._run_stage(
             PipelineStage.CODER,
             history,
-            lambda: self._coder.run(history.paper, history.task),
+            lambda: self._coder.run(history.analysis, history.task),
         )
         execution_result = self._run_stage(
             PipelineStage.RUNNER,
@@ -75,7 +75,7 @@ class WorkflowOrchestrator:
                 PipelineStage.REVIEWER,
                 history,
                 lambda: self._reviewer.run(
-                    history.paper,
+                    history.analysis,
                     history.task,
                     verification_result,
                 ),
