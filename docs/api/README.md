@@ -1,35 +1,44 @@
 # API Documentation
 
-Public API reference for Man1Lab v1.1.0.
+Public API reference for Man1Lab v1.2.0.
 
 ## Purpose
 
 Document stable contracts for contributors and integrators:
 
+- **Platform Facade** — recommended entry for users and integrators
 - Agent public methods and type contracts
 - Domain model field definitions
 - Service interfaces
-- Workflow orchestrator entry points
 
 ## Current State
 
 Detailed API reference pages (`agents.md`, `models.md`, etc.) are not yet written. Public contracts are defined in source code and summarized below.
 
+**Recommended entry:** `Man1Lab` (Platform Facade) via CLI (`man1lab`) or Python SDK (`from man1lab import Man1Lab`). See [GETTING_STARTED.md](../GETTING_STARTED.md).
+
 For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABILITIES.md). For frozen interface policy, see [DEVELOPMENT.md](../../DEVELOPMENT.md). Analysis artifact migration: [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
 
 ---
 
-## Workflow Entry Point
+## Platform Entry Point (v1.2+)
+
+| Component | Contract |
+|-----------|----------|
+| `Man1Lab` | Platform Facade — `init()`, `doctor()`, `reproduce(paper_path)`, `analyze()`, `discover()`, `plan()`, `execute()` |
+| `man1lab` CLI | Typer application; all commands delegate to `Man1Lab` |
+| `TrackedWorkflowOrchestrator` | Internal workflow engine; records MLflow runs ([ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md)) |
+| `app.py` | Legacy maintainer composition root — not a public interface |
+
+---
+
+## Workflow Entry Point (internal)
 
 | Component | Contract |
 |-----------|----------|
 | `WorkflowOrchestrator` | `run(paper_path: Path) -> ReportModel` |
-| `TrackedWorkflowOrchestrator` | Wraps orchestrator; records MLflow runs ([ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md)) |
-| `app.py` | Composition root; wires agents, services, and tracking |
 
 ---
-
-## Agents
 
 | Agent | Public method | Input | Output |
 |-------|---------------|-------|--------|

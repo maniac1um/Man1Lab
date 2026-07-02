@@ -1,6 +1,8 @@
 defaults:
   - parser: default
   - analysis: default
+  - discovery: default
+  - execution_planning: default
   - planner: default
   - coder: default
   - runner: default

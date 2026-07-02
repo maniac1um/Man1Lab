@@ -1,27 +1,33 @@
 # Getting Started
 
-Quick orientation for running and exploring the prototype. For current implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
-
----
-
-## Project Overview
-
-Man1Lab v1.1.0 is an automated pipeline that reads a research paper (PDF), plans engineering tasks, generates a reproduction repository, runs the training script, verifies results, reviews failures, and produces a final report. v1.1.0 completes **Platform Foundation** — infrastructure adoption and analysis pipeline refactor.
-
-System design and agent boundaries are documented in [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
+Quick orientation for installing and running Man1Lab v1.2.0. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
 
 ---
 
 ## Prerequisites
 
-- Python 3.10+ (Pixi installs **3.12** by default)
-- **Pixi** (recommended) or `pip` + virtual environment (legacy)
+- Python 3.10+
+- **Pixi** (recommended for development) or **pip**
 
 ---
 
-## Installation
+## 1. Install
 
-### Recommended — Pixi
+### Pip (recommended for users)
+
+```bash
+pip install man1lab
+```
+
+From a source checkout:
+
+```bash
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
+pip install -e .
+```
+
+### Pixi (recommended for development)
 
 ```bash
 git clone https://github.com/maniac1um/Man1Lab.git
@@ -29,13 +35,110 @@ cd Man1Lab
 pixi install
 ```
 
-### Legacy — pip
+---
+
+## 2. Initialize
+
+Create workspace directories, cache paths, and a `.env` template (never overwrites existing files):
 
 ```bash
-git clone https://github.com/maniac1um/Man1Lab.git
-cd Man1Lab
-pip install -r requirements.txt
+man1lab init
 ```
+
+With Pixi:
+
+```bash
+pixi run man1lab init
+```
+
+Edit `.env` and add LLM API keys. Optionally set `GITHUB_TOKEN` for GitHub discovery.
+
+---
+
+## 3. Doctor
+
+Validate the runtime environment:
+
+```bash
+man1lab doctor
+```
+
+Checks include Python, Pixi, Git, GitHub token, workspace paths, configuration, Docling, MLflow, write permissions, and network connectivity. Warnings do not fail the command; only critical failures return a non-zero exit code.
+
+---
+
+## 4. Reproduce
+
+Run the complete reproduction workflow on a PDF:
+
+```bash
+man1lab reproduce paper.pdf
+```
+
+Set `PAPER_PATH` in `.env` to use the default paper path from configuration.
+
+---
+
+## 5. Analyze (partial workflow)
+
+Run analysis (Reader) only:
+
+```bash
+man1lab analyze paper.pdf
+```
+
+Other partial commands: `discover`, `plan`, `execute`. See `man1lab --help`.
+
+---
+
+## 6. Python SDK
+
+```python
+from man1lab import Man1Lab
+
+client = Man1Lab()
+client.init()
+print(client.doctor())
+report = client.reproduce("paper.pdf")
+print(client.version())
+```
+
+The SDK delegates exclusively to the Platform Facade.
+
+---
+
+## API Key Configuration
+
+Copy `.env.example` to `.env` if `man1lab init` did not create one:
+
+```bash
+OPENAI_API_KEY=sk-your-key
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL=deepseek-v4-pro
+GITHUB_TOKEN=ghp_your-token
+```
+
+Without API keys, mock LLM providers return deterministic fixtures for tests.
+
+---
+
+## Experiment Tracking (optional)
+
+Each reproduction can be recorded as one MLflow experiment run. Default store: `sqlite:///mlruns/mlflow.db`. Disable with `TRACKING_BACKEND=noop`.
+
+```bash
+mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
+```
+
+---
+
+## Integration Run (maintainers)
+
+```bash
+pixi run integration
+```
+
+Requires a configured API key. Results: `outputs/` and `logs/`.
 
 ---
 
@@ -45,78 +148,21 @@ pip install -r requirements.txt
 pixi run test
 ```
 
-Or with pip:
+Or after `pip install -e ".[dev]"`:
 
 ```bash
-PYTHONPATH=. python -m pytest tests/ -v
+python -m pytest tests/ -v
 ```
 
-Or with unittest:
-
-```bash
-PYTHONPATH=. python -m unittest discover -s tests -v
-```
-
-Current suite: **165 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
-
----
-
-## Running the Application
-
-```bash
-pixi run run
-```
-
-Or with pip:
-
-```bash
-PYTHONPATH=. python app.py
-```
-
-Set `PAPER_PATH` to point to a PDF file (default: `paper.pdf` in the project root).
-
----
-
-## API Key Configuration
-
-Without an API key, the pipeline uses mock LLM providers (deterministic fixtures).
-
-For real LLM calls, copy `.env.example` to `.env`:
-
-```bash
-OPENAI_API_KEY=sk-your-key
-OPENAI_BASE_URL=https://api.deepseek.com
-OPENAI_MODEL=deepseek-v4-pro
-```
-
-`config.py` loads `.env` automatically via `python-dotenv`.
-
-### Integration run (full pipeline)
-
-```bash
-pixi run integration
-```
-
-Or with pip:
-
-```bash
-PYTHONPATH=. python scripts/run_integration_m7_1.py
-```
-
-Requires a configured API key. Results are written to `outputs/` and `logs/`.
+Current suite: **419 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
 ## Recommended Reading Order
 
-1. [CURRENT_STATUS.md](CURRENT_STATUS.md) — what is implemented, benchmarks, and limitations
-2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system architecture
-3. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) — per-capability component reference
-4. [DEVELOPMENT.md](../DEVELOPMENT.md) — milestone workflow, freeze policy, commit conventions
-5. [adr/README.md](adr/README.md) — architecture decision records
-6. [reviews/README.md](reviews/README.md) — pointer to private work documents
-7. [CHANGELOG.md](../CHANGELOG.md) — release history
-8. [releases/v1.1.0.md](releases/v1.1.0.md) — v1.1.0 Foundation Release notes
-9. [release/v1.0.0.md](../release/v1.0.0.md) — v1.0.0 MVP release notes
-
-Working roadmaps and milestone design reviews are in `private/` (local). See [CONTRIBUTING.md § Documentation Policy](../CONTRIBUTING.md#documentation-policy).
+1. [CURRENT_STATUS.md](CURRENT_STATUS.md)
+2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md)
+3. [ROADMAP.md](../ROADMAP.md)
+4. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md)
+5. [releases/v1.2.0.md](releases/v1.2.0.md)
+6. [CHANGELOG.md](../CHANGELOG.md)

@@ -8,6 +8,8 @@ from omegaconf import DictConfig
 
 from configuration.models import (
     AppSettings,
+    DiscoveryConfig,
+    ExecutionPlanningConfig,
     LLMConfig,
     LoggingConfig,
     ParserConfig,
@@ -36,6 +38,12 @@ def _settings_from_config(cfg: DictConfig) -> AppSettings:
         parser=ParserConfig(
             backend=str(cfg.parser.backend),
             max_paper_text_chars=int(cfg.parser.max_paper_text_chars),
+        ),
+        discovery=DiscoveryConfig(
+            enabled=bool(cfg.discovery.enabled),
+        ),
+        execution_planning=ExecutionPlanningConfig(
+            enabled=bool(cfg.execution_planning.enabled),
         ),
         workflow=WorkflowConfig(
             max_review_iterations=int(cfg.workflow.max_review_iterations),

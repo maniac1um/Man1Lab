@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 from configuration.models import (
     AppSettings,
+    DiscoveryConfig,
+    ExecutionPlanningConfig,
     LLMConfig,
     LoggingConfig,
     ParserConfig,
@@ -34,6 +36,12 @@ class LegacySettingsProvider:
             parser=ParserConfig(
                 backend=os.getenv("PARSER_BACKEND", "docling"),
                 max_paper_text_chars=int(os.getenv("MAX_PAPER_TEXT_CHARS", "80000")),
+            ),
+            discovery=DiscoveryConfig(
+                enabled=os.getenv("DISCOVERY_ENABLED", "true").lower() == "true",
+            ),
+            execution_planning=ExecutionPlanningConfig(
+                enabled=os.getenv("EXECUTION_PLANNING_ENABLED", "true").lower() == "true",
             ),
             workflow=WorkflowConfig(
                 max_review_iterations=int(os.getenv("MAX_REVIEW_ITERATIONS", "3")),

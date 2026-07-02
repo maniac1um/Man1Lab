@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 
 from agents.coder_quality import build_framework_binding
+from models.execution_strategy import ExecutionStrategy
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.routing import TaskRoutingTable
 from models.task import TaskModel, TaskStep
@@ -12,7 +13,22 @@ from models.verification import VerificationResult
 from routing.task_router import TaskRouter
 
 
-def build_planner_user_content(analysis: PaperReproductionAnalysis) -> str:
+def build_planner_user_content(execution_strategy: ExecutionStrategy) -> str:
+    """Build planner context from committed ExecutionStrategy only."""
+    return (
+        "Committed execution strategy for task decomposition:\n\n"
+        f"Strategy:\n{execution_strategy.strategy.model_dump_json(indent=2)}\n\n"
+        f"Resource bindings:\n{execution_strategy.resource_bindings.model_dump_json(indent=2)}\n\n"
+        f"Reuse plan:\n{execution_strategy.reuse_plan.model_dump_json(indent=2)}\n\n"
+        f"Adaptation plan:\n{execution_strategy.adaptation_plan.model_dump_json(indent=2)}\n\n"
+        f"Generation plan:\n{execution_strategy.generation_plan.model_dump_json(indent=2)}\n\n"
+        f"Risk assessment:\n{execution_strategy.risk_assessment.model_dump_json(indent=2)}\n\n"
+        "Decompose engineering tasks that implement this strategy. "
+        "Do not choose repository, greenfield, adaptation, or reuse — those are already decided."
+    )
+
+
+def build_planner_legacy_user_content(analysis: PaperReproductionAnalysis) -> str:
     return (
         "Reproduction analysis for planning:\n\n"
         f"Metadata:\n{analysis.metadata.model_dump_json(indent=2)}\n\n"

@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "man1lab"
+version = "1.2.0"
+description = "Autonomous research paper reproduction platform"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "maniac1um"}]
+keywords = ["research", "reproduction", "machine-learning", "agents", "pipeline"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pymupdf>=1.24.0",
+    "docling>=2.0.0",
+    "openai>=1.0.0",
+    "anthropic>=0.40.0",
+    "python-dotenv>=1.0.0",
+    "hydra-core>=1.3.0",
+    "mlflow>=2.0.0",
+    "httpx>=0.28.0",
+    "typer>=0.15.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "build>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/maniac1um/Man1Lab"
+Repository = "https://github.com/maniac1um/Man1Lab"
+Documentation = "https://github.com/maniac1um/Man1Lab/blob/main/docs/GETTING_STARTED.md"
+
+[project.scripts]
+man1lab = "interfaces.cli.app:run_cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "man1lab*",
+    "application*",
+    "interfaces*",
+    "agents*",
+    "adapters*",
+    "configuration*",
+    "discovery*",
+    "execution*",
+    "execution_planning*",
+    "llm*",
+    "models*",
+    "planning*",
+    "ports*",
+    "prompt*",
+    "providers*",
+    "routing*",
+    "services*",
+    "tracking*",
+    "validation*",
+    "workflow*",
+    "workspace",
+]
+exclude = ["tests*", "scripts*"]
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["config"]

@@ -13,6 +13,16 @@ class ParserConfig:
 
 
 @dataclass(frozen=True)
+class DiscoveryConfig:
+    enabled: bool = True
+
+
+@dataclass(frozen=True)
+class ExecutionPlanningConfig:
+    enabled: bool = True
+
+
+@dataclass(frozen=True)
 class WorkflowConfig:
     max_review_iterations: int = 3
 
@@ -48,6 +58,8 @@ class AppSettings:
     prompts_dir: Path
     paper_path: Path
     parser: ParserConfig
+    discovery: DiscoveryConfig
+    execution_planning: ExecutionPlanningConfig
     workflow: WorkflowConfig
     llm: LLMConfig
     logging: LoggingConfig

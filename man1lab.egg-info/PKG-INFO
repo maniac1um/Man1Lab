@@ -1,0 +1,265 @@
+Metadata-Version: 2.4
+Name: man1lab
+Version: 1.2.0
+Summary: Autonomous research paper reproduction platform
+Author: maniac1um
+Project-URL: Homepage, https://github.com/maniac1um/Man1Lab
+Project-URL: Repository, https://github.com/maniac1um/Man1Lab
+Project-URL: Documentation, https://github.com/maniac1um/Man1Lab/blob/main/docs/GETTING_STARTED.md
+Keywords: research,reproduction,machine-learning,agents,pipeline
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.0
+Requires-Dist: pymupdf>=1.24.0
+Requires-Dist: docling>=2.0.0
+Requires-Dist: openai>=1.0.0
+Requires-Dist: anthropic>=0.40.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: hydra-core>=1.3.0
+Requires-Dist: mlflow>=2.0.0
+Requires-Dist: httpx>=0.28.0
+Requires-Dist: typer>=0.15.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: build>=1.0; extra == "dev"
+
+# Man1Lab
+
+**Autonomous research paper reproduction platform.**
+
+**Version:** v1.2.0  
+**Status:** Release Candidate — installable Python package with CLI and SDK
+
+Man1Lab reads a research PDF, extracts structured analysis, discovers external engineering resources, commits an execution strategy, plans engineering tasks, generates a reproduction repository, runs training, verifies results, reviews failures, and produces a final report.
+
+This project is an **active research prototype** for academic demonstration. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Paper Analysis** | Modular `PaperReproductionAnalysis` from PDF ([ADR-0009](docs/adr/ADR-0009-Analysis-Canonical-Artifact.md)) |
+| **Research Resource Discovery** | Evidence-backed resource resolution ([ADR-0013](docs/adr/ADR-0013-Research-Resource-Discovery.md)) |
+| **GitHub Discovery Provider** | First production external provider — collection, evidence, verification, ranking ([ADR-0016](docs/adr/ADR-0016-GitHub-Discovery-Provider.md)) |
+| **Execution Planning** | Engineering strategy before task decomposition ([ADR-0014](docs/adr/ADR-0014-Execution-Planning-Capability.md)) |
+| **Platform Facade** | Single entry point — `Man1Lab` coordinates all capabilities |
+| **CLI** | `man1lab` — init, doctor, reproduce, analyze, discover, plan, execute |
+| **Python SDK** | `from man1lab import Man1Lab` |
+| **Package Distribution** | `pip install man1lab` (PEP 621 / `pyproject.toml`) |
+| **Lifecycle Commands** | `man1lab init`, `man1lab doctor` — workspace and environment validation |
+| **Experiment Tracking** | Optional MLflow via thin port ([ADR-0012](docs/adr/ADR-0012-Experiment-Tracking-MLflow.md)) |
+
+---
+
+## Platform Architecture
+
+All user-facing interfaces delegate to the **Platform Facade**. The facade owns configuration, tracking, and workflow composition — interfaces never call agents or orchestrators directly.
+
+```text
+Interfaces
+    CLI  ·  Python SDK  ·  (Future MCP)  ·  (Future REST)
+                        ↓
+              Man1Lab (Platform Facade)
+                        ↓
+           TrackedWorkflowOrchestrator
+                        ↓
+    Parsing → Analysis → Discovery → Execution Planning
+                        ↓
+         Planner → Coder → Runner → Verification
+                        ↓
+              Reviewer → Reporter
+```
+
+**Canonical artifact pipeline (implemented):**
+
+```text
+Paper (PDF)
+    ↓
+PaperReproductionAnalysis
+    ↓
+ResearchResourceDiscovery
+    ↓
+ExecutionStrategy
+    ↓
+TaskModel → Workspace → ExecutionResult → ReportModel
+```
+
+Full design: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
+
+---
+
+## Installation
+
+### Pip (recommended for users)
+
+```bash
+pip install man1lab
+```
+
+From source:
+
+```bash
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
+pip install -e .
+```
+
+### Pixi (recommended for development)
+
+```bash
+git clone https://github.com/maniac1um/Man1Lab.git
+cd Man1Lab
+pixi install
+pixi run test
+```
+
+**Requirements:** Python 3.10+ (Pixi installs 3.12 by default)
+
+---
+
+## Quick Start
+
+```bash
+man1lab init              # workspace directories + .env template
+man1lab doctor            # validate environment
+man1lab reproduce paper.pdf
+```
+
+With Pixi: prefix commands with `pixi run` (e.g. `pixi run man1lab reproduce paper.pdf`).
+
+Configure LLM keys in `.env` after `init`. Optional: `GITHUB_TOKEN` for GitHub discovery.
+
+---
+
+## CLI Examples
+
+```bash
+man1lab init
+man1lab doctor
+man1lab reproduce paper.pdf
+man1lab analyze paper.pdf
+man1lab discover paper.pdf
+man1lab plan paper.pdf
+man1lab execute --strategy strategy.json --analysis analysis.json
+man1lab config
+man1lab version
+```
+
+Exit codes: `0` success · `1` platform failure · `2` invalid arguments
+
+---
+
+## Python SDK Examples
+
+```python
+from man1lab import Man1Lab
+
+client = Man1Lab()
+client.init()
+print(client.doctor())
+
+report = client.reproduce("paper.pdf")
+analysis = client.analyze("paper.pdf")
+discovery = client.discover(paper_path="paper.pdf")
+strategy = client.plan(paper_path="paper.pdf")
+
+print(client.version())
+print(client.configuration())
+```
+
+The SDK wraps the Platform Facade only — no direct workflow imports.
+
+---
+
+## Current Capabilities
+
+| Capability | Output | Status |
+|------------|--------|--------|
+| Analysis (Reader) | `PaperReproductionAnalysis` | ✅ |
+| Discovery | `ResearchResourceDiscovery` | ✅ |
+| GitHub Provider | Collection · Evidence · Verification · Ranking | ✅ |
+| Execution Planning | `ExecutionStrategy` | ✅ |
+| Planner | `TaskModel` | ✅ |
+| Coder | `Workspace` | ✅ |
+| Runner | `ExecutionResult` | ✅ |
+| Verification | `VerificationResult` | ✅ |
+| Reviewer | `ReviewReport` | ✅ |
+| Reporter | `ReportModel` | ✅ |
+| Platform Facade / CLI / SDK | — | ✅ |
+
+Details: [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md)
+
+---
+
+## Roadmap
+
+| Version | Focus | Status |
+|---------|-------|--------|
+| v1.0 | Analysis · Planner · Execution | ✅ Complete |
+| v1.1 | Foundation — Docling · Hydra · Pixi · MLflow | ✅ Complete |
+| **v1.2** | **Platform — CLI · SDK · Discovery · GitHub · Execution Planning** | **✅ RC** |
+| v1.3 | Repository Understanding | Planned |
+| v1.4 | Repository Adaptation | Planned |
+| v1.5 | Knowledge Memory | Planned |
+
+Full roadmap: [ROADMAP.md](ROADMAP.md)
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [Getting Started](docs/GETTING_STARTED.md) | Install → init → doctor → reproduce |
+| [Current Status](docs/CURRENT_STATUS.md) | Capabilities, tests, limitations |
+| [Architecture](docs/architecture/ARCHITECTURE.md) | Platform layers and artifacts |
+| [Release v1.2.0](docs/releases/v1.2.0.md) | This release |
+| [Changelog](CHANGELOG.md) | Version history |
+| [ADRs](docs/adr/README.md) | Architecture decisions |
+| [Development](DEVELOPMENT.md) | Maintainer workflow |
+
+---
+
+## Tests
+
+**419** unit tests passing (`pixi run test`).
+
+---
+
+## Maintainer Notes
+
+`app.py` and `pixi run run` remain as **legacy composition roots** for maintainers only. Users and integrators should use **CLI** or **Python SDK**.
+
+```bash
+pixi run integration   # full pipeline integration (requires API key)
+```
+
+---
+
+## Citation
+
+```bibtex
+@software{man1lab_2026,
+  author       = {maniac1um},
+  title        = {Man1Lab: An Autonomous Research Paper Reproduction Platform},
+  year         = {2026},
+  version      = {1.2.0},
+  url          = {https://github.com/maniac1um/Man1Lab},
+  note         = {Man1Lab v1.2.0 Platform Capability Release.}
+}
+```
+
+---
+
+## Maintainer
+
+**maniac1um** — sole author and maintainer.

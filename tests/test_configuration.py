@@ -53,6 +53,8 @@ class ConfigFacadeTest(unittest.TestCase):
                 prompts_dir=Path("prompts"),
                 paper_path=Path("custom.pdf"),
                 parser=settings.parser,
+                discovery=settings.discovery,
+                execution_planning=settings.execution_planning,
                 workflow=settings.workflow,
                 llm=settings.llm,
                 logging=settings.logging,

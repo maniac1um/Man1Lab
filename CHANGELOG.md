@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-03
+
+**Platform Capability Release** — unified installable platform with public CLI and Python SDK; Discovery and Execution Planning integrated into the workflow.
+
+### Added
+
+- **Platform Facade** — `Man1Lab` as single composition root for all interfaces
+- **CLI** — `man1lab` Typer application (`init`, `doctor`, `reproduce`, `analyze`, `discover`, `plan`, `execute`, `config`, `version`)
+- **Python SDK** — `pip install man1lab` · `from man1lab import Man1Lab`
+- **Package distribution** — PEP 621 `pyproject.toml`, console script, `python -m man1lab`
+- **Lifecycle commands** — `man1lab init`, `man1lab doctor`
+- **Research Resource Discovery** — `DiscoveryWorkflow` → `ResearchResourceDiscovery` ([ADR-0013](docs/adr/ADR-0013-Research-Resource-Discovery.md))
+- **GitHub Discovery Provider** — collection, evidence, verification, ranking ([ADR-0016](docs/adr/ADR-0016-GitHub-Discovery-Provider.md))
+- **Execution Planning** — `ExecutionPlanningWorkflow` → `ExecutionStrategy` ([ADR-0014](docs/adr/ADR-0014-Execution-Planning-Capability.md))
+- **Strategy-driven Planner** — `TaskModel` from `ExecutionStrategy`
+- Release notes: [docs/releases/v1.2.0.md](docs/releases/v1.2.0.md)
+- Roadmap: [ROADMAP.md](ROADMAP.md)
+
+### Changed
+
+- **Recommended entry point** — `man1lab reproduce` or Python SDK; `app.py` retained for maintainers only
+- Planner consumes `ExecutionStrategy` when execution planning is enabled (default)
+
+### Migration
+
+- Replace `PYTHONPATH=. python app.py` with `man1lab reproduce paper.pdf` or SDK `client.reproduce(...)`
+- Hydra flags `discovery.enabled` and `execution_planning.enabled` default to enabled; set `false` for transitional legacy paths
+
+### Tests
+
+- 419 unit tests passing
+
+[1.2.0]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.2.0
+
 ## [1.1.0] - 2026-06-30
 
 **Foundation Release** — platform infrastructure complete. Not a feature-expansion release.

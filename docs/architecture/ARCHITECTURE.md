@@ -1,6 +1,6 @@
 # Man1Lab Architecture
 
-**Version:** v1.1.0  
+**Version:** v1.2.0  
 **Status:** Living document — platform-level design  
 **Audience:** Architects, contributors, and long-term maintainers  
 **Horizon:** 3–5 years
@@ -35,9 +35,9 @@ The platform treats a paper as the **source of truth** for what should be reprod
 
 | Horizon | Focus |
 |---------|--------|
-| **v1.0.x** | **MVP** — one paper in, one reproduction pipeline out |
-| **v1.1.x (now)** | **Platform Foundation** — infrastructure adoption, canonical analysis artifact, governance |
-| **v1.2+ (next)** | **Platform Capability** — repository discovery, environment generation, verification, failure recovery |
+| **v1.1.x** | **Foundation** — infrastructure adoption, canonical analysis artifact |
+| **v1.2.x (now)** | **Platform Capability** — CLI, SDK, Discovery, Execution Planning, GitHub Provider |
+| **v1.3+ (next)** | Repository Understanding → Adaptation → Knowledge Memory |
 
 The architecture is intentionally **paper-first** and **analysis-first** so that future capabilities attach to stable layers rather than re-implementing paper understanding in every feature.
 
@@ -69,6 +69,10 @@ Parsing Layer
     ↓
 Analysis Layer
     ↓
+Discovery Layer
+    ↓
+Execution Planning Layer
+    ↓
 Planning Layer
     ↓
 Implementation Layer
@@ -81,6 +85,69 @@ Reporting Layer
 ```
 
 Cross-cutting concerns — orchestration, prompt infrastructure, validation — support layers but are not substitutes for them.
+
+---
+
+### Platform Interface Layer
+
+| | |
+|--|--|
+| **Responsibility** | Provide the **only public entry** to Man1Lab for all future interfaces |
+| **Input** | User intent (paper path, partial operations, configuration) |
+| **Output** | Typed platform artifacts (`ReportModel`, `PaperReproductionAnalysis`, etc.) |
+| **Does** | Load configuration (Hydra), compose dependencies, initialize tracking, delegate to workflow |
+| **Does NOT** | Implement analysis, discovery, planning, coding, or execution logic |
+
+Future interfaces share this layer:
+
+```text
+CLI  ·  Python SDK  ·  (Future MCP)  ·  (Future REST)
+                    ↓
+          Man1Lab (Platform Facade)
+                    ↓
+       TrackedWorkflowOrchestrator
+                    ↓
+Parsing → Analysis → Discovery → Execution Planning
+                    ↓
+ Planner → Coder → Runner → Verification → Review → Report
+```
+
+Legacy maintainer entry: `app.py` — not a public interface.
+
+**CLI (v1.2):** `interfaces/cli/` — Typer commands delegate exclusively to `Man1Lab`.
+
+```text
+man1lab init      → Man1Lab.init()
+man1lab doctor    → Man1Lab.doctor()
+man1lab reproduce → Man1Lab.reproduce()
+man1lab analyze   → Man1Lab.analyze()
+man1lab discover  → Man1Lab.discover()
+man1lab plan      → Man1Lab.plan_from_paper()
+man1lab execute   → Man1Lab.execute_from_paths()
+man1lab config    → Man1Lab.configuration()
+man1lab version   → Man1Lab.version()
+```
+
+**Package distribution (v1.2 RC):** `pip install man1lab`, console script `man1lab`, module entry `python -m man1lab`. Public exports: `Man1Lab`, `PLATFORM_VERSION`, `__version__`.
+
+Future: `interfaces/mcp/`, `interfaces/api/` (reserved, not implemented).
+
+**Python SDK (v1.2):** `interfaces/sdk/` + `man1lab/` package — `from man1lab import Man1Lab`.
+
+Public API (`application.facade.Man1Lab`):
+
+| Method | Operation |
+|--------|-----------|
+| `reproduce()` | Full workflow |
+| `analyze()` | Analysis only |
+| `discover()` | Discovery only |
+| `plan()` | Execution planning only |
+| `execute()` | Implementation + runtime from existing strategy |
+| `doctor()` | Environment validation |
+| `version()` | Platform version |
+| `configuration()` | Effective runtime settings |
+
+Interfaces must **never** call `WorkflowOrchestrator` directly.
 
 ---
 
@@ -114,20 +181,54 @@ It is **not** a task plan, specification for code generation, or execution resul
 
 ---
 
+### Discovery Layer
+
+| | |
+|--|--|
+| **Responsibility** | Collect, verify, and rank external resources that may satisfy reproduction needs |
+| **Input** | `PaperReproductionAnalysis` (read-only) |
+| **Output** | `ResearchResourceDiscovery` |
+| **Does** | Candidate collection, evidence gathering, verification, ranking |
+| **Does NOT** | Choose engineering strategy, decompose tasks, generate code, or execute repositories |
+
+See [ADR-0016](../adr/ADR-0016-GitHub-Discovery-Provider.md).
+
+---
+
+### Execution Planning Layer
+
+| | |
+|--|--|
+| **Responsibility** | Commit engineering strategy before task decomposition |
+| **Input** | `PaperReproductionAnalysis`, `ResearchResourceDiscovery` (both read-only) |
+| **Output** | `ExecutionStrategy` |
+| **Does** | Strategy decision, resource binding, reuse/adaptation/generation planning, risk assessment |
+| **Does NOT** | Re-run discovery, decompose tasks, generate code, or execute repositories |
+
+See [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability.md).
+
+---
+
 ### Planning Layer
 
 | | |
 |--|--|
-| **Responsibility** | Transform analysis into an **ordered engineering task graph** |
-| **Input** | `PaperReproductionAnalysis` |
+| **Responsibility** | Transform committed strategy into an **ordered engineering task graph** |
+| **Input** | `ExecutionStrategy` |
 | **Output** | `TaskModel` — executable engineering steps with dependencies |
 | **Does** | Decompose reproduction into concrete steps (environment, data, model, training, evaluation, etc.) |
-| **Does NOT** | Re-read the PDF, rediscover paper facts, write source code, or execute scripts |
+| **Does NOT** | Choose repository, greenfield, adaptation, or reuse; re-read the PDF; write source code; execute scripts |
 
-Planning answers: *In what order should engineering work happen?*  
-It does **not** re-understand the paper — that belongs to Analysis.
+Planning answers: *In what order should engineering work happen given the committed strategy?*  
+It does **not** infer engineering strategy — that belongs to Execution Planning.
 
 See [ADR-0004](../adr/ADR-0004-Planning-Strategy.md) and [ADR-0005](../adr/ADR-0005-Planner-Capability.md).
+
+---
+
+### Planning Layer (legacy note)
+
+When `execution_planning.enabled=false`, the orchestrator uses a transitional `Planner.run_legacy(analysis)` path. Strategy decisions are not produced; this path exists for compatibility only.
 
 ---
 
@@ -215,11 +316,32 @@ All agents and services downstream of Analysis consume this object (directly or 
 | **No duplicate understanding** | The paper is interpreted once at Analysis; Planner and Implementation read the same facts |
 | **Consistent prompts** | Context builders derive views from one schema instead of ad hoc field subsets |
 | **Clear boundaries** | Parsing output (`ParsedDocument`) and planning output (`TaskModel`) remain separate artifact types |
-| **Future extensibility** | Repository discovery, environment discovery, and benchmark modules attach to analysis modules and gaps — not a second paper parse |
+| **Future extensibility** | Discovery and future modules attach to analysis modules and gaps — not a second paper parse |
 
 Schema versioning (`schema_version`) allows evolution without breaking the architectural rule: **one canonical analysis artifact per paper run**.
 
 See [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
+
+### Platform capability artifacts (v1.2+)
+
+After Analysis, additional **canonical artifacts** carry platform capability outputs:
+
+| Artifact | Layer | Input | Purpose |
+|----------|-------|-------|---------|
+| **`ResearchResourceDiscovery`** | Discovery | `PaperReproductionAnalysis` | Evidence-backed external resource resolution |
+| **`ExecutionStrategy`** | Execution Planning | Analysis + Discovery | Committed engineering strategy before task decomposition |
+
+Downstream planning consumes **`ExecutionStrategy`**, not raw discovery rankings.
+
+### Roadmap artifacts (planned — not implemented)
+
+| Artifact | Milestone | Notes |
+|----------|-----------|-------|
+| **`RepositoryKnowledge`** | v1.3 | Semantic repo structure mapping |
+
+`ExecutionResult` and `ReportModel` are **implemented** runtime/report outputs at Execution and Reporting layers.
+
+See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability.md), [ROADMAP.md](../../ROADMAP.md).
 
 ---
 
@@ -241,6 +363,18 @@ See [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
                           └────────┬────────┘
                                    ↓
                     PaperReproductionAnalysis  ← canonical domain object
+                                   ↓
+                          ┌─────────────────┐
+                          │ Discovery Layer │
+                          └────────┬────────┘
+                                   ↓
+                    ResearchResourceDiscovery
+                                   ↓
+                    ┌──────────────────────────┐
+                    │ Execution Planning Layer │
+                    └────────┬─────────────────┘
+                                   ↓
+                          ExecutionStrategy
                                    ↓
                           ┌─────────────────┐
                           │ Planning Layer  │
@@ -282,7 +416,9 @@ See [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
 |------|----------|----------|
 | **Parsing** | `ParsedDocument` | PDF bytes |
 | **Analysis** | `PaperReproductionAnalysis` | `ParsedDocument` |
-| **Planning** | `TaskModel` | `PaperReproductionAnalysis` |
+| **Discovery** | `ResearchResourceDiscovery` | `PaperReproductionAnalysis` |
+| **Execution Planning** | `ExecutionStrategy` | `PaperReproductionAnalysis`, `ResearchResourceDiscovery` |
+| **Planning** | `TaskModel` | `ExecutionStrategy` |
 | **Implementation** | `Workspace` | `PaperReproductionAnalysis`, `TaskModel` |
 | **Execution** | `ExecutionResult` | `Workspace` |
 | **Verification** | `VerificationResult` | `Workspace`, `ExecutionResult`, analysis goal/evaluation (criteria) |
@@ -293,37 +429,40 @@ See [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
 
 ---
 
-## 6. Current Scope (v1.x)
+## 6. Current Scope (v1.2)
 
 ### Completed
 
-| Layer | Status | Notes |
-|-------|--------|-------|
-| **Parsing** | ✅ Complete | Docling default; PyMuPDF fallback; adapter architecture |
-| **Analysis** | ✅ Complete | `PaperReproductionAnalysis`; pipeline-wide migration (Phase 2.4) |
-| **Planning** | ✅ Implemented | Consumes modular analysis; produces `TaskModel` |
-| **Implementation** | ✅ Implemented | Repository generation with validation and acceptance gate |
-| **Execution** | ✅ Implemented | Environment prep + script execution |
-| **Verification** | ✅ Implemented | Deterministic checks feeding review |
-| **Reporting** | ✅ Implemented | Workflow summary report |
-| **Experiment tracking** | ✅ Implemented | MLflow via `ExperimentTracker` port; optional noop backend |
+| Layer / Interface | Status | Notes |
+|-------------------|--------|-------|
+| **Platform Facade** | ✅ Complete | `Man1Lab` — all interfaces |
+| **CLI / SDK / Package** | ✅ Complete | `pip install man1lab` |
+| **Parsing** | ✅ Complete | Docling default; PyMuPDF fallback |
+| **Analysis** | ✅ Complete | `PaperReproductionAnalysis` |
+| **Discovery** | ✅ Complete | `ResearchResourceDiscovery`; GitHub Provider |
+| **Execution Planning** | ✅ Complete | `ExecutionStrategy` |
+| **Planning** | ✅ Complete | Strategy-driven `TaskModel` |
+| **Implementation** | ✅ Complete | GQ-1 + RAG |
+| **Execution** | ✅ Complete | Environment prep + script run |
+| **Verification / Review / Report** | ✅ Complete | End-to-end |
+| **Experiment tracking** | ✅ Complete | MLflow via port |
 
 ### In progress / partial
 
 | Item | Status |
 |------|--------|
-| Review loop re-implementation | Patch plan produced; automatic Citation retry not enabled |
-| Analysis prompt alignment | Schema landed; prompt refinement for gaps/scope ongoing |
-| Full training reproduction success | Pipeline runs end-to-end; successful training not guaranteed |
+| Review loop re-implementation | Patch plan produced; automatic Coder/Runner retry not enabled |
+| Full training reproduction success | Pipeline runs end-to-end; success not guaranteed |
+| MCP / REST interfaces | Reserved layout only |
 
-### Planned (architecture reserved, not yet productized)
+### Planned (roadmap)
 
-| Capability | Relationship to architecture |
-|------------|------------------------------|
-| **Repository discovery** | Consumes `reproduction_gaps` + metadata; does not replace Analysis |
-| **Environment discovery** | Resolves dependencies at runtime; does not rewrite analysis |
-| **Continuous research** | Lineage and iteration atop existing artifacts |
-| **Benchmark analysis** | Extends evaluation module consumption |
+| Capability | Milestone |
+|------------|-----------|
+| **Repository Understanding** | v1.3 — `RepositoryKnowledge` artifact |
+| **Repository Adaptation** | v1.4 |
+| **Knowledge Memory** | v1.5 |
+| **Failure recovery loop** | Future — re-invoke Coder/Runner on patch |
 
 ---
 
@@ -331,9 +470,18 @@ See [ADR-0009](../adr/ADR-0009-Analysis-Canonical-Artifact.md).
 
 Future capabilities **attach to the same layer cake**. They consume `PaperReproductionAnalysis`; they do not require re-designing Parsing or re-defining the canonical object.
 
+### Implemented (v1.2)
+
 | Extension | Layer | Consumes from analysis |
 |-----------|-------|----------------------|
-| **Repository discovery** | Post-analysis, pre- or co-planning | `reproduction_gaps` (repository), `resources.external_resources`, metadata |
+| **Research Resource Discovery** | Discovery | `reproduction_gaps`, `resources.external_resources`, metadata → `ResearchResourceDiscovery` |
+| **Execution Planning** | Execution Planning | Analysis + Discovery → `ExecutionStrategy` |
+
+### Planned (roadmap)
+
+| Extension | Layer | Consumes from analysis |
+|-----------|-------|----------------------|
+| **Repository Understanding** | v1.3 | Selected repository → `RepositoryKnowledge` |
 | **Environment discovery** | Execution support | `resources.dependencies`, method framework |
 | **Benchmark evaluation** | Evaluation + verification | `evaluation.metrics`, `evaluation.benchmarks`, `goal.scope` |
 | **Paper extension** | New workflow variant | `goal`, `evaluation`, lineage fields (future) |
@@ -361,6 +509,9 @@ This document states **structure and boundaries**. Detailed rationale lives in A
 | [ADR-0010](../adr/ADR-0010-Hydra-Configuration.md) | Hydra at configuration layer only | Infrastructure; not duplicated here — see [infrastructure.md](infrastructure.md) |
 | [ADR-0011](../adr/ADR-0011-Pixi-Environment.md) | Pixi at repository environment layer only | Infrastructure; not duplicated here — see [infrastructure.md](infrastructure.md) |
 | [ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md) | MLflow at experiment tracking layer only | Infrastructure; thin wrapper at composition root |
+| [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md) | Discovery capability and artifact | Discovery layer |
+| [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability.md) | Execution Planning capability | Execution Planning layer |
+| [ADR-0016](../adr/ADR-0016-GitHub-Discovery-Provider.md) | GitHub as first external Discovery Provider | Discovery adapters |
 
 When this document and an ADR disagree, **the ADR wins** for the specific decision; update this document in the same documentation pass.
 
@@ -370,10 +521,11 @@ When this document and an ADR disagree, **the ADR wins** for the specific decisi
 
 | Version | Name | Summary |
 |---------|------|---------|
-| **v1.1.0** | Foundation Release | Platform foundation complete. Analysis layer canonical artifact is `PaperReproductionAnalysis`. Infrastructure (Docling, Hydra, Pixi, MLflow) adopted via Provider / Adapter ports. Documentation and infrastructure governance established. |
-| v1.0.0 | MVP | End-to-end single-paper reproduction pipeline with real LLM integration, repository generation, execution, verification, review, and reporting. |
+| **v1.2.0** | Platform Capability | CLI, SDK, package distribution, Discovery + Execution Planning integrated, GitHub Provider, strategy-driven Planner |
+| v1.1.0 | Foundation Release | Infrastructure adoption; `PaperReproductionAnalysis`; Docling, Hydra, Pixi, MLflow |
+| v1.0.0 | MVP | End-to-end reproduction pipeline |
 
-Release notes: [releases/v1.1.0.md](../releases/v1.1.0.md) · [release/v1.0.0.md](../../release/v1.0.0.md)
+Release notes: [releases/v1.2.0.md](../releases/v1.2.0.md) · [releases/v1.1.0.md](../releases/v1.1.0.md) · [release/v1.0.0.md](../../release/v1.0.0.md)
 
 ---
 
@@ -388,7 +540,7 @@ Man1Lab v1.x explicitly **does not** aim to:
 | **Replace researcher judgment** | Verification checks engineering signals; scientific validity remains human-owned |
 | **Open-ended exploration** | Stages are bounded; there is no free-form “research agent” browsing literature |
 | **Infer beyond the paper** | Analysis records gaps instead of inventing missing hyperparameters, URLs, or methods |
-| **Search the open web during analysis** | Repository and resource discovery are separate future layers |
+| **Search the open web during analysis** | Resource discovery is a separate Discovery layer ([ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md)) |
 | **Guarantee SOTA reproduction accuracy** | The platform targets engineering reproducibility infrastructure, not benchmark leadership |
 | **Multi-paper autonomous research programs** | v1.x is single-paper reproduction; multi-paper orchestration is out of scope |
 | **Human-in-the-loop product UX** | Not a collaborative IDE; interactive steering is future work |
@@ -407,4 +559,4 @@ Non-goals are **features intentionally deferred or excluded**, not missing bugs.
 | Backend swap (e.g. parser) | §3 Parsing only | Yes |
 | Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
 
-**Last aligned with:** Man1Lab v1.1.0 — Foundation Release (Parsing + Analysis + Infrastructure adoption)
+**Last aligned with:** Man1Lab v1.2.0 — Platform Capability Release

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import tempfile
 from pathlib import Path
 
 import config
@@ -56,4 +58,28 @@ class TrackedWorkflowOrchestrator(WorkflowOrchestrator):
                 last = history.stages[-1]
                 tracker.log_metric("duration_seconds", last.duration_seconds)
                 tracker.set_tag("status", last.status)
+            self._log_stage_artifacts(stage, result)
             return result
+
+    def _log_stage_artifacts(self, stage: PipelineStage, result: object) -> None:
+        tracker = self._experiment_tracker
+        if stage == PipelineStage.DISCOVERY:
+            from models.research_resource_discovery import ResearchResourceDiscovery
+
+            if isinstance(result, ResearchResourceDiscovery):
+                tracker.set_tag("discovery_status", result.metadata.status.value)
+                tracker.log_metric("discovery_candidate_count", float(result.metadata.candidate_count))
+                self._log_json_artifact(result.model_dump(mode="json"), "discovery.json")
+        if stage == PipelineStage.EXECUTION_PLANNING:
+            from models.execution_strategy import ExecutionStrategy
+
+            if isinstance(result, ExecutionStrategy):
+                tracker.set_tag("strategy_posture", result.metadata.strategy_posture.value)
+                tracker.log_metric("binding_count", float(result.metadata.binding_count))
+                self._log_json_artifact(result.model_dump(mode="json"), "execution_strategy.json")
+
+    def _log_json_artifact(self, payload: object, filename: str) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / filename
+            path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            self._experiment_tracker.log_artifact(path)

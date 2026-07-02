@@ -1,6 +1,6 @@
 # Documentation Index
 
-Navigation hub for Man1Lab v1.1.0 documentation.
+Navigation hub for Man1Lab v1.2.0 documentation.
 
 **Principle:** Current documents answer *"What does the project do today?"* Historical reviews answer *"How did the project evolve?"*
 
@@ -10,11 +10,13 @@ Navigation hub for Man1Lab v1.1.0 documentation.
 
 | Document | Purpose |
 |----------|---------|
-| [GETTING_STARTED.md](GETTING_STARTED.md) | Install, run tests, configure API keys, reading order |
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Install, init, doctor, reproduce; CLI and SDK workflow |
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **Single source of truth** — capabilities, pipeline, benchmarks, limitations |
-| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.1.0) |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.2.0) |
+| [ROADMAP.md](../ROADMAP.md) | Completed milestones and planned work |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Research prototype — issues welcome, PRs not accepted |
 | [releases/README.md](releases/README.md) | Release history |
+| [releases/v1.2.0.md](releases/v1.2.0.md) | v1.2.0 Platform Capability Release notes |
 | [releases/v1.1.0.md](releases/v1.1.0.md) | v1.1.0 Foundation Release notes |
 | [release/v1.0.0.md](../release/v1.0.0.md) | v1.0.0 MVP release notes |
 | [DEVELOPMENT.md](../DEVELOPMENT.md) | Engineering workflow, architecture freeze, commit policy |
@@ -25,9 +27,9 @@ Navigation hub for Man1Lab v1.1.0 documentation.
 
 | Document | Purpose |
 |----------|---------|
-| [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) | System architecture, agent boundaries, pipeline design |
+| [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Platform architecture, interfaces, canonical artifacts |
 | [architecture/infrastructure.md](architecture/infrastructure.md) | Infrastructure governance, adoption matrix, native vs external boundaries |
-| [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) | Per-capability component reference (v1.1.0) |
+| [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md) | Per-capability component reference (partial refresh for v1.1 detail) |
 
 Root pointer: [ARCHITECTURE.md](../ARCHITECTURE.md)
 
@@ -39,8 +41,9 @@ Architecture Decision Records document significant design choices.
 
 | Resource | Purpose |
 |----------|---------|
-| [adr/README.md](adr/README.md) | ADR index, template, and when to write an ADR |
-| [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) – [ADR-0011](adr/ADR-0011-Pixi-Environment.md) | Accepted decisions |
+| [adr/README.md](adr/README.md) | ADR index, template, platform capability overview |
+| [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) – [ADR-0012](adr/ADR-0012-Experiment-Tracking-MLflow.md) | Accepted infrastructure and pipeline decisions |
+| [ADR-0013](adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](adr/ADR-0014-Execution-Planning-Capability.md), [ADR-0016](adr/ADR-0016-GitHub-Discovery-Provider.md) | Platform capability ADRs (Draft until release tag) |
 
 ---
 
@@ -53,7 +56,6 @@ Milestone reviews, audits, benchmarks, roadmaps, and adoption research live in *
 | Roadmaps | `private/roadmap/` |
 | Benchmarks | `private/benchmark/` |
 | Audits | `private/audit/` |
-| Adoption reviews | `private/adoption-review/` |
 
 ---
 
@@ -61,7 +63,7 @@ Milestone reviews, audits, benchmarks, roadmaps, and adoption research live in *
 
 | Resource | Purpose |
 |----------|---------|
-| [api/README.md](api/README.md) | Public API contract summary (v1.1.0) |
+| [api/README.md](api/README.md) | Public API contract summary (facade methods; may lag CLI) |
 
 ---
 
@@ -69,7 +71,7 @@ Milestone reviews, audits, benchmarks, roadmaps, and adoption research live in *
 
 | Document | Purpose |
 |----------|---------|
-| [README.md](../README.md) | Project introduction and quick links |
+| [README.md](../README.md) | Project homepage — CLI, SDK, quick start |
 
 ---
 
@@ -88,9 +90,8 @@ docs/
 ├── api/              → Public API contracts
 ├── GETTING_STARTED.md
 ├── CURRENT_STATUS.md
-└── …
-DEVELOPMENT.md        → Developer guide
-release/              → Release notes
+└── releases/           → Release notes
+ROADMAP.md              → Roadmap (root)
 ```
 
 **Principle:** GitHub stores **final decisions** and **formal documentation** only.
@@ -103,7 +104,7 @@ Research process, audits, benchmarks, and drafts — **not** in Git:
 private/
 ├── adoption-review/  → Technology Adoption Reviews (Docling, MLflow, …)
 ├── audit/            → Architecture audit reports
-├── benchmark/        → Benchmark run reports
+├── benchmark/          → Benchmark run reports
 ├── design/
 │   ├── drafts/       → Draft designs
 │   ├── migrations/   → Phase migration reports

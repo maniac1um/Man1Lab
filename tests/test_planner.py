@@ -77,7 +77,7 @@ class PlannerTest(unittest.TestCase):
         builder = FakePromptBuilder()
         llm = FakeLLMProvider()
         planner = Planner(prompt_builder=builder, llm=llm)
-        planner.run(_sample_analysis())
+        planner.run_legacy(_sample_analysis())
         self.assertEqual(planner._last_prompt, "PLANNER SYSTEM PROMPT")
 
     def test_planner_invokes_llm_and_response_parser(self) -> None:
@@ -88,7 +88,7 @@ class PlannerTest(unittest.TestCase):
             llm=llm,
             response_parser=parser,
         )
-        task = planner.run(_sample_analysis())
+        task = planner.run_legacy(_sample_analysis())
 
         self.assertTrue(llm.complete_called)
         self.assertIn("Goal:", llm.messages[1].content)
@@ -109,11 +109,11 @@ class PlannerTest(unittest.TestCase):
             response_parser=InvalidDependencyParser(),
         )
         with self.assertRaises(TaskValidationError):
-            planner.run(_sample_analysis())
+            planner.run_legacy(_sample_analysis())
 
     def test_planner_produces_structured_task_dict_with_mock_llm(self) -> None:
         planner = Planner()
-        planner.run(_sample_analysis())
+        planner.run_legacy(_sample_analysis())
         extracted = planner._last_extracted
 
         self.assertEqual(
@@ -133,7 +133,7 @@ class PlannerTest(unittest.TestCase):
             llm=FakeLLMProvider(),
         )
         with patch("pathlib.Path.read_text") as read_text:
-            planner.run(_sample_analysis())
+            planner.run_legacy(_sample_analysis())
             read_text.assert_not_called()
 
 

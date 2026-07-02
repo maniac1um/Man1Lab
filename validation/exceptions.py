@@ -6,6 +6,14 @@ class AnalysisValidationError(ValueError):
     """Raised when extracted reproduction analysis data fails validation."""
 
 
+class DiscoveryValidationError(ValueError):
+    """Raised when discovery artifact data fails validation."""
+
+
+class ExecutionStrategyValidationError(ValueError):
+    """Raised when execution strategy artifact data fails validation."""
+
+
 class TaskValidationError(ValueError):
     """Raised when extracted task data fails validation."""
 

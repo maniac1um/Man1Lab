@@ -12,6 +12,8 @@ from models.workspace import Workspace
 
 class PipelineStage(str, Enum):
     READER = "Reader"
+    DISCOVERY = "Discovery"
+    EXECUTION_PLANNING = "ExecutionPlanning"
     PLANNER = "Planner"
     CODER = "Coder"
     RUNNER = "Runner"

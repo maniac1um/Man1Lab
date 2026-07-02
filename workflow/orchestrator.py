@@ -8,6 +8,9 @@ from agents.reader import Reader
 from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
+from discovery.empty import build_empty_discovery
+from discovery.workflow import DiscoveryWorkflow
+from execution_planning.workflow import ExecutionPlanningWorkflow
 from models.report import ReportModel, StageRecord, WorkflowHistory
 from planning.patch_planner import PatchPlanner
 from services.verification_service import VerificationService
@@ -27,6 +30,11 @@ class WorkflowOrchestrator:
         workspace_manager: WorkspaceManager,
         verification_service: VerificationService | None = None,
         patch_planner: PatchPlanner | None = None,
+        discovery_workflow: DiscoveryWorkflow | None = None,
+        execution_planning_workflow: ExecutionPlanningWorkflow | None = None,
+        *,
+        discovery_enabled: bool = True,
+        execution_planning_enabled: bool = True,
     ) -> None:
         self._reader = reader
         self._planner = planner
@@ -37,6 +45,12 @@ class WorkflowOrchestrator:
         self._workspace_manager = workspace_manager
         self._verification_service = verification_service or VerificationService()
         self._patch_planner = patch_planner or PatchPlanner()
+        self._discovery_workflow = discovery_workflow or DiscoveryWorkflow.default()
+        self._execution_planning_workflow = (
+            execution_planning_workflow or ExecutionPlanningWorkflow.default()
+        )
+        self._discovery_enabled = discovery_enabled
+        self._execution_planning_enabled = execution_planning_enabled
 
     def run(self, paper_path: Path) -> ReportModel:
         context = PipelineContext(paper_path=str(paper_path))
@@ -47,11 +61,31 @@ class WorkflowOrchestrator:
             history,
             lambda: self._reader.run(paper_path),
         )
-        history.task = self._run_stage(
-            PipelineStage.PLANNER,
+        history.discovery = self._run_stage(
+            PipelineStage.DISCOVERY,
             history,
-            lambda: self._planner.run(history.analysis),
+            lambda: self._run_discovery(history.analysis),
         )
+        if self._execution_planning_enabled:
+            history.execution_strategy = self._run_stage(
+                PipelineStage.EXECUTION_PLANNING,
+                history,
+                lambda: self._execution_planning_workflow.run(
+                    history.analysis,
+                    history.discovery,
+                ),
+            )
+            history.task = self._run_stage(
+                PipelineStage.PLANNER,
+                history,
+                lambda: self._planner.run(history.execution_strategy),
+            )
+        else:
+            history.task = self._run_stage(
+                PipelineStage.PLANNER,
+                history,
+                lambda: self._planner.run_legacy(history.analysis),
+            )
         history.workspace = self._run_stage(
             PipelineStage.CODER,
             history,
@@ -135,3 +169,8 @@ class WorkflowOrchestrator:
         )
         print(f"[{agent_name}] {status} ({duration:.2f}s)")
         return result
+
+    def _run_discovery(self, analysis):
+        if not self._discovery_enabled:
+            return build_empty_discovery(analysis)
+        return self._discovery_workflow.run(analysis)

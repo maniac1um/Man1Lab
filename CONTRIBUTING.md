@@ -24,9 +24,10 @@ Architecture, workflow design, frozen interfaces, and capability scope are **mai
 
 | Document | Purpose |
 |----------|---------|
-| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install and run |
+| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install via pip or Pixi; `man1lab init`, `doctor`, `reproduce` |
 | [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) | Current capabilities and limitations |
-| [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | System design |
+| [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | Platform architecture and canonical artifacts |
+| [ROADMAP.md](ROADMAP.md) | Completed and planned milestones |
 | [docs/reviews/README.md](docs/reviews/README.md) | Pointer to private work documents (migrated) |
 
 ---
@@ -41,11 +42,11 @@ These documents describe **accepted decisions** and **formal project documentati
 
 | Category | Location | Examples |
 |----------|----------|----------|
-| Architecture Decision Records | `docs/adr/` | ADR-0001 – ADR-0011 |
+| Architecture Decision Records | `docs/adr/` | ADR-0001 – ADR-0016 |
 | Architecture | `docs/architecture/` | `ARCHITECTURE.md`, `infrastructure.md` |
 | API documentation | `docs/api/` | Public agent contracts |
 | User / developer guides | `docs/`, root | `GETTING_STARTED.md`, `DEVELOPMENT.md` |
-| Release notes | `release/` | Version release documents |
+| Release notes | `docs/releases/`, `release/` | Version release documents |
 | Current status | `docs/CURRENT_STATUS.md` | Capabilities and limitations |
 
 **Rule:** If a document records a **final architecture decision**, it becomes an **ADR** (or updates an existing ADR). ADRs are the durable audit trail.
