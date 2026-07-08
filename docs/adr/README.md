@@ -34,22 +34,26 @@ Do not create an ADR for routine bug fixes, internal refactors that preserve int
 | [ADR-0011](ADR-0011-Pixi-Environment.md) | Pixi Environment | Accepted |
 | [ADR-0012](ADR-0012-Experiment-Tracking-MLflow.md) | Experiment Tracking with MLflow | Accepted |
 | [ADR-0013](ADR-0013-Research-Resource-Discovery.md) | Research Resource Discovery | Draft |
-| [ADR-0014](ADR-0014-Execution-Planning-Capability.md) | Execution Planning Capability | Draft |
+| [ADR-0014](ADR-0014-Execution-Planning-Capability.md) | Execution Planning Capability | Accepted |
+| [ADR-0017](ADR-0017-Execution-Planning-Service-Architecture.md) | Execution Planning Service Architecture | Accepted |
+| [ADR-0018](ADR-0018-Execution-Planning-Decision-Foundation.md) | Execution Planning Decision Foundation | Accepted |
 | [ADR-0016](ADR-0016-GitHub-Discovery-Provider.md) | GitHub Discovery Provider | Draft |
 
 ## Platform Capability ADRs (v1.2)
 
-These ADRs document the v1.2 platform capability layer. Status remains **Draft** until the v1.2.0 release tag; promote to **Accepted** at release.
+These ADRs document the v1.2 platform capability layer. ADR-0014, ADR-0017, and ADR-0018 are **Accepted** (Execution Planning complete). ADR-0013 and ADR-0016 remain **Draft** until promoted at release tag.
 
 | ADR | Capability | Canonical artifact |
 |-----|------------|-------------------|
 | [ADR-0013](ADR-0013-Research-Resource-Discovery.md) | Research Resource Discovery | `ResearchResourceDiscovery` |
 | [ADR-0014](ADR-0014-Execution-Planning-Capability.md) | Execution Planning | `ExecutionStrategy` |
+| [ADR-0017](ADR-0017-Execution-Planning-Service-Architecture.md) | Execution Planning service architecture | Workflow → Services → Ports → Providers → Builder |
+| [ADR-0018](ADR-0018-Execution-Planning-Decision-Foundation.md) | Execution Planning Decision Foundation | ObservedFacts → Dimensions → Engineering Decisions |
 | [ADR-0016](ADR-0016-GitHub-Discovery-Provider.md) | GitHub Discovery Provider | External evidence for Discovery (no clone) |
 
 **Interface rule:** CLI and Python SDK delegate to `Man1Lab` (Platform Facade). Interfaces never call agents or orchestrators directly.
 
-See [architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md) and [releases/v1.2.0.md](../releases/v1.2.0.md).
+See [architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md), [architecture/EXECUTION_PLANNING.md](../architecture/EXECUTION_PLANNING.md), and [releases/v1.2.1.md](../releases/v1.2.1.md).
 
 ## Template
 

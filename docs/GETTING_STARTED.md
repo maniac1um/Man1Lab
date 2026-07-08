@@ -1,6 +1,6 @@
 # Getting Started
 
-Quick orientation for installing and running Man1Lab v1.2.0. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
+Quick orientation for installing and running Man1Lab v1.2.1. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
 
 ---
 
@@ -79,6 +79,32 @@ Set `PAPER_PATH` in `.env` to use the default paper path from configuration.
 
 ---
 
+## Platform Workflow
+
+`man1lab reproduce` runs the full platform pipeline through the **Platform Facade**:
+
+```text
+man1lab reproduce paper.pdf
+        ↓
+Analysis (Reader)
+        ↓
+Discovery (DiscoveryWorkflow)
+        ↓
+Execution Planning (ExecutionPlanningWorkflow)
+        ↓
+Planner
+        ↓
+Coder → Runner → Verification → Review → Report
+```
+
+**Public interfaces:** CLI (`man1lab`) and Python SDK (`from man1lab import Man1Lab`) — both delegate to `Man1Lab`; no direct workflow imports.
+
+**Execution Planning (v1.2.1):** Complete. Six embedded providers commit deterministic engineering decisions via the shared Decision Foundation. See [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md).
+
+**Partial commands:** `man1lab analyze`, `man1lab discover`, `man1lab plan` — see `man1lab --help`.
+
+---
+
 ## 5. Analyze (partial workflow)
 
 Run analysis (Reader) only:
@@ -154,7 +180,7 @@ Or after `pip install -e ".[dev]"`:
 python -m pytest tests/ -v
 ```
 
-Current suite: **419 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
+Current suite: **526 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
@@ -162,7 +188,8 @@ Current suite: **419 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 1. [CURRENT_STATUS.md](CURRENT_STATUS.md)
 2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md)
-3. [ROADMAP.md](../ROADMAP.md)
-4. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md)
-5. [releases/v1.2.0.md](releases/v1.2.0.md)
-6. [CHANGELOG.md](../CHANGELOG.md)
+3. [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md)
+4. [ROADMAP.md](../ROADMAP.md)
+5. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md)
+6. [releases/v1.2.1.md](releases/v1.2.1.md)
+7. [CHANGELOG.md](../CHANGELOG.md)

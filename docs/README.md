@@ -43,7 +43,7 @@ Architecture Decision Records document significant design choices.
 |----------|---------|
 | [adr/README.md](adr/README.md) | ADR index, template, platform capability overview |
 | [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) – [ADR-0012](adr/ADR-0012-Experiment-Tracking-MLflow.md) | Accepted infrastructure and pipeline decisions |
-| [ADR-0013](adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](adr/ADR-0014-Execution-Planning-Capability.md), [ADR-0016](adr/ADR-0016-GitHub-Discovery-Provider.md) | Platform capability ADRs (Draft until release tag) |
+| [ADR-0013](adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](adr/ADR-0014-Execution-Planning-Capability.md), [ADR-0016](adr/ADR-0016-GitHub-Discovery-Provider.md), [ADR-0017](adr/ADR-0017-Execution-Planning-Service-Architecture.md) | Platform capability ADRs (0013/0016 Draft; 0014/0017 Accepted) |
 
 ---
 

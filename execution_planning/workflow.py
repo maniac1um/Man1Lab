@@ -1,4 +1,4 @@
-"""Execution Planning workflow coordinator."""
+"""Execution Planning workflow coordinator — orchestration only."""
 
 from __future__ import annotations
 
@@ -6,17 +6,10 @@ import hashlib
 import json
 import uuid
 from datetime import UTC, datetime
+from typing import Type
 
 from execution_planning.builder import ExecutionStrategyBuilder
-from execution_planning.stages import (
-    new_strategy_id,
-    run_adaptation_planning,
-    run_generation_planning,
-    run_resource_binding,
-    run_reuse_planning,
-    run_risk_assessment,
-    run_strategy_decision,
-)
+from models.execution_planning_runtime import ResourceBindingResult
 from models.execution_strategy import (
     AnalysisReference,
     DecisionCategory,
@@ -32,12 +25,36 @@ from models.paper_reproduction_analysis import (
     PaperReproductionAnalysis,
 )
 from models.research_resource_discovery import ResearchResourceDiscovery
+from services.execution_planning.adaptation_service import AdaptationService
+from services.execution_planning.generation_service import GenerationService
+from services.execution_planning.resource_binding_service import ResourceBindingService
+from services.execution_planning.reuse_service import ReuseService
+from services.execution_planning.risk_service import RiskService
+from services.execution_planning.strategy_service import StrategyService
 
 
 class ExecutionPlanningWorkflow:
-    """Run six fixed planning stages and assemble ExecutionStrategy."""
+    """Execution Planning coordinator — six fixed stages, then builder assembly."""
 
-    def __init__(self, *, pipeline_version: str = "1.2.0") -> None:
+    def __init__(
+        self,
+        strategy_service: StrategyService,
+        resource_binding_service: ResourceBindingService,
+        reuse_service: ReuseService,
+        adaptation_service: AdaptationService,
+        generation_service: GenerationService,
+        risk_service: RiskService,
+        builder: Type[ExecutionStrategyBuilder] = ExecutionStrategyBuilder,
+        *,
+        pipeline_version: str = "1.2.0",
+    ) -> None:
+        self._strategy_service = strategy_service
+        self._resource_binding_service = resource_binding_service
+        self._reuse_service = reuse_service
+        self._adaptation_service = adaptation_service
+        self._generation_service = generation_service
+        self._risk_service = risk_service
+        self._builder = builder
         self._pipeline_version = pipeline_version
 
     def run(
@@ -46,54 +63,37 @@ class ExecutionPlanningWorkflow:
         discovery: ResearchResourceDiscovery,
     ) -> ExecutionStrategy:
         timestamps: dict[str, datetime] = {}
-        now = datetime.now(UTC)
 
-        timestamps["strategy_decision"] = now
-        strategy_result = run_strategy_decision(analysis, discovery, started_at=now)
+        timestamps["strategy_decision"] = datetime.now(UTC)
+        strategy_result = self._strategy_service.execute(analysis, discovery)
 
         timestamps["resource_binding"] = datetime.now(UTC)
-        binding_result = run_resource_binding(
+        binding_result = self._resource_binding_service.execute(
             analysis,
             discovery,
             strategy_result,
-            started_at=timestamps["resource_binding"],
         )
 
         timestamps["reuse_planning"] = datetime.now(UTC)
-        reuse_result = run_reuse_planning(
-            binding_result,
-            started_at=timestamps["reuse_planning"],
-        )
+        reuse_result = self._reuse_service.execute(analysis, discovery, binding_result)
 
         timestamps["adaptation_planning"] = datetime.now(UTC)
-        adaptation_result = run_adaptation_planning(
-            discovery,
-            reuse_result,
-            started_at=timestamps["adaptation_planning"],
-        )
+        adaptation_result = self._adaptation_service.execute(analysis, discovery, reuse_result)
 
         timestamps["generation_planning"] = datetime.now(UTC)
-        generation_result = run_generation_planning(
-            analysis,
-            adaptation_result,
-            started_at=timestamps["generation_planning"],
-        )
+        generation_result = self._generation_service.execute(analysis, discovery, adaptation_result)
 
         timestamps["risk_assessment"] = datetime.now(UTC)
-        risk_result = run_risk_assessment(
-            discovery,
-            generation_result,
-            started_at=timestamps["risk_assessment"],
-        )
+        risk_result = self._risk_service.execute(analysis, discovery, generation_result)
 
         timestamps["assembly"] = datetime.now(UTC)
         planning_run_id = str(uuid.uuid4())
         invocation_reason = _invocation_reason(discovery)
         input_references = _build_input_references(analysis, discovery, binding_result)
 
-        return ExecutionStrategyBuilder.build(
+        return self._builder.build(
             risk_result,
-            strategy_id=new_strategy_id(),
+            strategy_id=_new_strategy_id(),
             input_references=input_references,
             created_at=timestamps["assembly"],
             summary=risk_result.decision_notes or strategy_result.strategy.rationale,
@@ -124,13 +124,20 @@ class ExecutionPlanningWorkflow:
 
     @classmethod
     def default(cls) -> ExecutionPlanningWorkflow:
-        return cls()
+        return cls(
+            strategy_service=StrategyService.default(),
+            resource_binding_service=ResourceBindingService.default(),
+            reuse_service=ReuseService.default(),
+            adaptation_service=AdaptationService.default(),
+            generation_service=GenerationService.default(),
+            risk_service=RiskService.default(),
+        )
 
 
 def _build_input_references(
     analysis: PaperReproductionAnalysis,
     discovery: ResearchResourceDiscovery,
-    binding_result,
+    binding_result: ResourceBindingResult,
 ) -> InputReferences:
     selection_ids = [
         binding.selection_id
@@ -175,3 +182,7 @@ def _invocation_reason(discovery: ResearchResourceDiscovery) -> PlanningInvocati
     if discovery.metadata.status == DiscoveryStatus.COMPLETE:
         return PlanningInvocationReason.DISCOVERY_COMPLETE
     return PlanningInvocationReason.DISCOVERY_PARTIAL
+
+
+def _new_strategy_id() -> str:
+    return f"strategy-{uuid.uuid4()}"

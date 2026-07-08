@@ -2,8 +2,8 @@
 
 **Autonomous research paper reproduction platform.**
 
-**Version:** v1.2.0  
-**Status:** Release Candidate — installable Python package with CLI and SDK
+**Version:** v1.2.1  
+**Status:** Platform Capability — Execution Planning complete
 
 Man1Lab reads a research PDF, extracts structured analysis, discovers external engineering resources, commits an execution strategy, plans engineering tasks, generates a reproduction repository, runs training, verifies results, reviews failures, and produces a final report.
 
@@ -18,7 +18,7 @@ This project is an **active research prototype** for academic demonstration. See
 | **Paper Analysis** | Modular `PaperReproductionAnalysis` from PDF ([ADR-0009](docs/adr/ADR-0009-Analysis-Canonical-Artifact.md)) |
 | **Research Resource Discovery** | Evidence-backed resource resolution ([ADR-0013](docs/adr/ADR-0013-Research-Resource-Discovery.md)) |
 | **GitHub Discovery Provider** | First production external provider — collection, evidence, verification, ranking ([ADR-0016](docs/adr/ADR-0016-GitHub-Discovery-Provider.md)) |
-| **Execution Planning** | Engineering strategy before task decomposition ([ADR-0014](docs/adr/ADR-0014-Execution-Planning-Capability.md)) |
+| **Execution Planning** | Six-stage engineering strategy with Decision Foundation ([ADR-0014](docs/adr/ADR-0014-Execution-Planning-Capability.md), [ADR-0017](docs/adr/ADR-0017-Execution-Planning-Service-Architecture.md), [ADR-0018](docs/adr/ADR-0018-Execution-Planning-Decision-Foundation.md)) |
 | **Platform Facade** | Single entry point — `Man1Lab` coordinates all capabilities |
 | **CLI** | `man1lab` — init, doctor, reproduce, analyze, discover, plan, execute |
 | **Python SDK** | `from man1lab import Man1Lab` |
@@ -155,7 +155,7 @@ The SDK wraps the Platform Facade only — no direct workflow imports.
 | Analysis (Reader) | `PaperReproductionAnalysis` | ✅ |
 | Discovery | `ResearchResourceDiscovery` | ✅ |
 | GitHub Provider | Collection · Evidence · Verification · Ranking | ✅ |
-| Execution Planning | `ExecutionStrategy` | ✅ |
+| Execution Planning | `ExecutionStrategy` | ✅ Foundation complete |
 | Planner | `TaskModel` | ✅ |
 | Coder | `Workspace` | ✅ |
 | Runner | `ExecutionResult` | ✅ |
@@ -190,7 +190,8 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 | [Getting Started](docs/GETTING_STARTED.md) | Install → init → doctor → reproduce |
 | [Current Status](docs/CURRENT_STATUS.md) | Capabilities, tests, limitations |
 | [Architecture](docs/architecture/ARCHITECTURE.md) | Platform layers and artifacts |
-| [Release v1.2.0](docs/releases/v1.2.0.md) | This release |
+| [Release v1.2.1](docs/releases/v1.2.1.md) | Current release |
+| [Release v1.2.0](docs/releases/v1.2.0.md) | Previous release |
 | [Changelog](CHANGELOG.md) | Version history |
 | [ADRs](docs/adr/README.md) | Architecture decisions |
 | [Development](DEVELOPMENT.md) | Maintainer workflow |
@@ -199,7 +200,7 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## Tests
 
-**419** unit tests passing (`pixi run test`).
+**526** unit tests passing (`pixi run test`).
 
 ---
 

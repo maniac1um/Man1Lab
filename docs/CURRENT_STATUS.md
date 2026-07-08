@@ -2,16 +2,16 @@
 
 **Project:** Man1Lab  
 **Single source of truth for implementation and integration state.**  
-**Last updated:** 2026-07-03
+**Last updated:** 2026-07-08
 
 | Field | Value |
 |-------|-------|
-| **Current Version** | **v1.2.0** (Release Candidate) |
+| **Current Version** | **v1.2.1** |
 | **Milestone** | **Platform Capability** |
-| **Previous Milestone** | Foundation Complete (v1.1.0) |
+| **Previous Release** | v1.2.0 (Release Candidate) |
 | **Next Milestone** | **Repository Understanding (v1.3)** |
 
-Release notes: [releases/v1.2.0.md](releases/v1.2.0.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
+Release notes: [releases/v1.2.1.md](releases/v1.2.1.md) · Previous: [v1.2.0](releases/v1.2.0.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
 
 For install and run: [GETTING_STARTED.md](GETTING_STARTED.md). Architecture: [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 
@@ -118,7 +118,7 @@ Configuration: `discovery.enabled`, `execution_planning.enabled` (Hydra, default
 | Reader / Analysis | ✅ | `PaperReproductionAnalysis` |
 | Discovery | ✅ | `ResearchResourceDiscovery` |
 | GitHub Discovery Provider | ✅ | Collection · Evidence · Verification · Ranking |
-| Execution Planning | ✅ | `ExecutionStrategy` |
+| Execution Planning | ✅ Complete | `ExecutionStrategy` — six embedded providers + Decision Foundation |
 | Planner (strategy-driven) | ✅ | `TaskModel` |
 | Coder | ✅ | `Workspace` |
 | Runner | ✅ | `ExecutionResult` |
@@ -127,6 +127,27 @@ Configuration: `discovery.enabled`, `execution_planning.enabled` (Hydra, default
 | PatchPlanner | ✅ | `PatchPlan` |
 | Reporter | ✅ | `ReportModel` |
 | Experiment Tracking | ✅ | MLflow (optional noop) |
+
+### Execution Planning maturity (v1.2.1)
+
+**Execution Planning complete** — six embedded engineering decision providers with shared Decision Foundation.
+
+| Component | Status |
+|-----------|--------|
+| `ExecutionStrategy` canonical model | ✅ |
+| Validation layer | ✅ |
+| Runtime stage models | ✅ |
+| `ExecutionStrategyBuilder` | ✅ |
+| `ExecutionPlanningWorkflow` | ✅ |
+| Service layer (6 services) | ✅ |
+| Provider ports (6 ports) | ✅ |
+| Embedded providers (6 stages) | ✅ |
+| Decision Foundation | ✅ |
+| NoOp providers | ✅ |
+
+Internal layering: Workflow → Services → Providers → Decision Foundation → Builder → `ExecutionStrategy`.
+
+See [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md), [ADR-0017](adr/ADR-0017-Execution-Planning-Service-Architecture.md), [ADR-0018](adr/ADR-0018-Execution-Planning-Decision-Foundation.md).
 
 ---
 
@@ -146,7 +167,7 @@ Configuration: `discovery.enabled`, `execution_planning.enabled` (Hydra, default
 
 | Metric | Value |
 |--------|-------|
-| **Unit tests** | **419 passing** (`pixi run test`) |
+| **Unit tests** | **526 passing** (`pixi run test`) |
 | Platform facade | `tests/test_platform_facade.py` |
 | CLI | `tests/test_cli.py` |
 | SDK | `tests/test_sdk.py` |
@@ -192,7 +213,7 @@ See [ROADMAP.md](../ROADMAP.md).
 | Install and run | [GETTING_STARTED.md](GETTING_STARTED.md) |
 | Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) |
 | Roadmap | [ROADMAP.md](../ROADMAP.md) |
-| Release notes | [releases/v1.2.0.md](releases/v1.2.0.md) |
+| Release notes | [releases/v1.2.1.md](releases/v1.2.1.md) |
 | ADRs | [adr/README.md](adr/README.md) |
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |
 
@@ -204,7 +225,7 @@ See [ROADMAP.md](../ROADMAP.md).
 |-------|-----|
 | Analysis canonical artifact | [ADR-0009](adr/ADR-0009-Analysis-Canonical-Artifact.md) |
 | Research Resource Discovery | [ADR-0013](adr/ADR-0013-Research-Resource-Discovery.md) |
-| Execution Planning | [ADR-0014](adr/ADR-0014-Execution-Planning-Capability.md) |
+| Execution Planning | [ADR-0014](adr/ADR-0014-Execution-Planning-Capability.md), [ADR-0017](adr/ADR-0017-Execution-Planning-Service-Architecture.md), [ADR-0018](adr/ADR-0018-Execution-Planning-Decision-Foundation.md) |
 | GitHub Discovery Provider | [ADR-0016](adr/ADR-0016-GitHub-Discovery-Provider.md) |
 | Experiment tracking | [ADR-0012](adr/ADR-0012-Experiment-Tracking-MLflow.md) |
 | Workflow orchestration | [ADR-0001](adr/ADR-0001-Workflow-Orchestrator.md) |

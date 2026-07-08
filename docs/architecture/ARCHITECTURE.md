@@ -193,6 +193,22 @@ It is **not** a task plan, specification for code generation, or execution resul
 
 See [ADR-0016](../adr/ADR-0016-GitHub-Discovery-Provider.md).
 
+#### Internal capability layering
+
+```text
+DiscoveryWorkflow                  ← orchestration only
+        ↓
+Discovery Services                 ← provider orchestration (execute)
+        ↓
+Provider Ports
+        ↓
+Providers (GitHub, Embedded, NoOp)
+        ↓
+ResearchResourceDiscoveryBuilder ← canonical assembly
+        ↓
+ResearchResourceDiscovery        ← only exported artifact
+```
+
 ---
 
 ### Execution Planning Layer
@@ -205,7 +221,40 @@ See [ADR-0016](../adr/ADR-0016-GitHub-Discovery-Provider.md).
 | **Does** | Strategy decision, resource binding, reuse/adaptation/generation planning, risk assessment |
 | **Does NOT** | Re-run discovery, decompose tasks, generate code, or execute repositories |
 
-See [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability.md).
+See [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability.md) and [ADR-0017](../adr/ADR-0017-Execution-Planning-Service-Architecture.md).
+
+#### Internal capability layering
+
+```text
+ExecutionPlanningWorkflow          ← orchestration only
+        ↓
+Execution Planning Services      ← provider orchestration (execute)
+        ↓
+Provider Ports
+        ↓
+Embedded Providers               ← runtime snapshots
+        ↓
+Decision Foundation              ← internal reasoning
+        ↓
+ExecutionStrategyBuilder         ← canonical assembly
+        ↓
+Validation
+        ↓
+ExecutionStrategy                ← only exported artifact
+```
+
+| Layer | Owns |
+|-------|------|
+| **Workflow** | Stage ordering, timestamps, provenance envelope, builder invocation |
+| **Services** | Provider orchestration, ordering, per-stage merge |
+| **Providers** | Runtime metadata and snapshot mapping from decisions |
+| **Decision Foundation** | Observed facts, dimensions, per-stage engineering decisions |
+| **Builder** | Canonical artifact assembly from runtime results |
+| **Validation** | Structural correctness of `ExecutionStrategy` |
+
+**Maturity:** Execution Planning complete (v1.2.1). Six embedded providers with shared Decision Foundation.
+
+See [architecture/EXECUTION_PLANNING.md](EXECUTION_PLANNING.md), [ADR-0017](../adr/ADR-0017-Execution-Planning-Service-Architecture.md), [ADR-0018](../adr/ADR-0018-Execution-Planning-Decision-Foundation.md).
 
 ---
 
@@ -440,7 +489,7 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 | **Parsing** | ✅ Complete | Docling default; PyMuPDF fallback |
 | **Analysis** | ✅ Complete | `PaperReproductionAnalysis` |
 | **Discovery** | ✅ Complete | `ResearchResourceDiscovery`; GitHub Provider |
-| **Execution Planning** | ✅ Complete | `ExecutionStrategy` |
+| **Execution Planning** | ✅ Foundation complete | `ExecutionStrategy`; skeleton providers wired |
 | **Planning** | ✅ Complete | Strategy-driven `TaskModel` |
 | **Implementation** | ✅ Complete | GQ-1 + RAG |
 | **Execution** | ✅ Complete | Environment prep + script run |
@@ -511,6 +560,7 @@ This document states **structure and boundaries**. Detailed rationale lives in A
 | [ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md) | MLflow at experiment tracking layer only | Infrastructure; thin wrapper at composition root |
 | [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md) | Discovery capability and artifact | Discovery layer |
 | [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability.md) | Execution Planning capability | Execution Planning layer |
+| [ADR-0017](../adr/ADR-0017-Execution-Planning-Service-Architecture.md) | Execution Planning service architecture | Execution Planning services/ports/providers |
 | [ADR-0016](../adr/ADR-0016-GitHub-Discovery-Provider.md) | GitHub as first external Discovery Provider | Discovery adapters |
 
 When this document and an ADR disagree, **the ADR wins** for the specific decision; update this document in the same documentation pass.
@@ -559,4 +609,4 @@ Non-goals are **features intentionally deferred or excluded**, not missing bugs.
 | Backend swap (e.g. parser) | §3 Parsing only | Yes |
 | Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
 
-**Last aligned with:** Man1Lab v1.2.0 — Platform Capability Release
+**Last aligned with:** Man1Lab v1.2.0 — Execution Planning Foundation (Phase 5.2)

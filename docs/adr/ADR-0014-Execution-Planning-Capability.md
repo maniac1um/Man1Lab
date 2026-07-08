@@ -2,11 +2,15 @@
 
 ## Status
 
-Draft
+Accepted
 
 ## Date
 
 2026-07-03
+
+## Implementation Status (2026-07-08)
+
+Execution Planning Foundation (Phase 5.2) is **implemented**. Internal service/port/provider layering is recorded in [ADR-0017](ADR-0017-Execution-Planning-Service-Architecture.md). `ExecutionStrategy` schema, validation, runtime models, builder, workflow, and strategy-driven Planner integration are in production. Business reasoning in providers is pending the next implementation phase.
 
 ## Context
 
@@ -176,19 +180,31 @@ Execution Planning operates **only on canonical artifacts**. Configuration and t
 
 Companion design (Discovery): [research-resource-discovery.md](../design/research-resource-discovery.md), [research-resource-discovery-schema.md](../design/research-resource-discovery-schema.md), [research-resource-discovery-workflow.md](../design/research-resource-discovery-workflow.md)
 
+Companion design (Execution Planning): [execution-planning.md](../design/execution-planning.md), [execution-strategy-schema.md](../design/execution-strategy-schema.md), [execution-planning-workflow.md](../design/execution-planning-workflow.md)
+
+Implementation architecture: [ADR-0017](ADR-0017-Execution-Planning-Service-Architecture.md)
+
 ## Future Work
 
-Out of scope for this ADR — recorded for downstream architecture only:
+Remaining work after foundation (Phase 5.2):
 
 | Topic | Direction |
 |-------|-----------|
-| **`ExecutionStrategy` canonical artifact** | Schema design — strategy modes, resource bindings, risk fields, migration from implicit Planner decisions |
-| **Execution Planning workflow** | Internal stages (if any), partial strategy semantics, coordinator integration |
-| **Planner migration** | Planner consumes `ExecutionStrategy`; ADR-0004/0005 scope narrowed to decomposition; interface freeze update |
+| **Embedded Execution Planning providers** | Complete (v1.2.1) — see [ADR-0018](ADR-0018-Execution-Planning-Decision-Foundation.md) |
 | **Repository Understanding** | Read-only semantic mapping after strategy commits to repo-based path |
 | **Repository Adaptation** | Patch/pin/fork execution when strategy selects adaptation mode |
 | **Execution modes** | Official repo, community fork, hybrid, greenfield — extensible enum in strategy artifact |
-| **Platform coordinator** | Mandatory vs optional Execution Planning invocation; coexistence with v1.1 path |
+| **Policy Engine** | Org rules (license block, approved postures) — optional pre/post hooks |
+
+Completed (foundation):
+
+| Topic | Status |
+|-------|--------|
+| `ExecutionStrategy` canonical artifact | ✅ Implemented |
+| Execution Planning workflow | ✅ `ExecutionPlanningWorkflow` |
+| Service/port/provider architecture | ✅ [ADR-0017](ADR-0017-Execution-Planning-Service-Architecture.md) |
+| Planner migration | ✅ Strategy-driven `Planner.run(execution_strategy)` |
+| Platform coordinator integration | ✅ `execution_planning.enabled` (default true) |
 
 Evolution roadmap:
 

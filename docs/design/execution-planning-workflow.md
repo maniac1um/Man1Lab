@@ -2,11 +2,9 @@
 
 **Project:** Man1Lab  
 **Phase:** v1.2 — Execution Planning  
-**Version:** Workflow design draft  
-**Status:** Design Only — implementation-ready specification  
-**Audience:** Architects, workflow implementers  
-**Horizon:** 3–5 years  
-**Last updated:** 2026-07-03
+**Version:** Workflow design — implemented foundation (Phase 5.2)  
+**Status:** Implemented — service/port/provider foundation complete; business reasoning providers pending  
+**Last updated:** 2026-07-08
 
 Related documents:
 
@@ -14,7 +12,7 @@ Related documents:
 - [execution-planning.md](execution-planning.md) — capability design
 - [execution-strategy-schema.md](execution-strategy-schema.md) — canonical object schema
 - [research-resource-discovery-workflow.md](research-resource-discovery-workflow.md) — upstream workflow pattern
-- [ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md) — experiment tracking port pattern
+- [ADR-0017](../adr/ADR-0017-Execution-Planning-Service-Architecture.md) — service/port/provider layering
 
 This document describes **how the Execution Planning pipeline runs** — stage order, data flow, invariants, failure handling, and tracking hooks. It does **not** redefine the `ExecutionStrategy` schema (see schema document) and does **not** specify APIs, classes, prompts, or runtime code.
 
@@ -109,9 +107,44 @@ Execution
 | Coordinator | Scope |
 |-------------|-------|
 | **Platform workflow coordinator** | Decides whether to invoke Execution Planning (Discovery complete, user flag, policy); passes analysis + discovery in, receives strategy out |
-| **Execution Planning workflow coordinator** | Runs six internal stages + assembly + validation; maintains in-progress builder state |
+| **Execution Planning workflow coordinator** | Runs six internal stages via services, then builder assembly + validation; maintains provenance envelope |
+| **Execution Planning services** | Orchestrate provider ports per stage; all methods use `execute()` |
 
-Unlike Discovery, Execution Planning has **no provider ports** in Phase 1. All stages derive decisions from canonical artifacts only.
+Execution Planning internal layering mirrors Discovery ([research-resource-discovery-workflow.md](research-resource-discovery-workflow.md)):
+
+```text
+ExecutionPlanningWorkflow
+        ↓
+Execution Planning Services.execute(...)
+        ↓
+Provider Ports
+        ↓
+Providers (Embedded, NoOp)
+        ↓
+Decision Foundation
+        ↓
+Runtime Models
+        ↓
+ExecutionStrategyBuilder.build(...)
+        ↓
+Validation
+        ↓
+ExecutionStrategy
+```
+
+| Layer | Responsibility |
+|-------|----------------|
+| Workflow | Orchestration only — stage order, timestamps, builder envelope |
+| Services | Provider orchestration, ordering, per-stage merge |
+| Ports | Provider contracts (`execute`) |
+| Providers | Runtime snapshots from Decision Foundation decisions |
+| Decision Foundation | Observed facts, dimensions, per-stage engineering decisions |
+| Builder | Canonical assembly — final artifact construction |
+| Validation | Structural correctness |
+
+Default provider order: `Embedded*Provider` → `NoOp*Provider` (mirrors Discovery).
+
+**Maturity:** Complete (v1.2.1). Six embedded providers with shared Decision Foundation. See [ADR-0018](../adr/ADR-0018-Execution-Planning-Decision-Foundation.md) and [architecture/EXECUTION_PLANNING.md](../architecture/EXECUTION_PLANNING.md).
 
 ---
 
@@ -1066,7 +1099,7 @@ Emitted (complete | partial | degraded | manual_review | aborted)
 | Policy Engine designed | Add §11.1 detail — no core stage reorder |
 | Human approval implemented | Document gate in §11.1 |
 
-**Status:** Design Only — workflow specification complete for Phase 1 implementation.
+**Status:** Implemented foundation (Phase 5.2) — service/port/provider architecture complete; business reasoning providers pending.
 
 ---
 
@@ -1082,7 +1115,10 @@ Audit performed against [ADR-0014](../adr/ADR-0014-Execution-Planning-Capability
 | Each stage documented with responsibilities and non-responsibilities | ✅ Pass |
 | Risk Assessment does not revise strategy (EP-INV-06) | ✅ Pass |
 | Builder and Validation separated from semantic stages | ✅ Pass |
-| No provider stages (unlike Discovery) | ✅ Pass — artifact-only decisions |
+| Service/port/provider layering (mirrors Discovery) | ✅ Pass — Phase 5.2 |
+| All service and provider methods use `execute()` | ✅ Pass |
+| Embedded skeleton + NoOp providers wired | ✅ Pass |
+| Embedded providers complete with Decision Foundation | ✅ Pass |
 
 ### Runtime contracts
 
