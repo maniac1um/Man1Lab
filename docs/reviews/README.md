@@ -78,6 +78,18 @@ For current project state, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). For ac
 
 ---
 
+## Runtime (8.x)
+
+| Directory | Scope |
+|-----------|-------|
+| [8.1_runtime_performance_audit/](8.1_runtime_performance_audit/) | Runtime profiling foundation |
+| [8.2_runtime_lifecycle/](8.2_runtime_lifecycle/) | Platform runtime lifecycle owner |
+| [8.3_runtime_lazy_initialization/](8.3_runtime_lazy_initialization/) | Runtime lazy initialization subsystem |
+| [8.4_runtime_resource_management/](8.4_runtime_resource_management/) | Runtime resource manager, descriptors, health, cache policy |
+| [8.5_runtime_session/](8.5_runtime_session/) | Runtime session lifecycle and workspace placeholder |
+
+---
+
 ## Private work documents
 
 Technology adoption reviews, working roadmaps, and research notes may also exist in `private/` (local, gitignored). See [CONTRIBUTING.md](../../CONTRIBUTING.md#documentation-policy).

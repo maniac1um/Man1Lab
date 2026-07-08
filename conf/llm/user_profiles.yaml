@@ -1,0 +1,9 @@
+active: default
+profiles:
+  default:
+    provider: deepseek
+    model: deepseek-v4-pro
+    api_key_reference: OPENAI_API_KEY
+    enabled: true
+    base_url: https://api.deepseek.com
+    description: Migrated from legacy LLM configuration.

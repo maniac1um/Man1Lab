@@ -179,7 +179,7 @@ class FacadeModelDelegationTest(unittest.TestCase):
 
         manager = MagicMock()
         manager.list_models.return_value = _list_report()
-        with patch("application.facade.LLMManager", return_value=manager):
+        with patch("application.runtime.resource_wiring.LLMManager", return_value=manager):
             platform = Platform(initialize_configuration=False, configure_logging=False)
             platform.list_models()
             platform.use_model("claude")

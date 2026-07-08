@@ -191,7 +191,7 @@ class InitWizardLifecycleTest(unittest.TestCase):
             model="gpt-4o-mini",
             api_key="sk-test",
         )
-        with patch("application.facade.LLMManager", return_value=manager):
+        with patch("application.runtime.resource_wiring.LLMManager", return_value=manager):
             with tempfile.TemporaryDirectory() as temp_dir:
                 root = Path(temp_dir)
                 platform = Platform(initialize_configuration=False, configure_logging=False)
@@ -362,7 +362,7 @@ class InitWizardBoundaryTest(unittest.TestCase):
         from application import Man1Lab as Platform
 
         manager = MagicMock()
-        with patch("application.facade.LLMManager", return_value=manager):
+        with patch("application.runtime.resource_wiring.LLMManager", return_value=manager):
             platform = Platform(initialize_configuration=False, configure_logging=False)
             with tempfile.TemporaryDirectory() as temp_dir:
                 export_path = Path(temp_dir) / "out.yaml"

@@ -26,7 +26,6 @@ from application.lifecycle import (
 from application.lifecycle.init_wizard import InitWizardRequest, resolve_wizard_profile, write_api_key_to_env
 from application.lifecycle.llm_doctor import run_llm_doctor_checks
 from application.version import PLATFORM_VERSION
-from configuration.bootstrap import initialize_app_configuration
 from configuration.models import AppSettings
 from discovery.empty import build_empty_discovery
 from discovery.workflow import DiscoveryWorkflow
@@ -34,7 +33,9 @@ from execution_planning.workflow import ExecutionPlanningWorkflow
 from llm.compat import LLMManagerCompleteAdapter
 from llm.mock_provider import MOCK_PLANNER_JSON, MockLLMProvider
 from llm.provider import LLMProvider
+from application.runtime.resource_wiring import wire_runtime_resources
 from providers.llm.manager import LLMManager
+from runtime.resources.manager import RESOURCE_CONFIGURATION, RESOURCE_LLM_MANAGER
 from providers.llm.model_management import (
     CurrentModelReport,
     ModelChangeReport,
@@ -43,6 +44,10 @@ from providers.llm.model_management import (
 )
 from providers.llm.models import RegistryValidationResult
 from providers.llm.persistence import ModelImportReport
+from runtime.profiling.report import RuntimeProfile
+from runtime.runtime import PlatformRuntime
+from runtime.session import RuntimeSession
+from runtime.state import RuntimeState
 from models.execution import ExecutionResult
 from models.execution_strategy import ExecutionStrategy
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
@@ -87,11 +92,18 @@ class Man1Lab:
         configure_logging: bool = True,
         orchestrator: WorkflowOrchestrator | None = None,
         reporter: Reporter | None = None,
+        runtime: PlatformRuntime | None = None,
     ) -> None:
-        if initialize_configuration:
-            self._settings = settings or initialize_app_configuration()
-        else:
-            self._settings = settings or _settings_from_config_module()
+        self._runtime = runtime or PlatformRuntime()
+        if self._runtime.state is RuntimeState.NEW:
+            self._runtime.startup()
+
+        wire_runtime_resources(
+            self._runtime.context.resources,
+            settings=settings,
+            initialize_configuration=initialize_configuration,
+        )
+        self._settings = self._runtime.context.resources.get(RESOURCE_CONFIGURATION)
 
         if configure_logging:
             self._configure_logging()
@@ -101,7 +113,6 @@ class Man1Lab:
             root=self._settings.workspace_root,
             outputs_dir=self._settings.outputs_dir,
         )
-        self._llm_manager = LLMManager(self._settings.llm)
         self._llm = self._build_llm_port()
         self._reader, self._planner, self._coder, self._runner = self._build_agents()
         self._discovery_workflow = DiscoveryWorkflow.default()
@@ -284,6 +295,42 @@ class Man1Lab:
     def configuration(self) -> dict[str, Any]:
         """Return effective runtime configuration."""
         return _settings_to_dict(self._settings)
+
+    @property
+    def runtime(self) -> PlatformRuntime:
+        """Return the platform runtime lifecycle owner."""
+        return self._runtime
+
+    def is_runtime_ready(self) -> bool:
+        """Return whether the platform runtime is ready."""
+        return self._runtime.is_ready()
+
+    def shutdown_runtime(self) -> None:
+        """Shut down the platform runtime lifecycle."""
+        self._runtime.shutdown()
+
+    def session(self) -> RuntimeSession:
+        """Return the runtime session for user interaction lifetime."""
+        return self._runtime.session
+
+    def is_session_active(self) -> bool:
+        """Return whether the runtime session is active."""
+        return self._runtime.is_session_active()
+
+    def close_session(self) -> None:
+        """Close the active runtime session."""
+        self._runtime.close_session()
+
+    @staticmethod
+    def profile_startup() -> RuntimeProfile:
+        """Profile platform startup and runtime initialization."""
+        from application.runtime.startup_profile import profile_platform_startup
+
+        return profile_platform_startup()
+
+    @property
+    def _llm_manager(self) -> LLMManager:
+        return self._runtime.context.resources.get(RESOURCE_LLM_MANAGER)
 
     def list_models(self) -> ModelListReport:
         """List configured model profiles."""
