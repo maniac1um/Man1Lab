@@ -140,7 +140,6 @@ class ProfileCLITest(unittest.TestCase):
         self.assertIn("Total", result.stdout)
         self.assertIn("Runtime Resources", result.stdout)
         self.assertIn("READY", result.stdout)
-        self.assertIn("DEFERRED", result.stdout)
         self.assertIn("Session", result.stdout)
         self.assertIn("NEW", result.stdout)
 

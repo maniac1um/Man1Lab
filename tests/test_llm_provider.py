@@ -119,18 +119,16 @@ class DeepSeekProviderTest(unittest.TestCase):
 
 
 class FactoryAndFacadeAdapterTest(unittest.TestCase):
-    @patch("llm.factory.LLMManager")
-    def test_build_llm_provider_uses_manager_when_configured(self, manager_cls: MagicMock) -> None:
-        manager = manager_cls.return_value
+    def test_build_llm_provider_uses_manager_when_configured(self) -> None:
+        manager = MagicMock()
         manager.has_active_provider.return_value = True
-        provider = build_llm_provider()
+        provider = build_llm_provider(manager=manager)
         self.assertIsInstance(provider, LLMManagerCompleteAdapter)
 
-    @patch("llm.factory.LLMManager")
-    def test_build_planner_llm_provider_falls_back_to_mock(self, manager_cls: MagicMock) -> None:
-        manager = manager_cls.return_value
+    def test_build_planner_llm_provider_falls_back_to_mock(self) -> None:
+        manager = MagicMock()
         manager.has_active_provider.return_value = False
-        provider = build_planner_llm_provider()
+        provider = build_planner_llm_provider(manager=manager)
         self.assertEqual(provider.__class__.__name__, "MockLLMProvider")
 
 

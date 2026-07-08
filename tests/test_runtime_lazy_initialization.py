@@ -197,7 +197,7 @@ class ProfilingIntegrationTest(unittest.TestCase):
         self.assertTrue(profile.resource_statuses)
         statuses = dict(profile.resource_statuses)
         self.assertEqual(statuses["Configuration"], "READY (Runtime Cache)")
-        self.assertEqual(statuses["Prompt Registry"], "DEFERRED")
+        self.assertEqual(statuses["Prompt Registry"], "READY (Runtime Cache)")
 
 
 class FacadeLazyBehaviorTest(unittest.TestCase):
@@ -212,7 +212,7 @@ class FacadeLazyBehaviorTest(unittest.TestCase):
             context = platform.runtime.context
             self.assertTrue(context.configuration.is_initialized())
             self.assertTrue(context.llm_manager.is_initialized())
-            self.assertFalse(context.prompt_registry.is_initialized())
+            self.assertTrue(context.prompt_registry.is_initialized())
 
     def test_model_operations_still_work(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

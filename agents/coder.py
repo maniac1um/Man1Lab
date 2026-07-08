@@ -21,7 +21,6 @@ from models.routing import RepositoryTarget, TaskRoutingTable
 from models.task import TaskModel, TaskStep
 from models.workspace import Workspace
 from prompt.builder import PromptBuilder
-from prompt.loader import PromptLoader
 from routing.task_router import TaskRouter
 from workspace.manager import WorkspaceManager
 
@@ -46,14 +45,14 @@ class Coder:
     def __init__(
         self,
         workspace_manager: WorkspaceManager,
+        prompt_builder: PromptBuilder,
         llm: LLMProvider | None = None,
         task_router: TaskRouter | None = None,
-        prompt_builder: PromptBuilder | None = None,
     ) -> None:
         self._workspace_manager = workspace_manager
         self._llm = llm or CoderMockLLMProvider()
         self._task_router = task_router or TaskRouter()
-        self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._prompt_builder = prompt_builder
 
     def run(
         self,

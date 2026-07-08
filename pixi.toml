@@ -4,7 +4,7 @@ channels = ["conda-forge"]
 description = "Autonomous research paper reproduction pipeline"
 name = "man1lab"
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
-version = "1.2.2"
+version = "1.2.3"
 
 [dependencies]
 python = "3.12.*"

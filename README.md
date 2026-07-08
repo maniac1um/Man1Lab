@@ -7,7 +7,7 @@ Man1Lab automates the engineering workflow behind AI paper reproduction — from
 [![PyPI version](https://img.shields.io/pypi/v/man1lab)](https://pypi.org/project/man1lab/)
 [![Python Version](https://img.shields.io/pypi/pyversions/man1lab)](https://pypi.org/project/man1lab/)
 [![Latest Release](https://img.shields.io/github/v/release/maniac1um/Man1Lab)](https://github.com/maniac1um/Man1Lab/releases)
-[![Tests](https://img.shields.io/badge/tests-614%20passing-brightgreen)](docs/CURRENT_STATUS.md)
+[![Tests](https://img.shields.io/badge/tests-765%20passing-brightgreen)](docs/CURRENT_STATUS.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-Getting%20Started-blue)](docs/GETTING_STARTED.md)
 
@@ -67,7 +67,9 @@ Each stage produces a structured artifact that feeds the next. The full pipeline
 | DeepSeek | DeepSeek API-compatible models | ✅ |
 | Anthropic | Claude models | ✅ |
 | Package Distribution | `pip install man1lab` | ✅ |
-| Platform Facade | Single entry point for CLI, SDK, and future interfaces | ✅ |
+| Platform Runtime | Process lifecycle, resources, profiling, session | ✅ |
+| Interactive Console | `man1lab` with no args — REPL-style interface | ✅ |
+| Platform Facade | Single entry point for CLI, SDK, and Console | ✅ |
 
 ---
 
@@ -142,7 +144,7 @@ Details: [Architecture](docs/architecture/ARCHITECTURE.md)
 
 | Version | Focus | Status |
 |---------|-------|--------|
-| **v1.2.x** | Platform foundation, Execution Planning, CLI, SDK, multi-model support | **Completed** |
+| **v1.2.x** | Platform foundation, Runtime, Console, Execution Planning, LLM platform | **Completed** |
 | **v1.3** | Repository Understanding — semantic mapping of discovered code to paper modules | Planned |
 | **v1.4** | Repository Adaptation — align discovered repos with paper requirements | Planned |
 | **v1.5** | Knowledge Memory — cross-run reproduction knowledge | Planned |
@@ -158,7 +160,8 @@ Live status: [Current Status](docs/CURRENT_STATUS.md) · Full roadmap: [ROADMAP.
 | [Getting Started](docs/GETTING_STARTED.md) | Install, configure models, run your first reproduction |
 | [Architecture](docs/architecture/ARCHITECTURE.md) | Platform design and canonical artifacts |
 | [Current Status](docs/CURRENT_STATUS.md) | Capabilities, tests, and known limitations |
-| [Release Notes](docs/releases/v1.2.2.md) | v1.2.2 — LLM platform and first-run experience |
+| [Runtime Architecture](docs/architecture/RUNTIME.md) | Platform Runtime subsystem |
+| [Release Notes](docs/releases/v1.2.3.md) | v1.2.3 — Platform Runtime and interactive console |
 | [Contributing](CONTRIBUTING.md) | Development setup and contribution guidelines |
 | [Security](SECURITY.md) | Vulnerability reporting |
 | [Support](SUPPORT.md) | Questions, bugs, and feature requests |
@@ -185,7 +188,7 @@ Man1Lab is an active research prototype for academic demonstration. See [Contrib
   author       = {maniac1um},
   title        = {Man1Lab: An Autonomous Research Paper Reproduction Platform},
   year         = {2026},
-  version      = {1.2.2},
+  version      = {1.2.3},
   url          = {https://github.com/maniac1um/Man1Lab},
   note         = {Engineering-first autonomous research paper reproduction platform.}
 }

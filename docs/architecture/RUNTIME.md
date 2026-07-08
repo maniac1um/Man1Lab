@@ -71,7 +71,7 @@ Runtime was introduced to **separate process infrastructure from business capabi
 | **Infrastructure Before Business** | Runtime boots and becomes ready before business workflows execute. Business logic never drives process lifecycle. |
 | **Observe Before Optimize** | Profiling and resource health exist before performance optimization. Measurement is a first-class Runtime concern, not an afterthought in workflows. |
 | **Initialize on Demand** | Expensive infrastructure is created lazily at first access unless startup policy requires earlier resolution. Runtime owns the deferral policy. |
-| **One Runtime, Multiple Interfaces** | CLI, SDK, and future Console, MCP, and REST share one `PlatformRuntime` per process. Interfaces delegate to the facade; the facade delegates lifecycle to Runtime. |
+| **One Runtime, Multiple Interfaces** | CLI, Interactive Console, SDK, and future MCP and REST share one `PlatformRuntime` per process. Interfaces delegate to the facade; the facade delegates lifecycle to Runtime. |
 | **Business Unawareness** | Workflow, agents, Discovery, and Execution Planning do not import Runtime internals. Dependency flows downward: interfaces → facade → runtime → business. |
 | **Stable Substrate, Evolving Wiring** | Runtime core defines lifecycle, ownership, and observation contracts. Application-layer wiring may evolve (new resource types) without changing business capability boundaries. |
 
@@ -81,7 +81,7 @@ Runtime was introduced to **separate process infrastructure from business capabi
 
 ```text
 Interfaces
-    CLI  ·  Console (future)  ·  SDK  ·  REST (future)  ·  MCP (future)
+    CLI  ·  Interactive Console  ·  SDK  ·  REST (future)  ·  MCP (future)
                               ↓
                     Platform Facade (Man1Lab)
                               ↓
@@ -392,20 +392,19 @@ SessionWorkspace                ← in-memory interaction placeholders
 
 ## 11. Current Limitations
 
-Honest constraints as of the Runtime foundation phases (8.1–8.5):
+Honest constraints as of v1.2.3 (phases 8.1–8.6):
 
 | Limitation | Notes |
 |------------|-------|
 | **No persistent session workspace** | `SessionWorkspace` is in-memory only |
-| **No conversation memory** | Session does not retain dialogue history |
+| **No conversation memory** | Console does not retain dialogue history |
 | **No daemon mode** | Process lifetime follows facade / CLI invocation |
-| **No interactive console** | Session open/close exists; REPL-style interface planned |
 | **No distributed runtime** | Single-process ownership model |
 | **Cache policy is metadata only** | No eviction algorithms; runtime-scoped cache dominates |
 | **Business workflows not runtime-owned** | Orchestrator and agents wired outside resource manager |
 | **No business-stage profiling** | Runtime profiles infrastructure startup, not full reproduction pipeline |
 | **No persistent profiling storage** | Reports are ephemeral per run |
-| **Session not auto-opened** | Interaction scope requires explicit open (future console will drive this) |
+| **Session not auto-opened on CLI subcommands** | Subcommands use one-shot facade calls; console opens session on start |
 | **Workspace slot on context unused** | Reserved; not yet migrated from legacy paths |
 
 These limitations are **intentional scope boundaries** for the foundation phases, not architectural oversights.
@@ -416,7 +415,7 @@ These limitations are **intentional scope boundaries** for the foundation phases
 
 Runtime was designed to support progressive enhancement without restructuring business capabilities.
 
-### Completed foundation (phases 8.1–8.5)
+### Completed foundation (phases 8.1–8.6)
 
 ```text
 8.1 Profiling
@@ -428,6 +427,10 @@ Runtime was designed to support progressive enhancement without restructuring bu
 8.4 Resource Management
   ↓
 8.5 Runtime Session
+  ↓
+8.5.1 Runtime Integration
+  ↓
+8.6 Interactive Console
 ```
 
 | Phase | Deliverable |
@@ -437,12 +440,12 @@ Runtime was designed to support progressive enhancement without restructuring bu
 | **8.3** | Lazy initialization primitives, deferred resource resolution |
 | **8.4** | Resource manager, descriptors, health, cache policy metadata |
 | **8.5** | Session lifecycle, `SessionWorkspace` placeholders |
+| **8.5.1** | `RuntimeInfrastructure`; agents receive injected dependencies |
+| **8.6** | `Man1LabConsole` — `man1lab` with no args |
 
 ### Planned interfaces and modes
 
 ```text
-8.6 Interactive Console (planned)
-  ↓
 Future: Daemon
 Future: REST
 Future: MCP
@@ -451,7 +454,6 @@ Future: GUI
 
 | Direction | Runtime role |
 |-----------|--------------|
-| **Interactive Console** | Session-driven interaction; explicit open/close; workspace pinning |
 | **Daemon** | Long-lived **READY** process; session multiplexing |
 | **REST / MCP** | Remote interfaces share one runtime per server process |
 | **GUI** | Session and workspace as UI binding targets |
@@ -477,7 +479,9 @@ Future: GUI
 | [reviews/8.3_runtime_lazy_initialization/](../reviews/8.3_runtime_lazy_initialization/) | Lazy initialization phase audit |
 | [reviews/8.4_runtime_resource_management/](../reviews/8.4_runtime_resource_management/) | Resource management phase audit |
 | [reviews/8.5_runtime_session/](../reviews/8.5_runtime_session/) | Session phase audit |
+| [reviews/8.5.1_runtime_integration/](../reviews/8.5.1_runtime_integration/) | Runtime integration audit |
+| [reviews/8.6_man1lab_console/](../reviews/8.6_man1lab_console/) | Interactive console audit |
 
 ---
 
-**Last aligned with:** Man1Lab v1.2.2 — Runtime foundation (phases 8.1–8.5)
+**Last aligned with:** Man1Lab v1.2.3 — Platform Runtime and Interactive Console

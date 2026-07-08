@@ -11,6 +11,7 @@ from adapters.pymupdf_parser import PyMuPDFParser
 from prompt.builder import PromptBuilder
 from prompt.loader import PromptLoader
 from tests.fixtures import create_sample_paper_pdf
+from tests.support.prompt import default_prompt_builder
 
 
 class ReaderPromptIntegrationTest(unittest.TestCase):
@@ -46,7 +47,7 @@ class ReaderPromptIntegrationTest(unittest.TestCase):
                 return MOCK_REPRODUCTION_ANALYSIS_JSON
 
         llm = RecordingLLM()
-        reader = Reader(document_parser=PyMuPDFParser(), llm=llm)
+        reader = Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder(), llm=llm)
         analysis = reader.run(self.paper_path)
 
         self.assertIsInstance(analysis, PaperReproductionAnalysis)

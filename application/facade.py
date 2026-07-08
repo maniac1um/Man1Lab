@@ -33,9 +33,10 @@ from execution_planning.workflow import ExecutionPlanningWorkflow
 from llm.compat import LLMManagerCompleteAdapter
 from llm.mock_provider import MOCK_PLANNER_JSON, MockLLMProvider
 from llm.provider import LLMProvider
+from application.runtime.accessors import RuntimeInfrastructure
 from application.runtime.resource_wiring import wire_runtime_resources
+from prompt.builder import PromptBuilder
 from providers.llm.manager import LLMManager
-from runtime.resources.manager import RESOURCE_CONFIGURATION, RESOURCE_LLM_MANAGER
 from providers.llm.model_management import (
     CurrentModelReport,
     ModelChangeReport,
@@ -103,7 +104,8 @@ class Man1Lab:
             settings=settings,
             initialize_configuration=initialize_configuration,
         )
-        self._settings = self._runtime.context.resources.get(RESOURCE_CONFIGURATION)
+        infrastructure = RuntimeInfrastructure(self._runtime.context.resources)
+        self._settings = infrastructure.configuration()
 
         if configure_logging:
             self._configure_logging()
@@ -113,6 +115,7 @@ class Man1Lab:
             root=self._settings.workspace_root,
             outputs_dir=self._settings.outputs_dir,
         )
+        self._prompt_builder = PromptBuilder(infrastructure.prompt_registry())
         self._llm = self._build_llm_port()
         self._reader, self._planner, self._coder, self._runner = self._build_agents()
         self._discovery_workflow = DiscoveryWorkflow.default()
@@ -328,9 +331,13 @@ class Man1Lab:
 
         return profile_platform_startup()
 
+    def run_startup_profile(self) -> RuntimeProfile:
+        """Profile platform startup (instance entry for console and SDK)."""
+        return self.profile_startup()
+
     @property
     def _llm_manager(self) -> LLMManager:
-        return self._runtime.context.resources.get(RESOURCE_LLM_MANAGER)
+        return RuntimeInfrastructure(self._runtime.context.resources).llm_manager()
 
     def list_models(self) -> ModelListReport:
         """List configured model profiles."""
@@ -424,15 +431,25 @@ class Man1Lab:
         return MockLLMProvider(MOCK_PLANNER_JSON)
 
     def _build_agents(self) -> tuple[Reader, Planner, Coder, Runner]:
-        reader = Reader(document_parser=build_document_parser(), llm=self._llm)
-        planner = Planner(llm=self._build_planner_llm_port())
-        coder = Coder(workspace_manager=self._workspace_manager, llm=self._llm)
+        reader = Reader(
+            document_parser=build_document_parser(),
+            llm=self._llm,
+            prompt_builder=self._prompt_builder,
+        )
+        planner = Planner(llm=self._build_planner_llm_port(), prompt_builder=self._prompt_builder)
+        coder = Coder(
+            workspace_manager=self._workspace_manager,
+            llm=self._llm,
+            prompt_builder=self._prompt_builder,
+        )
         runner = Runner()
         return reader, planner, coder, runner
 
     def _build_orchestrator(self, *, reporter: Reporter | None = None) -> WorkflowOrchestrator:
-        patch_planner = PatchPlanner(llm=self._llm)
-        reviewer = Reviewer(llm=self._llm, patch_planner=patch_planner)
+        patch_planner = PatchPlanner(llm=self._llm, prompt_builder=self._prompt_builder)
+        reviewer = Reviewer(
+            llm=self._llm, patch_planner=patch_planner, prompt_builder=self._prompt_builder
+        )
         return TrackedWorkflowOrchestrator(
             reader=self._reader,
             planner=self._planner,

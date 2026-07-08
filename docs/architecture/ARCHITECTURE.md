@@ -1,6 +1,6 @@
 # Man1Lab Architecture
 
-**Version:** v1.2.2  
+**Version:** v1.2.3  
 **Status:** Living document — platform-level design  
 **Audience:** Architects, contributors, and long-term maintainers  
 **Horizon:** 3–5 years
@@ -10,6 +10,8 @@ This document describes **what Man1Lab is**, how its layers relate, and where re
 For **specific decisions** (orchestrator ownership, parsing backend, canonical analysis artifact), see [Architecture Decision Records](../adr/README.md). ADRs record *why* a choice was made; this document records *what the system is*.
 
 For **implementation status and benchmarks**, see [CURRENT_STATUS.md](../CURRENT_STATUS.md) and [CAPABILITIES.md](CAPABILITIES.md).
+
+For **Platform Runtime** (process lifecycle, resources, session, console), see [RUNTIME.md](RUNTIME.md).
 
 For **infrastructure governance** (Hydra, Pixi, adoption matrix), see [infrastructure.md](infrastructure.md).
 
@@ -101,9 +103,11 @@ Cross-cutting concerns — orchestration, prompt infrastructure, validation — 
 Future interfaces share this layer:
 
 ```text
-CLI  ·  Python SDK  ·  (Future MCP)  ·  (Future REST)
+CLI  ·  Interactive Console  ·  Python SDK  ·  (Future MCP)  ·  (Future REST)
                     ↓
           Man1Lab (Platform Facade)
+                    ↓
+          PlatformRuntime
                     ↓
        TrackedWorkflowOrchestrator
                     ↓
@@ -127,10 +131,12 @@ man1lab plan      → Man1Lab.plan_from_paper()
 man1lab execute   → Man1Lab.execute_from_paths()
 man1lab config    → Man1Lab.configuration()
 man1lab model     → Man1Lab.list_models() / use_model() / export_models() / import_models() / …
+man1lab profile   → Man1Lab.profile_startup()
+man1lab           → Interactive Console (no args)
 man1lab version   → Man1Lab.version()
 ```
 
-**Package distribution (v1.2 RC):** `pip install man1lab`, console script `man1lab`, module entry `python -m man1lab`. Public exports: `Man1Lab`, `PLATFORM_VERSION`, `__version__`.
+**Package distribution (v1.2):** `pip install man1lab`, console script `man1lab`, module entry `python -m man1lab`. Public exports: `Man1Lab`, `PLATFORM_VERSION`, `__version__`.
 
 Future: `interfaces/mcp/`, `interfaces/api/` (reserved, not implemented).
 
@@ -150,6 +156,29 @@ Public API (`application.facade.Man1Lab`):
 | `configuration()` | Effective runtime settings |
 
 Interfaces must **never** call `WorkflowOrchestrator` directly.
+
+---
+
+### Platform Runtime Layer
+
+| | |
+|--|--|
+| **Responsibility** | Own process lifecycle, infrastructure resources, lazy initialization, profiling, and user session lifetime |
+| **Input** | Startup/shutdown signals from facade; resource factory registration from application wiring |
+| **Output** | Ready runtime context; resolved infrastructure (configuration, prompts, LLM platform); session scope |
+| **Does** | Lifecycle FSM, resource manager, startup profiling, interactive console substrate |
+| **Does NOT** | Interpret papers, run Discovery, commit strategies, generate code, or execute training |
+
+```text
+PlatformRuntime
+    ├── RuntimeContext → RuntimeResourceManager → lazy infrastructure
+    ├── RuntimeSession → SessionWorkspace (in-memory)
+    └── RuntimeProfiler (per observation run)
+```
+
+Business workflows run **below** Runtime. Agents receive injected dependencies resolved through `RuntimeInfrastructure` — they do not import runtime internals.
+
+Full specification: [RUNTIME.md](RUNTIME.md).
 
 ---
 
@@ -648,4 +677,4 @@ Non-goals are **features intentionally deferred or excluded**, not missing bugs.
 | Backend swap (e.g. parser) | §3 Parsing only | Yes |
 | Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
 
-**Last aligned with:** Man1Lab v1.2.2 — LLM Platform and First-run Experience
+**Last aligned with:** Man1Lab v1.2.3 — Platform Runtime and Interactive Console

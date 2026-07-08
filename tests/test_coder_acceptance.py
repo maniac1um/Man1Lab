@@ -12,6 +12,7 @@ from agents.coder_quality import (
 from llm.coder_mock_provider import CoderMockLLMProvider
 from models.task import TaskModel, TaskStep
 from tests.fixtures import sample_reproduction_analysis
+from tests.support.prompt import default_prompt_builder
 from workspace.manager import WorkspaceManager
 
 
@@ -37,6 +38,7 @@ class CoderAcceptanceGateTest(unittest.TestCase):
         self._workspace_manager = WorkspaceManager(root=self._root)
         self._coder = Coder(
             workspace_manager=self._workspace_manager,
+            prompt_builder=default_prompt_builder(),
             llm=CoderMockLLMProvider(),
         )
 

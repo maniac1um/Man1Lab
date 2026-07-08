@@ -6,6 +6,7 @@ from agents.coder import Coder
 from models.task import TaskModel, TaskStep
 from tests.fixtures import sample_reproduction_analysis
 from workspace.manager import REPOSITORY_SUBDIRS, WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 def _sample_analysis():
@@ -35,7 +36,7 @@ class CoderWorkspaceTest(unittest.TestCase):
         self._temp_dir = tempfile.TemporaryDirectory()
         self._root = Path(self._temp_dir.name) / "workspace" / "tasks"
         self._workspace_manager = WorkspaceManager(root=self._root)
-        self._coder = Coder(workspace_manager=self._workspace_manager)
+        self._coder = Coder(workspace_manager=self._workspace_manager, prompt_builder=default_prompt_builder())
 
     def tearDown(self) -> None:
         self._temp_dir.cleanup()

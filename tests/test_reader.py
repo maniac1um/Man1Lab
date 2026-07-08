@@ -11,6 +11,7 @@ from models.paper_reproduction_analysis import PaperReproductionAnalysis, Reprod
 from adapters.pymupdf_parser import PyMuPDFParser
 from tests.fixtures import create_sample_paper_pdf
 from validation.exceptions import AnalysisValidationError
+from tests.support.prompt import default_prompt_builder
 
 
 class FakePromptBuilder:
@@ -55,7 +56,7 @@ class ReaderTest(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.paper_path = Path(self.temp_dir.name) / "sample.pdf"
         create_sample_paper_pdf(self.paper_path)
-        self.reader = Reader(document_parser=PyMuPDFParser())
+        self.reader = Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder())
 
     def tearDown(self) -> None:
         logging.disable(logging.NOTSET)

@@ -233,7 +233,7 @@ class ProfilingResourceMetadataTest(unittest.TestCase):
         self.assertTrue(profile.resource_statuses)
         statuses = dict(profile.resource_statuses)
         self.assertEqual(statuses["Configuration"], "READY (Runtime Cache)")
-        self.assertEqual(statuses["Prompt Registry"], "DEFERRED")
+        self.assertEqual(statuses["Prompt Registry"], "READY (Runtime Cache)")
         self.assertIn("LLM Manager", statuses)
 
 

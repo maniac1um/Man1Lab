@@ -22,6 +22,7 @@ from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import failing_train_command_runner, mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import REPOSITORY_SUBDIRS, WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 def _write_environment_log(workspace_path: Path, *, success: bool) -> None:
@@ -201,9 +202,9 @@ class VerificationWorkflowTest(unittest.TestCase):
                     return super().run(history)
 
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(document_parser=PyMuPDFParser()),
-                planner=Planner(),
-                coder=Coder(workspace_manager=workspace_manager),
+                reader=Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder()),
+                planner=Planner(prompt_builder=default_prompt_builder()),
+                coder=Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder()),
                 runner=Runner(
                     environment_service=EnvironmentService(
                         command_runner=mock_command_runner
@@ -212,7 +213,7 @@ class VerificationWorkflowTest(unittest.TestCase):
                         command_runner=mock_command_runner
                     ),
                 ),
-                reviewer=Reviewer(),
+                reviewer=Reviewer(prompt_builder=default_prompt_builder()),
                 reporter=CapturingReporter(),
                 workspace_manager=workspace_manager,
             )
@@ -250,9 +251,9 @@ class VerificationWorkflowTest(unittest.TestCase):
                     return super().run(history)
 
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(document_parser=PyMuPDFParser()),
-                planner=Planner(),
-                coder=Coder(workspace_manager=workspace_manager),
+                reader=Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder()),
+                planner=Planner(prompt_builder=default_prompt_builder()),
+                coder=Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder()),
                 runner=Runner(
                     environment_service=EnvironmentService(
                         command_runner=mock_command_runner
@@ -262,6 +263,7 @@ class VerificationWorkflowTest(unittest.TestCase):
                     ),
                 ),
                 reviewer=Reviewer(
+                    prompt_builder=default_prompt_builder(),
                     llm=MockLLMProvider(MOCK_REVIEWER_FAIL_JSON),
                 ),
                 reporter=CapturingReporter(),

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-07-08
+
+**Platform Runtime & Interactive Console** — process-level infrastructure, runtime resource ownership, and REPL-style interface.
+
+### Added
+
+- **Platform Runtime** — `PlatformRuntime` lifecycle, `RuntimeContext`, lazy initialization, resource manager (phases 8.1–8.5)
+- **Runtime profiling** — `RuntimeProfiler`, `man1lab profile` startup observation
+- **Runtime integration** — `RuntimeInfrastructure`; configuration, prompts, and LLM platform resolved through runtime resources (8.5.1)
+- **Interactive Console** — `man1lab` with no arguments enters `Man1LabConsole` (8.6)
+- **Canonical architecture** — [docs/architecture/RUNTIME.md](docs/architecture/RUNTIME.md)
+- Release notes: [docs/releases/v1.2.3.md](docs/releases/v1.2.3.md)
+
+### Changed
+
+- Agents require injected `PromptBuilder`; facade resolves infrastructure via runtime
+- `LLMManager` created only through runtime-owned resources
+
+### Compatibility
+
+- No breaking changes to canonical artifacts or reproduction workflow semantics
+- Existing CLI subcommands unchanged; console is additive (`man1lab` with no args)
+
+### Tests
+
+- 765 unit tests passing
+
+[1.2.3]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.2.3
+
 ## [1.2.2] - 2026-07-08
 
 **LLM Platform & First-run Experience** — model registry, multi-provider support, model management CLI, interactive initialization, and release hardening.

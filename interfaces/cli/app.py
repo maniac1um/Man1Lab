@@ -10,7 +10,8 @@ from interfaces.cli.commands import analyze, clean, config, discover, doctor, ex
 app = typer.Typer(
     name="man1lab",
     help="Man1Lab — autonomous research paper reproduction platform.",
-    no_args_is_help=True,
+    no_args_is_help=False,
+    invoke_without_command=True,
     add_completion=False,
 )
 
@@ -34,7 +35,11 @@ def main(
     ),
 ) -> None:
     """Man1Lab platform command line interface."""
-    del ctx, show_version
+    if ctx.invoked_subcommand is None and not show_version:
+        from interfaces.cli.common import get_platform
+        from runtime.console import run_console
+
+        raise typer.Exit(run_console(get_platform()))
 
 
 app.command("reproduce", help="Run the complete reproduction workflow.")(reproduce.command)

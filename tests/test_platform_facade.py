@@ -50,6 +50,7 @@ from services.execution_service import ExecutionService
 from agents.coder import Coder
 from agents.runner import Runner
 from workspace.manager import WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 def _test_settings(temp_dir: Path) -> AppSettings:
@@ -87,7 +88,7 @@ class Man1LabConstructionTest(unittest.TestCase):
                 configure_logging=False,
             )
             self.assertEqual(platform.version(), PLATFORM_VERSION)
-            self.assertEqual(PLATFORM_VERSION, "1.2.2")
+            self.assertEqual(PLATFORM_VERSION, "1.2.3")
 
     def test_configuration_returns_effective_settings(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -167,7 +168,7 @@ class Man1LabDelegationTest(unittest.TestCase):
                 initialize_configuration=False,
                 configure_logging=False,
             )
-            platform._reader = Reader(document_parser=PyMuPDFParser(), llm=MockLLMProvider())
+            platform._reader = Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder(), llm=MockLLMProvider())
             analysis = platform.analyze(paper_path)
             self.assertIsInstance(analysis, PaperReproductionAnalysis)
             self.assertIn("Diffusion Policy", analysis.metadata.title)
@@ -232,8 +233,11 @@ class Man1LabDelegationTest(unittest.TestCase):
                 configure_logging=False,
             )
             platform._workspace_manager = workspace_manager
-            platform._planner = Planner(llm=MockLLMProvider(MOCK_PLANNER_JSON))
-            platform._coder = Coder(workspace_manager=workspace_manager)
+            platform._planner = Planner(
+                prompt_builder=default_prompt_builder(),
+                llm=MockLLMProvider(MOCK_PLANNER_JSON),
+            )
+            platform._coder = Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder())
             platform._runner = Runner(
                 environment_service=EnvironmentService(command_runner=mock_command_runner),
                 execution_service=ExecutionService(command_runner=mock_command_runner),

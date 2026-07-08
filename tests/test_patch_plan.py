@@ -32,6 +32,7 @@ from validation.patch import build_patch_plan
 from validation.review import build_review_report
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 _VALID_PATCH_DATA = {
@@ -114,9 +115,12 @@ class PatchPlannerTest(unittest.TestCase):
 
 class ReviewerPatchPlannerIntegrationTest(unittest.TestCase):
     def test_reviewer_to_patch_planner_flow(self) -> None:
+        prompt_builder = default_prompt_builder()
         reviewer = Reviewer(
+            prompt_builder=prompt_builder,
             llm=MockLLMProvider(MOCK_REVIEWER_PASS_JSON),
             patch_planner=PatchPlanner(
+                prompt_builder=prompt_builder,
                 llm=MockLLMProvider(MOCK_PATCH_NO_ITERATION_JSON),
             ),
         )
@@ -188,9 +192,9 @@ class PatchWorkflowBranchTest(unittest.TestCase):
                 else mock_command_runner
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(document_parser=PyMuPDFParser()),
-                planner=Planner(),
-                coder=Coder(workspace_manager=workspace_manager),
+                reader=Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder()),
+                planner=Planner(prompt_builder=default_prompt_builder()),
+                coder=Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder()),
                 runner=Runner(
                     environment_service=EnvironmentService(
                         command_runner=mock_command_runner
@@ -200,13 +204,17 @@ class PatchWorkflowBranchTest(unittest.TestCase):
                     ),
                 ),
                 reviewer=Reviewer(
+                    prompt_builder=default_prompt_builder(),
                     llm=MockLLMProvider(
                         MOCK_REVIEWER_FAIL_JSON if failing_runner else MOCK_REVIEWER_PASS_JSON
                     ),
                 ),
                 reporter=CapturingReporter(),
                 workspace_manager=workspace_manager,
-                patch_planner=PatchPlanner(llm=MockLLMProvider(patch_json)),
+                patch_planner=PatchPlanner(
+                    prompt_builder=default_prompt_builder(),
+                    llm=MockLLMProvider(patch_json),
+                ),
             )
             orchestrator.run(paper_path)
         return captured_history

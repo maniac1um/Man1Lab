@@ -1,6 +1,6 @@
 # Getting Started
 
-Quick orientation for installing and running Man1Lab v1.2.2. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
+Quick orientation for installing and running Man1Lab v1.2.3. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
 
 ---
 
@@ -125,7 +125,19 @@ Coder → Runner → Verification → Review → Report
 
 **Execution Planning (v1.2.1):** Complete. Six embedded providers commit deterministic engineering decisions via the shared Decision Foundation. See [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md).
 
-**Partial commands:** `man1lab analyze`, `man1lab discover`, `man1lab plan` — see `man1lab --help`.
+**Partial commands:** `man1lab analyze`, `man1lab discover`, `man1lab plan`, `man1lab profile` — see `man1lab --help`.
+
+---
+
+## Interactive Console
+
+Run `man1lab` with **no arguments** to enter the interactive console:
+
+```bash
+man1lab
+```
+
+Built-in commands include `help`, `doctor`, `profile`, `analyze`, `discover`, `plan`, `reproduce`, and `exit`. The console delegates exclusively to the Platform Facade and opens a `RuntimeSession` for the interaction scope.
 
 ---
 
@@ -255,7 +267,7 @@ Or after `pip install -e ".[dev]"`:
 python -m pytest tests/ -v
 ```
 
-Current suite: **614 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
+Current suite: **765 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
@@ -266,5 +278,5 @@ Current suite: **614 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 3. [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md)
 4. [ROADMAP.md](../ROADMAP.md)
 5. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md)
-6. [releases/v1.2.2.md](releases/v1.2.2.md)
+6. [releases/v1.2.3.md](releases/v1.2.3.md)
 7. [CHANGELOG.md](../CHANGELOG.md)

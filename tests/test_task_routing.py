@@ -12,6 +12,7 @@ from services.execution_service import ExecutionService
 from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import mock_command_runner
 from workspace.manager import WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 def _step(task_id: str, name: str, description: str = "") -> TaskStep:
@@ -171,7 +172,7 @@ class CoderRoutingIntegrationTest(unittest.TestCase):
         self._temp_dir = tempfile.TemporaryDirectory()
         self._root = Path(self._temp_dir.name) / "workspace" / "tasks"
         self._workspace_manager = WorkspaceManager(root=self._root)
-        self._coder = Coder(workspace_manager=self._workspace_manager)
+        self._coder = Coder(workspace_manager=self._workspace_manager, prompt_builder=default_prompt_builder())
 
     def tearDown(self) -> None:
         self._temp_dir.cleanup()
@@ -227,9 +228,9 @@ class TaskRoutingWorkflowTest(unittest.TestCase):
                 outputs_dir=temp_path / "outputs",
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(document_parser=PyMuPDFParser()),
-                planner=Planner(),
-                coder=Coder(workspace_manager=workspace_manager),
+                reader=Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder()),
+                planner=Planner(prompt_builder=default_prompt_builder()),
+                coder=Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder()),
                 runner=Runner(
                     environment_service=EnvironmentService(
                         command_runner=mock_command_runner
@@ -238,7 +239,7 @@ class TaskRoutingWorkflowTest(unittest.TestCase):
                         command_runner=mock_command_runner
                     ),
                 ),
-                reviewer=Reviewer(),
+                reviewer=Reviewer(prompt_builder=default_prompt_builder()),
                 reporter=Reporter(),
                 workspace_manager=workspace_manager,
             )

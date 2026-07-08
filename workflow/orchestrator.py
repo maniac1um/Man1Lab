@@ -44,7 +44,9 @@ class WorkflowOrchestrator:
         self._reporter = reporter
         self._workspace_manager = workspace_manager
         self._verification_service = verification_service or VerificationService()
-        self._patch_planner = patch_planner or PatchPlanner()
+        self._patch_planner = patch_planner or PatchPlanner(
+            prompt_builder=reviewer.prompt_builder,
+        )
         self._discovery_workflow = discovery_workflow or DiscoveryWorkflow.default()
         self._execution_planning_workflow = (
             execution_planning_workflow or ExecutionPlanningWorkflow.default()

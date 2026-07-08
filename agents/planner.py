@@ -6,18 +6,17 @@ from models.execution_strategy import ExecutionStrategy
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.task import TaskModel
 from prompt.builder import PromptBuilder
-from prompt.loader import PromptLoader
 from validation.task import build_task_model
 
 
 class Planner:
     def __init__(
         self,
-        prompt_builder: PromptBuilder | None = None,
+        prompt_builder: PromptBuilder,
         llm: LLMProvider | None = None,
         response_parser: ResponseParser | None = None,
     ) -> None:
-        self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._prompt_builder = prompt_builder
         self._llm = llm or MockLLMProvider(MOCK_PLANNER_JSON)
         self._response_parser = response_parser or ResponseParser()
         self._last_prompt: str | None = None

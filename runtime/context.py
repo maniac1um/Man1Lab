@@ -10,6 +10,7 @@ from runtime.resources.manager import (
     RESOURCE_CONFIGURATION,
     RESOURCE_LLM_MANAGER,
     RESOURCE_PROMPT_REGISTRY,
+    RESOURCE_PROVIDER_REGISTRY,
     RuntimeResourceManager,
 )
 
@@ -51,6 +52,10 @@ class RuntimeContext:
     @property
     def llm_manager(self) -> LazyResource[Any]:
         return self.resource_manager.require(RESOURCE_LLM_MANAGER)
+
+    @property
+    def provider_registry(self) -> LazyResource[Any]:
+        return self.resource_manager.require(RESOURCE_PROVIDER_REGISTRY)
 
     def resource_status_entries(self) -> tuple[tuple[str, str], ...]:
         """Return profiling labels with health and cache metadata."""

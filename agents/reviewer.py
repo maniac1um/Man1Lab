@@ -9,24 +9,31 @@ from models.task import TaskModel
 from models.verification import VerificationResult
 from planning.patch_planner import PatchPlanner
 from prompt.builder import PromptBuilder
-from prompt.loader import PromptLoader
 from validation.review import build_review_report
 
 
 class Reviewer:
     def __init__(
         self,
-        prompt_builder: PromptBuilder | None = None,
+        prompt_builder: PromptBuilder,
         llm: LLMProvider | None = None,
         response_parser: ResponseParser | None = None,
         patch_planner: PatchPlanner | None = None,
     ) -> None:
-        self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._prompt_builder = prompt_builder
         self._llm = llm or MockLLMProvider(MOCK_REVIEWER_PASS_JSON)
         self._response_parser = response_parser or ResponseParser()
-        self._patch_planner = patch_planner or PatchPlanner()
+        self._patch_planner = patch_planner or PatchPlanner(prompt_builder=prompt_builder)
         self._last_prompt: str | None = None
         self._last_extracted: dict | None = None
+
+    @property
+    def prompt_builder(self) -> PromptBuilder:
+        return self._prompt_builder
+
+    @property
+    def llm(self) -> LLMProvider:
+        return self._llm
 
     def run(
         self,

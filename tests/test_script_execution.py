@@ -19,6 +19,7 @@ from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import failing_train_command_runner, mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 def _workspace_with_train_script(root: Path) -> Workspace:
@@ -128,9 +129,9 @@ class ScriptExecutionWorkflowTest(unittest.TestCase):
                 outputs_dir=temp_path / "outputs",
             )
             orchestrator = WorkflowOrchestrator(
-                reader=Reader(document_parser=PyMuPDFParser()),
-                planner=Planner(),
-                coder=Coder(workspace_manager=workspace_manager),
+                reader=Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder()),
+                planner=Planner(prompt_builder=default_prompt_builder()),
+                coder=Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder()),
                 runner=Runner(
                     environment_service=EnvironmentService(
                         command_runner=mock_command_runner
@@ -139,7 +140,7 @@ class ScriptExecutionWorkflowTest(unittest.TestCase):
                         command_runner=mock_command_runner
                     ),
                 ),
-                reviewer=Reviewer(),
+                reviewer=Reviewer(prompt_builder=default_prompt_builder()),
                 reporter=Reporter(),
                 workspace_manager=workspace_manager,
             )

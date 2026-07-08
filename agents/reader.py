@@ -7,7 +7,6 @@ from llm.response_parser import ResponseParser
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from ports.document_parser import DocumentParser
 from prompt.builder import PromptBuilder
-from prompt.loader import PromptLoader
 from validation.analysis_builder import build_analysis_from_extraction
 
 
@@ -15,12 +14,12 @@ class Reader:
     def __init__(
         self,
         document_parser: DocumentParser,
-        prompt_builder: PromptBuilder | None = None,
+        prompt_builder: PromptBuilder,
         llm: LLMProvider | None = None,
         response_parser: ResponseParser | None = None,
     ) -> None:
         self._document_parser = document_parser
-        self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._prompt_builder = prompt_builder
         self._llm = llm or MockLLMProvider()
         self._response_parser = response_parser or ResponseParser()
         self._last_prompt: str | None = None

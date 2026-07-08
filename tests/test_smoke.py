@@ -15,6 +15,7 @@ from tests.fixtures import create_sample_paper_pdf
 from tests.runner_mocks import mock_command_runner
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
+from tests.support.prompt import default_prompt_builder
 
 
 class SmokeTest(unittest.TestCase):
@@ -28,12 +29,12 @@ class SmokeTest(unittest.TestCase):
                 root=temp_path / "workspace/tasks",
                 outputs_dir=temp_path / "outputs",
             )
-            reader = Reader(document_parser=PyMuPDFParser())
+            reader = Reader(document_parser=PyMuPDFParser(), prompt_builder=default_prompt_builder())
 
             orchestrator = WorkflowOrchestrator(
                 reader=reader,
-                planner=Planner(),
-                coder=Coder(workspace_manager=workspace_manager),
+                planner=Planner(prompt_builder=default_prompt_builder()),
+                coder=Coder(workspace_manager=workspace_manager, prompt_builder=default_prompt_builder()),
                 runner=Runner(
                     environment_service=EnvironmentService(
                         command_runner=mock_command_runner
@@ -42,7 +43,7 @@ class SmokeTest(unittest.TestCase):
                         command_runner=mock_command_runner
                     ),
                 ),
-                reviewer=Reviewer(),
+                reviewer=Reviewer(prompt_builder=default_prompt_builder()),
                 reporter=Reporter(),
                 workspace_manager=workspace_manager,
             )

@@ -1,7 +1,7 @@
 # Man1Lab Roadmap
 
 **Last updated:** 2026-07-08  
-**Current version:** v1.2.2 (Release Candidate)
+**Current version:** v1.2.3 (Release Candidate)
 
 For live implementation state see [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md). For release history see [docs/releases/README.md](docs/releases/README.md).
 
@@ -82,6 +82,18 @@ Release: [docs/releases/v1.2.1.md](docs/releases/v1.2.1.md)
 | Doctor LLM validation | ✅ |
 
 Release: [docs/releases/v1.2.2.md](docs/releases/v1.2.2.md)
+
+#### v1.2.3 — Platform Runtime & Interactive Console (2026-07-08 RC)
+
+| Deliverable | Status |
+|-------------|--------|
+| Platform Runtime (lifecycle, context, resources) | ✅ |
+| Lazy initialization + runtime profiling | ✅ |
+| Runtime session + workspace placeholders | ✅ |
+| Runtime infrastructure integration (8.5.1) | ✅ |
+| Interactive Console (`man1lab` no args) | ✅ |
+
+Release: [docs/releases/v1.2.3.md](docs/releases/v1.2.3.md)
 
 ---
 

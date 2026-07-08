@@ -7,6 +7,7 @@ from agents.planner import Planner
 from llm.mock_provider import MOCK_PLANNER_JSON
 from tests.fixtures import sample_reproduction_analysis
 from validation.exceptions import TaskValidationError
+from tests.support.prompt import default_prompt_builder
 
 
 class FakePromptBuilder:
@@ -112,7 +113,7 @@ class PlannerTest(unittest.TestCase):
             planner.run_legacy(_sample_analysis())
 
     def test_planner_produces_structured_task_dict_with_mock_llm(self) -> None:
-        planner = Planner()
+        planner = Planner(prompt_builder=default_prompt_builder())
         planner.run_legacy(_sample_analysis())
         extracted = planner._last_extracted
 

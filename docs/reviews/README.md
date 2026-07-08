@@ -87,6 +87,8 @@ For current project state, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). For ac
 | [8.3_runtime_lazy_initialization/](8.3_runtime_lazy_initialization/) | Runtime lazy initialization subsystem |
 | [8.4_runtime_resource_management/](8.4_runtime_resource_management/) | Runtime resource manager, descriptors, health, cache policy |
 | [8.5_runtime_session/](8.5_runtime_session/) | Runtime session lifecycle and workspace placeholder |
+| [8.5.1_runtime_integration/](8.5.1_runtime_integration/) | Runtime as single infrastructure owner; business injection |
+| [8.6_man1lab_console/](8.6_man1lab_console/) | Interactive Man1Lab Console |
 
 ---
 

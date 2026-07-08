@@ -6,13 +6,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Version** | **v1.2.2** |
+| **Current Version** | **v1.2.3** |
 | **License** | MIT ([LICENSE](../../LICENSE)) |
 | **Milestone** | **Platform Capability** |
-| **Previous Release** | v1.2.1 (Execution Planning Stabilization) |
+| **Previous Release** | v1.2.2 (LLM Platform & First-run Experience) |
 | **Next Milestone** | **Repository Understanding (v1.3)** |
 
-Release notes: [releases/v1.2.2.md](releases/v1.2.2.md) · Previous: [v1.2.1](releases/v1.2.1.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
+Release notes: [releases/v1.2.3.md](releases/v1.2.3.md) · Previous: [releases/v1.2.2.md](releases/v1.2.2.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
 
 For install and run: [GETTING_STARTED.md](GETTING_STARTED.md). Architecture: [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 
@@ -23,18 +23,21 @@ For install and run: [GETTING_STARTED.md](GETTING_STARTED.md). Architecture: [ar
 All public entry points route through the **Platform Facade** (`application/facade.py` → `Man1Lab`):
 
 ```text
-CLI (man1lab)  ·  Python SDK (man1lab package)  ·  Future MCP  ·  Future REST
+CLI (man1lab)  ·  Interactive Console  ·  Python SDK  ·  Future MCP  ·  Future REST
                               ↓
                     Man1Lab (Platform Facade)
+                              ↓
+                    PlatformRuntime
                               ↓
                  TrackedWorkflowOrchestrator
 ```
 
 | Interface | Location | Status |
 |-----------|----------|--------|
-| **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|clean\|model\|reproduce\|…` |
+| **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|clean\|model\|reproduce\|profile\|…` |
+| **Interactive Console** | `runtime/console/` | ✅ `man1lab` (no args) — REPL via facade |
 | **Python SDK** | `man1lab/` + `interfaces/sdk/` | ✅ `from man1lab import Man1Lab` |
-| **Package** | `pyproject.toml` | ✅ `pip install man1lab` (v1.2.2) |
+| **Package** | `pyproject.toml` | ✅ `pip install man1lab` (v1.2.3) |
 | **Lifecycle** | `application/lifecycle/` | ✅ `init` (+ first-model wizard), `doctor` (+ LLM checks), `clean` |
 | **LLM Providers** | `providers/llm/` | ✅ `LLMManager`, `ModelRegistry`, `ProviderRegistry`, OpenAI, DeepSeek, Anthropic |
 | **Model CLI** | `interfaces/cli/commands/model.py` | ✅ `man1lab model list\|current\|use\|add\|remove\|rename\|test\|validate\|export\|import` |
@@ -110,6 +113,7 @@ Planner → Coder → Runner → Verification → Reviewer → Reporter
 | PatchPlanner | ✅ | `PatchPlan` |
 | Reporter | ✅ | `ReportModel` |
 | Experiment Tracking | ✅ | MLflow (optional noop) |
+| Platform Runtime | ✅ | Lifecycle, resources, profiling, session |
 
 ### Execution Planning maturity (v1.2.1+)
 
@@ -149,6 +153,24 @@ Architecture: CLI → Facade → `LLMManager` → `ModelRegistry` → `ProviderR
 
 Phase audits: [reviews/7.1_llm_provider_foundation/](reviews/7.1_llm_provider_foundation/) through [reviews/7.5_first_run_experience/](reviews/7.5_first_run_experience/).
 
+### Platform Runtime maturity (v1.2.3)
+
+**Platform Runtime foundation complete** — interactive console shipped.
+
+| Component | Status |
+|-----------|--------|
+| `PlatformRuntime` lifecycle | ✅ |
+| `RuntimeContext` + `RuntimeResourceManager` | ✅ |
+| Lazy initialization | ✅ |
+| Runtime profiling (`man1lab profile`) | ✅ |
+| `RuntimeSession` + `SessionWorkspace` | ✅ |
+| Runtime infrastructure integration (8.5.1) | ✅ |
+| Interactive Console (`man1lab` no args) | ✅ |
+
+Architecture: Interfaces → Facade → `PlatformRuntime` → Business workflows. See [architecture/RUNTIME.md](architecture/RUNTIME.md).
+
+Phase audits: [reviews/8.1_runtime_performance_audit/](reviews/8.1_runtime_performance_audit/) through [reviews/8.6_man1lab_console/](reviews/8.6_man1lab_console/), [reviews/8.5.1_runtime_integration/](reviews/8.5.1_runtime_integration/).
+
 ---
 
 ## Foundation Infrastructure (v1.1)
@@ -167,7 +189,8 @@ Phase audits: [reviews/7.1_llm_provider_foundation/](reviews/7.1_llm_provider_fo
 
 | Metric | Value |
 |--------|-------|
-| **Unit tests** | **614 passing** (`pixi run test`) |
+| **Unit tests** | **765 passing** (`pixi run test`) |
+| Runtime | `tests/test_runtime_*.py`, `tests/test_man1lab_console.py` |
 | Platform facade | `tests/test_platform_facade.py` |
 | CLI | `tests/test_cli.py` |
 | SDK | `tests/test_sdk.py` |
@@ -191,6 +214,7 @@ Phase audits: [reviews/7.1_llm_provider_foundation/](reviews/7.1_llm_provider_fo
 | L-06 | MCP / REST interfaces not implemented | Roadmap |
 | L-07 | `execution_planning.enabled=false` uses legacy Planner path | Transitional |
 | L-08 | SDK does not expose model management methods | Optional polish |
+| L-09 | Session workspace is in-memory only (no persistence) | Runtime |
 
 Full benchmark history: [benchmark section in prior releases](releases/v1.1.0.md).
 
@@ -213,9 +237,9 @@ See [ROADMAP.md](../ROADMAP.md).
 | Need | Document |
 |------|----------|
 | Install and run | [GETTING_STARTED.md](GETTING_STARTED.md) |
-| Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) |
+| Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md), [architecture/RUNTIME.md](architecture/RUNTIME.md) |
 | Roadmap | [ROADMAP.md](../ROADMAP.md) |
-| Release notes | [releases/v1.2.2.md](releases/v1.2.2.md) |
+| Release notes | [releases/v1.2.3.md](releases/v1.2.3.md) |
 | ADRs | [adr/README.md](adr/README.md) |
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |
 

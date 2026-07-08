@@ -4,18 +4,17 @@ from llm.response_parser import ResponseParser
 from models.review_report import ReviewReport
 from models.review import PatchPlan
 from prompt.builder import PromptBuilder
-from prompt.loader import PromptLoader
 from validation.patch import build_patch_plan
 
 
 class PatchPlanner:
     def __init__(
         self,
-        prompt_builder: PromptBuilder | None = None,
+        prompt_builder: PromptBuilder,
         llm: LLMProvider | None = None,
         response_parser: ResponseParser | None = None,
     ) -> None:
-        self._prompt_builder = prompt_builder or PromptBuilder(PromptLoader())
+        self._prompt_builder = prompt_builder
         self._llm = llm or MockLLMProvider(MOCK_PATCH_NO_ITERATION_JSON)
         self._response_parser = response_parser or ResponseParser()
         self._last_prompt: str | None = None
