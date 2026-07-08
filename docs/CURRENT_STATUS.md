@@ -6,12 +6,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Version** | **v1.2.1** |
+| **Current Version** | **v1.2.2** |
+| **License** | MIT ([LICENSE](../../LICENSE)) |
 | **Milestone** | **Platform Capability** |
-| **Previous Release** | v1.2.0 (Release Candidate) |
+| **Previous Release** | v1.2.1 (Execution Planning Stabilization) |
 | **Next Milestone** | **Repository Understanding (v1.3)** |
 
-Release notes: [releases/v1.2.1.md](releases/v1.2.1.md) · Previous: [v1.2.0](releases/v1.2.0.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
+Release notes: [releases/v1.2.2.md](releases/v1.2.2.md) · Previous: [v1.2.1](releases/v1.2.1.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
 
 For install and run: [GETTING_STARTED.md](GETTING_STARTED.md). Architecture: [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 
@@ -31,10 +32,12 @@ CLI (man1lab)  ·  Python SDK (man1lab package)  ·  Future MCP  ·  Future REST
 
 | Interface | Location | Status |
 |-----------|----------|--------|
-| **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|clean\|reproduce\|…` |
+| **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|clean\|model\|reproduce\|…` |
 | **Python SDK** | `man1lab/` + `interfaces/sdk/` | ✅ `from man1lab import Man1Lab` |
-| **Package** | `pyproject.toml` | ✅ `pip install man1lab` |
-| **Lifecycle** | `application/lifecycle/` | ✅ `init`, `doctor`, `clean` |
+| **Package** | `pyproject.toml` | ✅ `pip install man1lab` (v1.2.2) |
+| **Lifecycle** | `application/lifecycle/` | ✅ `init` (+ first-model wizard), `doctor` (+ LLM checks), `clean` |
+| **LLM Providers** | `providers/llm/` | ✅ `LLMManager`, `ModelRegistry`, `ProviderRegistry`, OpenAI, DeepSeek, Anthropic |
+| **Model CLI** | `interfaces/cli/commands/model.py` | ✅ `man1lab model list\|current\|use\|add\|remove\|rename\|test\|validate\|export\|import` |
 | MCP | `interfaces/mcp/` | Reserved |
 | REST | `interfaces/api/` | Reserved |
 
@@ -76,49 +79,29 @@ ReportModel                     ← Reporter
 
 ```text
 Research Paper (PDF)
-        ↓
-Parsing → ParsedDocument
-        ↓
-Reader → PaperReproductionAnalysis
-        ↓
-DiscoveryWorkflow → ResearchResourceDiscovery
-        ↓
-ExecutionPlanningWorkflow → ExecutionStrategy
-        ↓
-Planner → TaskModel
-        ↓
-Coder → Workspace
-        ↓
-Runner → ExecutionResult
-        ↓
-VerificationService → VerificationResult
-        ↓
-Reviewer → ReviewReport
-        ↓
-PatchPlanner → PatchPlan
-        ↓
-Reporter → ReportModel
-        ↓
-Experiment Tracking (MLflow nested runs + stage artifacts)
+    ↓
+Reader (Analysis)
+    ↓
+DiscoveryWorkflow
+    ↓
+ExecutionPlanningWorkflow
+    ↓
+Planner → Coder → Runner → Verification → Reviewer → Reporter
 ```
-
-Configuration: `discovery.enabled`, `execution_planning.enabled` (Hydra, default true). When disabled, transitional fallback paths apply.
 
 ---
 
-## Implemented Capabilities
+## Capability Status
 
-| Capability | Status | Output |
-|------------|--------|--------|
-| Platform Facade | ✅ | `Man1Lab` public API |
-| CLI | ✅ | `man1lab` commands |
-| Python SDK | ✅ | `from man1lab import Man1Lab` |
-| Package Distribution | ✅ | `pip install man1lab` |
-| Lifecycle (`init`, `doctor`) | ✅ | Workspace + validation |
+| Capability | Status | Artifact |
+|------------|--------|----------|
 | Reader / Analysis | ✅ | `PaperReproductionAnalysis` |
 | Discovery | ✅ | `ResearchResourceDiscovery` |
 | GitHub Discovery Provider | ✅ | Collection · Evidence · Verification · Ranking |
 | Execution Planning | ✅ Complete | `ExecutionStrategy` — six embedded providers + Decision Foundation |
+| LLM Platform | ✅ Complete | `ModelRegistry`, `ProviderRegistry`, OpenAI / DeepSeek / Anthropic |
+| Model Management CLI | ✅ Complete | Profile lifecycle, export/import, doctor validation |
+| First-run Experience | ✅ Complete | Interactive `man1lab init` wizard |
 | Planner (strategy-driven) | ✅ | `TaskModel` |
 | Coder | ✅ | `Workspace` |
 | Runner | ✅ | `ExecutionResult` |
@@ -128,7 +111,7 @@ Configuration: `discovery.enabled`, `execution_planning.enabled` (Hydra, default
 | Reporter | ✅ | `ReportModel` |
 | Experiment Tracking | ✅ | MLflow (optional noop) |
 
-### Execution Planning maturity (v1.2.1)
+### Execution Planning maturity (v1.2.1+)
 
 **Execution Planning complete** — six embedded engineering decision providers with shared Decision Foundation.
 
@@ -149,6 +132,23 @@ Internal layering: Workflow → Services → Providers → Decision Foundation �
 
 See [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md), [ADR-0017](adr/ADR-0017-Execution-Planning-Service-Architecture.md), [ADR-0018](adr/ADR-0018-Execution-Planning-Decision-Foundation.md).
 
+### LLM Platform maturity (v1.2.2)
+
+| Component | Status |
+|-----------|--------|
+| `LLMProvider` foundation | ✅ |
+| `ModelRegistry` + persistence | ✅ |
+| `ProviderRegistry` | ✅ |
+| OpenAI / DeepSeek / Anthropic providers | ✅ |
+| `man1lab model` CLI | ✅ |
+| Interactive init wizard | ✅ |
+| Model export/import (portable, no secrets) | ✅ |
+| Doctor LLM validation | ✅ |
+
+Architecture: CLI → Facade → `LLMManager` → `ModelRegistry` → `ProviderRegistry` → `LLMProvider`.
+
+Phase audits: [reviews/7.1_llm_provider_foundation/](reviews/7.1_llm_provider_foundation/) through [reviews/7.5_first_run_experience/](reviews/7.5_first_run_experience/).
+
 ---
 
 ## Foundation Infrastructure (v1.1)
@@ -167,10 +167,11 @@ See [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md), [A
 
 | Metric | Value |
 |--------|-------|
-| **Unit tests** | **526 passing** (`pixi run test`) |
+| **Unit tests** | **614 passing** (`pixi run test`) |
 | Platform facade | `tests/test_platform_facade.py` |
 | CLI | `tests/test_cli.py` |
 | SDK | `tests/test_sdk.py` |
+| Model CLI / init wizard | `tests/test_model_cli.py`, `tests/test_init_wizard.py` |
 | Package | `tests/test_package_distribution.py` |
 | Platform integration | `tests/test_platform_integration.py` |
 | Discovery / GitHub / Execution Planning | Dedicated test modules |
@@ -189,6 +190,7 @@ See [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md), [A
 | L-05 | Discovery verification is shallow — not guaranteed runnable | Discovery |
 | L-06 | MCP / REST interfaces not implemented | Roadmap |
 | L-07 | `execution_planning.enabled=false` uses legacy Planner path | Transitional |
+| L-08 | SDK does not expose model management methods | Optional polish |
 
 Full benchmark history: [benchmark section in prior releases](releases/v1.1.0.md).
 
@@ -213,7 +215,7 @@ See [ROADMAP.md](../ROADMAP.md).
 | Install and run | [GETTING_STARTED.md](GETTING_STARTED.md) |
 | Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) |
 | Roadmap | [ROADMAP.md](../ROADMAP.md) |
-| Release notes | [releases/v1.2.1.md](releases/v1.2.1.md) |
+| Release notes | [releases/v1.2.2.md](releases/v1.2.2.md) |
 | ADRs | [adr/README.md](adr/README.md) |
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |
 

@@ -40,3 +40,8 @@ def resolve_env_example() -> Path | None:
         if candidate.is_file():
             return candidate
     return None
+
+
+def resolve_llm_user_profiles_path() -> Path:
+    """Return the user-writable LLM profile overlay path."""
+    return resolve_conf_dir() / "llm" / "user_profiles.yaml"

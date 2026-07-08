@@ -53,7 +53,7 @@ These ADRs document the v1.2 platform capability layer. ADR-0014, ADR-0017, and 
 
 **Interface rule:** CLI and Python SDK delegate to `Man1Lab` (Platform Facade). Interfaces never call agents or orchestrators directly.
 
-See [architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md), [architecture/EXECUTION_PLANNING.md](../architecture/EXECUTION_PLANNING.md), and [releases/v1.2.1.md](../releases/v1.2.1.md).
+See [architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md), [architecture/EXECUTION_PLANNING.md](../architecture/EXECUTION_PLANNING.md), and [releases/v1.2.2.md](../releases/v1.2.2.md).
 
 ## Template
 

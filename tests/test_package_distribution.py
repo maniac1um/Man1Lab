@@ -97,7 +97,7 @@ class LifecycleCommandTest(unittest.TestCase):
             actions=[InitAction(path=Path("."), action="ready", message="ok")],
             next_steps=["Run doctor"],
         )
-        result = runner.invoke(app, ["init"])
+        result = runner.invoke(app, ["init", "--skip-model-config"])
         self.assertEqual(result.exit_code, 0)
         get_platform.return_value.init.assert_called_once()
         self.assertIn("Next steps", result.stdout)

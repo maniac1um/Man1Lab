@@ -87,7 +87,7 @@ class Man1LabConstructionTest(unittest.TestCase):
                 configure_logging=False,
             )
             self.assertEqual(platform.version(), PLATFORM_VERSION)
-            self.assertEqual(PLATFORM_VERSION, "1.2.0")
+            self.assertEqual(PLATFORM_VERSION, "1.2.2")
 
     def test_configuration_returns_effective_settings(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

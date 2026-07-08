@@ -1,34 +1,29 @@
-from anthropic import Anthropic
+"""Backward-compatible Anthropic provider export."""
+
+from __future__ import annotations
 
 import config
-from llm.provider import LLMMessage, LLMProvider
+from configuration.models import LLMConfig
+from llm.compat import ProviderCompleteAdapter
+from providers.llm.anthropic_provider import AnthropicProvider as InfrastructureAnthropicProvider
 
 
-class AnthropicProvider(LLMProvider):
-    def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
-        key = api_key if api_key is not None else config.ANTHROPIC_API_KEY
-        if not key:
-            raise ValueError("ANTHROPIC_API_KEY is not set")
-        self._client = Anthropic(api_key=key)
-        self._model = model or config.ANTHROPIC_MODEL
-
-    def complete(self, messages: list[LLMMessage], *, temperature: float = 0.0) -> str:
-        system_prompt = ""
-        chat_messages: list[dict[str, str]] = []
-        for message in messages:
-            if message.role == "system":
-                system_prompt = message.content
-            else:
-                chat_messages.append({"role": message.role, "content": message.content})
-
-        response = self._client.messages.create(
-            model=self._model,
-            max_tokens=4096,
-            temperature=temperature,
-            system=system_prompt,
-            messages=chat_messages,
+class AnthropicProvider(ProviderCompleteAdapter):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
+        llm_config = LLMConfig(
+            anthropic_api_key=api_key if api_key is not None else (config.ANTHROPIC_API_KEY or ""),
+            anthropic_model=model if model is not None else (config.ANTHROPIC_MODEL or "claude-3-5-haiku-latest"),
         )
-        text_blocks = [block.text for block in response.content if block.type == "text"]
-        if not text_blocks:
-            raise RuntimeError("Anthropic returned an empty response")
-        return "\n".join(text_blocks)
+        super().__init__(
+            InfrastructureAnthropicProvider(
+                llm_config,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+            )
+        )

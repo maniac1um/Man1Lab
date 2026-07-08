@@ -1,14 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from providers.llm.models import LLMMessage
 
-
-class LLMMessage(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
-    role: Literal["system", "user", "assistant"]
-    content: str
+__all__ = ["LLMMessage", "LLMProvider"]
 
 
 class LLMProvider(ABC):

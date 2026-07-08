@@ -1,6 +1,6 @@
 # Documentation Index
 
-Navigation hub for Man1Lab v1.2.0 documentation.
+Navigation hub for Man1Lab v1.2.2 documentation.
 
 **Principle:** Current documents answer *"What does the project do today?"* Historical reviews answer *"How did the project evolve?"*
 
@@ -12,10 +12,12 @@ Navigation hub for Man1Lab v1.2.0 documentation.
 |----------|---------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Install, init, doctor, reproduce; CLI and SDK workflow |
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **Single source of truth** — capabilities, pipeline, benchmarks, limitations |
-| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.2.0) |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.2.2) |
 | [ROADMAP.md](../ROADMAP.md) | Completed milestones and planned work |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Research prototype — issues welcome, PRs not accepted |
 | [releases/README.md](releases/README.md) | Release history |
+| [releases/v1.2.2.md](releases/v1.2.2.md) | v1.2.2 LLM Platform & First-run Experience |
+| [releases/v1.2.1.md](releases/v1.2.1.md) | v1.2.1 Execution Planning Stabilization |
 | [releases/v1.2.0.md](releases/v1.2.0.md) | v1.2.0 Platform Capability Release notes |
 | [releases/v1.1.0.md](releases/v1.1.0.md) | v1.1.0 Foundation Release notes |
 | [release/v1.0.0.md](../release/v1.0.0.md) | v1.0.0 MVP release notes |

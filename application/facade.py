@@ -17,20 +17,32 @@ from agents.runner import Runner
 from application.lifecycle import (
     CleanPolicy,
     CleanupReport,
-    DoctorCheck,
     DoctorReport,
     InitReport,
     clean_workspace,
     init_workspace,
     run_doctor_checks,
 )
+from application.lifecycle.init_wizard import InitWizardRequest, resolve_wizard_profile, write_api_key_to_env
+from application.lifecycle.llm_doctor import run_llm_doctor_checks
 from application.version import PLATFORM_VERSION
 from configuration.bootstrap import initialize_app_configuration
 from configuration.models import AppSettings
 from discovery.empty import build_empty_discovery
 from discovery.workflow import DiscoveryWorkflow
 from execution_planning.workflow import ExecutionPlanningWorkflow
-from llm.factory import build_llm_provider, build_planner_llm_provider
+from llm.compat import LLMManagerCompleteAdapter
+from llm.mock_provider import MOCK_PLANNER_JSON, MockLLMProvider
+from llm.provider import LLMProvider
+from providers.llm.manager import LLMManager
+from providers.llm.model_management import (
+    CurrentModelReport,
+    ModelChangeReport,
+    ModelListReport,
+    ModelTestReport,
+)
+from providers.llm.models import RegistryValidationResult
+from providers.llm.persistence import ModelImportReport
 from models.execution import ExecutionResult
 from models.execution_strategy import ExecutionStrategy
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
@@ -44,6 +56,15 @@ from tracking.protocol import ExperimentTracker
 from tracking.workflow import TrackedWorkflowOrchestrator
 from workflow.orchestrator import WorkflowOrchestrator
 from workspace.manager import WorkspaceManager
+
+
+@dataclass(frozen=True)
+class ModelSetupReport:
+    successful: bool
+    message: str
+    profile_name: str = ""
+    provider: str = ""
+    model: str = ""
 
 
 @dataclass(frozen=True)
@@ -80,7 +101,8 @@ class Man1Lab:
             root=self._settings.workspace_root,
             outputs_dir=self._settings.outputs_dir,
         )
-        self._llm = build_llm_provider()
+        self._llm_manager = LLMManager(self._settings.llm)
+        self._llm = self._build_llm_port()
         self._reader, self._planner, self._coder, self._runner = self._build_agents()
         self._discovery_workflow = DiscoveryWorkflow.default()
         self._execution_planning_workflow = ExecutionPlanningWorkflow.default()
@@ -169,14 +191,75 @@ class Man1Lab:
         )
         return self.execute(strategy, analysis)
 
-    def init(self, *, workspace_root: Path | str | None = None) -> InitReport:
+    def init(
+        self,
+        *,
+        workspace_root: Path | str | None = None,
+    ) -> InitReport:
         """Initialize a Man1Lab workspace without overwriting existing user files."""
         root = Path(workspace_root) if workspace_root is not None else None
         return init_workspace(self._settings, workspace_root=root)
 
+    def setup_first_model(
+        self,
+        request: InitWizardRequest,
+        *,
+        workspace_root: Path | str | None = None,
+    ) -> ModelSetupReport:
+        """Configure and activate the first model profile during initialization."""
+        root = Path(workspace_root) if workspace_root is not None else Path.cwd()
+        resolved = resolve_wizard_profile(request)
+        try:
+            write_api_key_to_env(root / ".env", resolved.api_key_reference, request.api_key)
+        except ValueError as exc:
+            return ModelSetupReport(successful=False, message=str(exc))
+
+        add_report = self.add_model(
+            profile_name=resolved.profile_name,
+            provider=resolved.provider,
+            model=resolved.model,
+            base_url=resolved.base_url,
+            api_key_reference=resolved.api_key_reference,
+            temperature=resolved.temperature,
+            max_tokens=resolved.max_tokens,
+            description=resolved.description,
+            enabled=True,
+        )
+        if not add_report.successful:
+            return ModelSetupReport(
+                successful=False,
+                message=add_report.message,
+                profile_name=resolved.profile_name,
+                provider=resolved.provider,
+                model=resolved.model,
+            )
+
+        use_report = self.use_model(resolved.profile_name)
+        if not use_report.successful:
+            return ModelSetupReport(
+                successful=False,
+                message=use_report.message,
+                profile_name=resolved.profile_name,
+                provider=resolved.provider,
+                model=resolved.model,
+            )
+
+        self._llm = self._build_llm_port()
+        return ModelSetupReport(
+            successful=True,
+            message="First model profile configured.",
+            profile_name=resolved.profile_name,
+            provider=resolved.provider,
+            model=resolved.model,
+        )
+
     def doctor(self) -> DoctorReport:
         """Validate runtime environment and platform prerequisites."""
-        return run_doctor_checks(self._settings)
+        base_report = run_doctor_checks(self._settings)
+        llm_checks = run_llm_doctor_checks(self._llm_manager)
+        checks = list(base_report.checks) + llm_checks
+        healthy = all(check.status != "fail" for check in checks)
+        return DoctorReport(healthy=healthy, checks=checks)
 
     def clean(
         self,
@@ -202,6 +285,78 @@ class Man1Lab:
         """Return effective runtime configuration."""
         return _settings_to_dict(self._settings)
 
+    def list_models(self) -> ModelListReport:
+        """List configured model profiles."""
+        return self._llm_manager.list_models()
+
+    def current_model(self) -> CurrentModelReport | None:
+        """Return the active model profile."""
+        return self._llm_manager.current_model()
+
+    def use_model(self, profile_name: str) -> ModelChangeReport:
+        """Switch the active model profile."""
+        return self._llm_manager.use_model(profile_name)
+
+    def add_model(
+        self,
+        *,
+        profile_name: str,
+        provider: str,
+        model: str,
+        base_url: str = "",
+        api_key_reference: str = "OPENAI_API_KEY",
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        description: str = "",
+        enabled: bool = True,
+    ) -> ModelChangeReport:
+        """Add a model profile to the registry."""
+        return self._llm_manager.add_model(
+            profile_name=profile_name,
+            provider=provider,
+            model=model,
+            base_url=base_url,
+            api_key_reference=api_key_reference,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            description=description,
+            enabled=enabled,
+        )
+
+    def remove_model(self, profile_name: str, *, force: bool = False) -> ModelChangeReport:
+        """Remove a model profile from the registry."""
+        return self._llm_manager.remove_model(profile_name, force=force)
+
+    def rename_model(self, old_name: str, new_name: str) -> ModelChangeReport:
+        """Rename an existing model profile."""
+        return self._llm_manager.rename_model(old_name, new_name)
+
+    def test_model(self, profile_name: str | None = None) -> ModelTestReport:
+        """Run a provider health check for a model profile."""
+        return self._llm_manager.test_model(profile_name)
+
+    def validate_models(self) -> RegistryValidationResult:
+        """Validate configured model profiles."""
+        return self._llm_manager.validate_models()
+
+    def export_models(self, path: Path | str) -> Path:
+        """Export portable model profile configuration."""
+        return self._llm_manager.export_models(Path(path))
+
+    def import_models(
+        self,
+        path: Path | str,
+        *,
+        replace: bool = False,
+        skip_existing: bool = False,
+    ) -> ModelImportReport:
+        """Import portable model profile configuration."""
+        return self._llm_manager.import_models(
+            Path(path),
+            replace=replace,
+            skip_existing=skip_existing,
+        )
+
     @property
     def settings(self) -> AppSettings:
         return self._settings
@@ -210,9 +365,20 @@ class Man1Lab:
     def experiment_tracker(self) -> ExperimentTracker:
         return self._tracker
 
+    def _build_llm_port(self) -> LLMProvider:
+        if self._llm_manager.has_active_provider():
+            return LLMManagerCompleteAdapter(self._llm_manager)
+        logging.warning("OPENAI_API_KEY not set; using MockLLMProvider")
+        return MockLLMProvider()
+
+    def _build_planner_llm_port(self) -> LLMProvider:
+        if self._llm_manager.has_active_provider():
+            return LLMManagerCompleteAdapter(self._llm_manager)
+        return MockLLMProvider(MOCK_PLANNER_JSON)
+
     def _build_agents(self) -> tuple[Reader, Planner, Coder, Runner]:
         reader = Reader(document_parser=build_document_parser(), llm=self._llm)
-        planner = Planner(llm=build_planner_llm_provider())
+        planner = Planner(llm=self._build_planner_llm_port())
         coder = Coder(workspace_manager=self._workspace_manager, llm=self._llm)
         runner = Runner()
         return reader, planner, coder, runner

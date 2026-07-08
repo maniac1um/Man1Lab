@@ -1,6 +1,6 @@
 # Man1Lab Architecture
 
-**Version:** v1.2.0  
+**Version:** v1.2.2  
 **Status:** Living document — platform-level design  
 **Audience:** Architects, contributors, and long-term maintainers  
 **Horizon:** 3–5 years
@@ -117,8 +117,8 @@ Legacy maintainer entry: `app.py` — not a public interface.
 **CLI (v1.2):** `interfaces/cli/` — Typer commands delegate exclusively to `Man1Lab`.
 
 ```text
-man1lab init      → Man1Lab.init()
-man1lab doctor    → Man1Lab.doctor()
+man1lab init      → Man1Lab.init() + optional setup_first_model()
+man1lab doctor    → Man1Lab.doctor() (environment + LLM checks)
 man1lab clean     → Man1Lab.clean()
 man1lab reproduce → Man1Lab.reproduce()
 man1lab analyze   → Man1Lab.analyze()
@@ -126,6 +126,7 @@ man1lab discover  → Man1Lab.discover()
 man1lab plan      → Man1Lab.plan_from_paper()
 man1lab execute   → Man1Lab.execute_from_paths()
 man1lab config    → Man1Lab.configuration()
+man1lab model     → Man1Lab.list_models() / use_model() / export_models() / import_models() / …
 man1lab version   → Man1Lab.version()
 ```
 
@@ -149,6 +150,43 @@ Public API (`application.facade.Man1Lab`):
 | `configuration()` | Effective runtime settings |
 
 Interfaces must **never** call `WorkflowOrchestrator` directly.
+
+---
+
+### LLM Provider Layer
+
+Business capabilities must not call vendor SDKs directly. Inference flows through a single manager, model registry, and provider registry.
+
+```text
+Business Logic (Reader, Planner, Coder, Reviewer, PatchPlanner)
+        ↓
+LLMManager
+        ↓
+ModelRegistry
+        ↓
+ProviderRegistry
+        ↓
+LLMProvider (infrastructure contract)
+        ↓
+OpenAIProvider / DeepSeekProvider / AnthropicProvider / (future providers)
+```
+
+| Component | Location | Responsibility |
+|-----------|----------|----------------|
+| **LLMManager** | `providers/llm/manager.py` | Resolve active profile, delegate `generate()` / `stream()` / `health_check()` |
+| **ModelRegistry** | `providers/llm/registry.py` | Profile lifecycle — load, validate, activate, register, rename, remove |
+| **ModelProfile** | `providers/llm/models.py` | Canonical configured model descriptor (no runtime state) |
+| **ProviderRegistry** | `providers/llm/provider_registry.py` | Register provider adapters, resolve by provider name |
+| **LLMProvider** | `providers/llm/base.py` | Infrastructure contract — no provider-specific logic outside adapters |
+| **OpenAIProvider** | `providers/llm/openai_provider.py` | OpenAI chat-completions adapter |
+| **AnthropicProvider** | `providers/llm/anthropic_provider.py` | Anthropic Messages API adapter (non-OpenAI-compatible SDK) |
+| **Legacy port** | `llm/provider.py` | Business `complete()` port; bridged by `llm/compat.py` during migration |
+
+**Implemented providers:** OpenAI, DeepSeek, Anthropic.
+
+**Reserved for future phases:** Gemini, OpenRouter, Ollama, Azure OpenAI.
+
+Configuration uses `LLMConfig.active` and `LLMConfig.profiles` in `conf/llm/default.yaml`. Legacy flat `OPENAI_*` fields remain supported and are auto-migrated into a `default` profile when profiles are absent.
 
 ---
 
@@ -576,7 +614,7 @@ When this document and an ADR disagree, **the ADR wins** for the specific decisi
 | v1.1.0 | Foundation Release | Infrastructure adoption; `PaperReproductionAnalysis`; Docling, Hydra, Pixi, MLflow |
 | v1.0.0 | MVP | End-to-end reproduction pipeline |
 
-Release notes: [releases/v1.2.0.md](../releases/v1.2.0.md) · [releases/v1.1.0.md](../releases/v1.1.0.md) · [release/v1.0.0.md](../../release/v1.0.0.md)
+Release notes: [releases/v1.2.2.md](../releases/v1.2.2.md) · [releases/v1.2.1.md](../releases/v1.2.1.md) · [releases/v1.2.0.md](../releases/v1.2.0.md) · [release/v1.0.0.md](../../release/v1.0.0.md)
 
 ---
 
@@ -610,4 +648,4 @@ Non-goals are **features intentionally deferred or excluded**, not missing bugs.
 | Backend swap (e.g. parser) | §3 Parsing only | Yes |
 | Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
 
-**Last aligned with:** Man1Lab v1.2.0 — Execution Planning Foundation (Phase 5.2)
+**Last aligned with:** Man1Lab v1.2.2 — LLM Platform and First-run Experience

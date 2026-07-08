@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+title: Man1Lab
+message: >
+  If you use Man1Lab in your research or publications,
+  please cite this repository.
+type: software
+
+authors:
+  - family-names: "Xu"
+    alias: "maniac1um"
+
+repository-code: "https://github.com/maniac1um/Man1Lab"
+
+url: "https://github.com/maniac1um/Man1Lab"
+
+version: "1.2.2"
+
+date-released: "2026-07-08"
+
+license: MIT
+
+keywords:
+  - autonomous-agents
+  - paper-reproduction
+  - ai-agent
+  - llm
+  - workflow
+  - research
+  - reproducibility
+  - execution-planning
+
+abstract: >
+  Man1Lab is an autonomous research paper reproduction platform.
+  It provides a structured workflow covering paper analysis,
+  resource discovery, execution planning, and engineering-oriented
+  reproduction through a modular Agent architecture.

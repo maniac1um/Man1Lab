@@ -1,7 +1,7 @@
 # Man1Lab Roadmap
 
-**Last updated:** 2026-07-03  
-**Current version:** v1.2.0 (Release Candidate)
+**Last updated:** 2026-07-08  
+**Current version:** v1.2.2 (Release Candidate)
 
 For live implementation state see [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md). For release history see [docs/releases/README.md](docs/releases/README.md).
 
@@ -59,6 +59,29 @@ Unified platform interfaces and pre-implementation capabilities.
 | Orchestrator: Analysis → Discovery → Execution Planning → Planner → … | ✅ |
 
 Release: [docs/releases/v1.2.0.md](docs/releases/v1.2.0.md)
+
+#### v1.2.1 — Execution Planning Stabilization (2026-07-08)
+
+| Deliverable | Status |
+|-------------|--------|
+| Six embedded Execution Planning providers | ✅ |
+| Decision Foundation | ✅ |
+| Architecture stabilization | ✅ |
+
+Release: [docs/releases/v1.2.1.md](docs/releases/v1.2.1.md)
+
+#### v1.2.2 — LLM Platform & First-run Experience (2026-07-08 RC)
+
+| Deliverable | Status |
+|-------------|--------|
+| LLM Provider foundation (`LLMManager`, `ProviderRegistry`) | ✅ |
+| Model Registry + persistence | ✅ |
+| OpenAI / DeepSeek / Anthropic providers | ✅ |
+| `man1lab model` CLI (list, use, add, export, import, …) | ✅ |
+| Interactive `man1lab init` first-model wizard | ✅ |
+| Doctor LLM validation | ✅ |
+
+Release: [docs/releases/v1.2.2.md](docs/releases/v1.2.2.md)
 
 ---
 

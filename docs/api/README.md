@@ -1,6 +1,6 @@
 # API Documentation
 
-Public API reference for Man1Lab v1.2.0.
+Public API reference for Man1Lab v1.2.2.
 
 ## Purpose
 
@@ -25,8 +25,8 @@ For capability-level documentation, see [CAPABILITIES.md](../architecture/CAPABI
 
 | Component | Contract |
 |-----------|----------|
-| `Man1Lab` | Platform Facade — `init()`, `doctor()`, `reproduce(paper_path)`, `analyze()`, `discover()`, `plan()`, `execute()` |
-| `man1lab` CLI | Typer application; all commands delegate to `Man1Lab` |
+| `Man1Lab` | Platform Facade — `init()`, `setup_first_model()`, `doctor()`, `reproduce()`, `analyze()`, `discover()`, `plan()`, `execute()`, `list_models()`, `use_model()`, `export_models()`, `import_models()` |
+| `man1lab` CLI | Typer application; lifecycle, model, and workflow commands delegate to `Man1Lab` |
 | `TrackedWorkflowOrchestrator` | Internal workflow engine; records MLflow runs ([ADR-0012](../adr/ADR-0012-Experiment-Tracking-MLflow.md)) |
 | `app.py` | Legacy maintainer composition root — not a public interface |
 

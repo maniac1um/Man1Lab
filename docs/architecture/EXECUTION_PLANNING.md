@@ -93,4 +93,4 @@ The Decision Foundation is **not** a public API and does not appear in canonical
 
 - Design: [execution-planning-workflow.md](../design/execution-planning-workflow.md)
 - Phase audits: [reviews/5.1_execution_planning_workflow](../reviews/5.1_execution_planning_workflow/audit.md) through [6.6_execution_planning_risk_provider](../reviews/6.6_execution_planning_risk_provider/audit.md)
-- Stabilization: [reviews/7_execution_planning_architecture_stabilization](../reviews/7_execution_planning_architecture_stabilization/audit.md)
+- Stabilization: [reviews/6.7_execution_planning_architecture_stabilization](../reviews/6.7_execution_planning_architecture_stabilization/audit.md)

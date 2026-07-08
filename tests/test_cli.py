@@ -92,7 +92,7 @@ class CLIAnalyzeTest(unittest.TestCase):
 class CLIDoctorTest(unittest.TestCase):
     @patch("interfaces.cli.commands.doctor.get_platform")
     def test_doctor_success(self, get_platform: MagicMock) -> None:
-        from application.facade import DoctorCheck, DoctorReport
+        from application.lifecycle import DoctorCheck, DoctorReport
 
         get_platform.return_value.doctor.return_value = DoctorReport(
             healthy=True,
@@ -105,7 +105,7 @@ class CLIDoctorTest(unittest.TestCase):
 
     @patch("interfaces.cli.commands.doctor.get_platform")
     def test_doctor_failure_exits_platform_failure(self, get_platform: MagicMock) -> None:
-        from application.facade import DoctorCheck, DoctorReport
+        from application.lifecycle import DoctorCheck, DoctorReport
 
         get_platform.return_value.doctor.return_value = DoctorReport(
             healthy=False,

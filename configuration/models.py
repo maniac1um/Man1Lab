@@ -28,7 +28,24 @@ class WorkflowConfig:
 
 
 @dataclass(frozen=True)
+class ModelProfileSpec:
+    provider: str
+    model: str
+    base_url: str = ""
+    api_key_reference: str = "OPENAI_API_KEY"
+    organization: str = ""
+    api_version: str = ""
+    temperature: float | None = None
+    max_tokens: int | None = None
+    enabled: bool = True
+    description: str = ""
+    tags: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class LLMConfig:
+    active: str = "default"
+    profiles: dict[str, ModelProfileSpec] | None = None
     openai_api_key: str = ""
     openai_base_url: str = ""
     openai_model: str = "gpt-4o-mini"

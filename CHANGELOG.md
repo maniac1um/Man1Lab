@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-07-08
+
+**LLM Platform & First-run Experience** — model registry, multi-provider support, model management CLI, interactive initialization, and release hardening.
+
+### Added
+
+- **LLM Provider foundation** — `LLMManager`, `ModelRegistry`, `ProviderRegistry` ([reviews/7.1](docs/reviews/7.1_llm_provider_foundation/))
+- **Model Registry** — named profiles, active profile resolution, validation, persistence to `conf/llm/user_profiles.yaml`
+- **Anthropic provider** — `claude-sonnet-4` and compatible models
+- **Model Management CLI** — `man1lab model list|current|use|add|remove|rename|test|validate`
+- **First-run Experience** — interactive `man1lab init` wizard for first model setup; `man1lab model export|import`
+- **Doctor LLM checks** — profile count, active profile, API key, connection health, validation
+- Release notes: [docs/releases/v1.2.2.md](docs/releases/v1.2.2.md)
+
+### Changed
+
+- `man1lab doctor` includes LLM configuration section
+- `man1lab init` optionally configures first model profile (skip with `--skip-model-config`)
+- Documentation synchronized for v1.2.2; `docs/reviews/` directories normalized to `x.x_feature_name` format
+
+### Compatibility
+
+- No breaking changes to workflow, canonical artifacts, or existing CLI commands
+- Skipping init wizard produces identical behavior to v1.2.1
+
+### Tests
+
+- 614 unit tests passing
+
+[1.2.2]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.2.2
+
+## [1.2.1] - 2026-07-08
+
+**Execution Planning Stabilization** — six embedded providers with Decision Foundation; documentation and architecture cleanup.
+
+### Added
+
+- Decision Foundation package (`providers/embedded/decision_foundation/`)
+- [ADR-0018](docs/adr/ADR-0018-Execution-Planning-Decision-Foundation.md)
+- Release notes: [docs/releases/v1.2.1.md](docs/releases/v1.2.1.md)
+
+### Tests
+
+- 526 unit tests passing
+
+[1.2.1]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.2.1
+
 ## [1.2.0] - 2026-07-03
 
 **Platform Capability Release** — unified installable platform with public CLI and Python SDK; Discovery and Execution Planning integrated into the workflow.

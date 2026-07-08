@@ -1,3 +1,30 @@
+active: default
+
+profiles:
+  default:
+    provider: openai
+    model: ${oc.env:OPENAI_MODEL,gpt-4o-mini}
+    base_url: ${oc.env:OPENAI_BASE_URL,""}
+    api_key_reference: OPENAI_API_KEY
+    enabled: true
+    description: Default OpenAI-compatible profile
+    tags: [default]
+  deepseek:
+    provider: deepseek
+    model: deepseek-chat
+    base_url: https://api.deepseek.com
+    api_key_reference: OPENAI_API_KEY
+    enabled: false
+    description: DeepSeek chat profile
+    tags: [deepseek]
+  claude:
+    provider: anthropic
+    model: ${oc.env:ANTHROPIC_MODEL,claude-sonnet-4}
+    api_key_reference: ANTHROPIC_API_KEY
+    enabled: false
+    description: Anthropic Claude profile
+    tags: [anthropic, claude]
+
 openai_api_key: ${oc.env:OPENAI_API_KEY,""}
 openai_base_url: ${oc.env:OPENAI_BASE_URL,""}
 openai_model: ${oc.env:OPENAI_MODEL,gpt-4o-mini}

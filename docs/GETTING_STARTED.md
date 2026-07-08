@@ -1,6 +1,6 @@
 # Getting Started
 
-Quick orientation for installing and running Man1Lab v1.2.1. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
+Quick orientation for installing and running Man1Lab v1.2.2. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
 
 ---
 
@@ -45,13 +45,15 @@ Create workspace directories, cache paths, and a `.env` template (never overwrit
 man1lab init
 ```
 
+After workspace setup, `init` optionally prompts **Configure your first AI model?** — an interactive wizard for profile name, provider (OpenAI / DeepSeek / Anthropic), model, API key, and optional settings. Profiles are saved through the Model Registry (no manual YAML editing). Press `n` or use `--skip-model-config` for the same behavior as previous releases.
+
 With Pixi:
 
 ```bash
 pixi run man1lab init
 ```
 
-Edit `.env` and add LLM API keys. Optionally set `GITHUB_TOKEN` for GitHub discovery.
+Edit `.env` and add LLM API keys if you skipped the wizard. Optionally set `GITHUB_TOKEN` for GitHub discovery.
 
 ---
 
@@ -63,7 +65,7 @@ Validate the runtime environment:
 man1lab doctor
 ```
 
-Checks include Python, Pixi, Git, GitHub token, workspace paths, configuration, Docling, MLflow, write permissions, and network connectivity. Warnings do not fail the command; only critical failures return a non-zero exit code.
+Checks include Python, Pixi, Git, GitHub token, workspace paths, configuration, Docling, MLflow, write permissions, network connectivity, and an **LLM** section (profile count, active profile, provider, model, API key, connection health, validation). Warnings do not fail the command; only critical failures return a non-zero exit code.
 
 ---
 
@@ -168,6 +170,57 @@ GITHUB_TOKEN=ghp_your-token
 
 Without API keys, mock LLM providers return deterministic fixtures for tests.
 
+### Model profiles (advanced)
+
+Hydra configuration supports named model profiles under `conf/llm/default.yaml`:
+
+```yaml
+llm:
+  active: default
+  profiles:
+    default:
+      provider: openai
+      model: gpt-4o-mini
+      api_key_reference: OPENAI_API_KEY
+    deepseek:
+      provider: deepseek
+      model: deepseek-chat
+      base_url: https://api.deepseek.com
+      api_key_reference: OPENAI_API_KEY
+      enabled: false
+    claude:
+      provider: anthropic
+      model: claude-sonnet-4
+      api_key_reference: ANTHROPIC_API_KEY
+      enabled: false
+```
+
+Set `ANTHROPIC_API_KEY` in `.env` and switch `active: claude` to use Anthropic. Business agents remain unaware of the provider — resolution happens inside `LLMManager` → `ModelRegistry` → `ProviderRegistry`.
+
+### Model management CLI
+
+Manage profiles without editing YAML directly:
+
+```bash
+man1lab model list
+man1lab model current
+man1lab model use claude
+man1lab model add
+man1lab model remove claude --force
+man1lab model rename claude claude-prod
+man1lab model test
+man1lab model test claude
+man1lab model validate
+man1lab model export profiles.yaml
+man1lab model import profiles.yaml
+man1lab model import profiles.yaml --replace
+man1lab model import profiles.yaml --skip-existing
+```
+
+Profile changes persist to `conf/llm/user_profiles.yaml`. Export writes a portable format (`profiles` + `active` only — never API keys). Import validates and merges profiles without contacting providers. The CLI delegates exclusively to `Man1Lab` facade methods.
+
+Legacy `.env` variables (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`) continue to work. When no profiles are configured, Man1Lab auto-migrates them into a `default` profile at runtime.
+
 ---
 
 ## Experiment Tracking (optional)
@@ -202,7 +255,7 @@ Or after `pip install -e ".[dev]"`:
 python -m pytest tests/ -v
 ```
 
-Current suite: **526 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
+Current suite: **614 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
@@ -213,5 +266,5 @@ Current suite: **526 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 3. [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md)
 4. [ROADMAP.md](../ROADMAP.md)
 5. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md)
-6. [releases/v1.2.1.md](releases/v1.2.1.md)
+6. [releases/v1.2.2.md](releases/v1.2.2.md)
 7. [CHANGELOG.md](../CHANGELOG.md)

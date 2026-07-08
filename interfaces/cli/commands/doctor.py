@@ -12,9 +12,21 @@ def command() -> None:
     """Validate runtime environment and prerequisites."""
     def _run():
         report = get_platform().doctor()
-        for check in report.checks:
+        llm_checks = [check for check in report.checks if check.name.startswith("LLM")]
+        other_checks = [check for check in report.checks if not check.name.startswith("LLM")]
+
+        for check in other_checks:
             symbol = format_check_status(check.status)
             typer.echo(f"{symbol} {check.name}: {check.message}")
+
+        if llm_checks:
+            typer.echo("")
+            typer.echo("LLM")
+            for check in llm_checks:
+                symbol = format_check_status(check.status)
+                label = check.name.removeprefix("LLM ").strip()
+                typer.echo(f"{symbol} {label}: {check.message}")
+
         if not report.healthy:
             raise typer.Exit(EXIT_PLATFORM_FAILURE)
         typer.echo("Environment check passed.")

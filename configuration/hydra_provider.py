@@ -12,6 +12,7 @@ from configuration.models import (
     ExecutionPlanningConfig,
     LLMConfig,
     LoggingConfig,
+    ModelProfileSpec,
     ParserConfig,
     TrackingConfig,
     WorkflowConfig,
@@ -48,13 +49,7 @@ def _settings_from_config(cfg: DictConfig) -> AppSettings:
         workflow=WorkflowConfig(
             max_review_iterations=int(cfg.workflow.max_review_iterations),
         ),
-        llm=LLMConfig(
-            openai_api_key=str(cfg.llm.openai_api_key),
-            openai_base_url=str(cfg.llm.openai_base_url),
-            openai_model=str(cfg.llm.openai_model),
-            anthropic_api_key=str(cfg.llm.anthropic_api_key),
-            anthropic_model=str(cfg.llm.anthropic_model),
-        ),
+        llm=_merge_persisted_llm_config(_llm_config_from_hydra(cfg.llm)),
         logging=LoggingConfig(
             level=str(cfg.logging.level),
             format=str(cfg.logging.format),
@@ -66,3 +61,47 @@ def _settings_from_config(cfg: DictConfig) -> AppSettings:
             tracking_uri=str(cfg.tracking.tracking_uri),
         ),
     )
+
+
+def _llm_config_from_hydra(cfg: object) -> LLMConfig:
+    profiles_cfg = getattr(cfg, "profiles", None)
+    profiles: dict[str, ModelProfileSpec] | None = None
+    if profiles_cfg is not None:
+        profiles = {}
+        for name, profile in profiles_cfg.items():
+            tags_raw = getattr(profile, "tags", ()) or ()
+            temperature = getattr(profile, "temperature", None)
+            max_tokens = getattr(profile, "max_tokens", None)
+            profiles[str(name)] = ModelProfileSpec(
+                provider=str(profile.provider),
+                model=str(profile.model),
+                base_url=str(getattr(profile, "base_url", "") or ""),
+                api_key_reference=str(
+                    getattr(profile, "api_key_reference", "OPENAI_API_KEY") or "OPENAI_API_KEY"
+                ),
+                organization=str(getattr(profile, "organization", "") or ""),
+                api_version=str(getattr(profile, "api_version", "") or ""),
+                temperature=float(temperature) if temperature is not None else None,
+                max_tokens=int(max_tokens) if max_tokens is not None else None,
+                enabled=bool(getattr(profile, "enabled", True)),
+                description=str(getattr(profile, "description", "") or ""),
+                tags=tuple(str(tag) for tag in tags_raw),
+            )
+
+    return LLMConfig(
+        active=str(getattr(cfg, "active", "default") or "default"),
+        profiles=profiles,
+        openai_api_key=str(cfg.openai_api_key),
+        openai_base_url=str(cfg.openai_base_url),
+        openai_model=str(cfg.openai_model),
+        anthropic_api_key=str(cfg.anthropic_api_key),
+        anthropic_model=str(cfg.anthropic_model),
+    )
+
+
+def _merge_persisted_llm_config(base: LLMConfig) -> LLMConfig:
+    from configuration.paths import resolve_llm_user_profiles_path
+    from providers.llm.persistence import load_persisted_llm_config, merge_llm_config
+
+    overlay = load_persisted_llm_config(resolve_llm_user_profiles_path())
+    return merge_llm_config(base, overlay)
