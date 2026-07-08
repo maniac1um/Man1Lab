@@ -23,7 +23,7 @@ This project is an **active research prototype** for academic demonstration. See
 | **CLI** | `man1lab` — init, doctor, reproduce, analyze, discover, plan, execute |
 | **Python SDK** | `from man1lab import Man1Lab` |
 | **Package Distribution** | `pip install man1lab` (PEP 621 / `pyproject.toml`) |
-| **Lifecycle Commands** | `man1lab init`, `man1lab doctor` — workspace and environment validation |
+| **Lifecycle Commands** | `man1lab init`, `man1lab doctor`, `man1lab clean` — workspace setup, validation, and cleanup |
 | **Experiment Tracking** | Optional MLflow via thin port ([ADR-0012](docs/adr/ADR-0012-Experiment-Tracking-MLflow.md)) |
 
 ---
@@ -99,6 +99,7 @@ pixi run test
 ```bash
 man1lab init              # workspace directories + .env template
 man1lab doctor            # validate environment
+man1lab clean             # remove regeneratable artifacts (SAFE mode)
 man1lab reproduce paper.pdf
 ```
 
@@ -113,6 +114,9 @@ Configure LLM keys in `.env` after `init`. Optional: `GITHUB_TOKEN` for GitHub d
 ```bash
 man1lab init
 man1lab doctor
+man1lab clean
+man1lab clean --dry-run
+man1lab clean --all --yes
 man1lab reproduce paper.pdf
 man1lab analyze paper.pdf
 man1lab discover paper.pdf

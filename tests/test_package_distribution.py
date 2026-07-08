@@ -73,6 +73,7 @@ class ConsoleEntryTest(unittest.TestCase):
         result = runner.invoke(app, ["--help"])
         self.assertEqual(result.exit_code, 0)
         self.assertIn("init", result.stdout)
+        self.assertIn("clean", result.stdout)
 
     def test_python_module_main(self) -> None:
         result = subprocess.run(

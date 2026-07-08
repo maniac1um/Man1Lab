@@ -15,9 +15,12 @@ from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
 from application.lifecycle import (
+    CleanPolicy,
+    CleanupReport,
     DoctorCheck,
     DoctorReport,
     InitReport,
+    clean_workspace,
     init_workspace,
     run_doctor_checks,
 )
@@ -174,6 +177,22 @@ class Man1Lab:
     def doctor(self) -> DoctorReport:
         """Validate runtime environment and platform prerequisites."""
         return run_doctor_checks(self._settings)
+
+    def clean(
+        self,
+        *,
+        policy: CleanPolicy = CleanPolicy.SAFE,
+        dry_run: bool = False,
+        project_root: Path | str | None = None,
+    ) -> CleanupReport:
+        """Remove regeneratable workspace artifacts according to cleanup policy."""
+        root = Path(project_root) if project_root is not None else None
+        return clean_workspace(
+            self._settings,
+            policy=policy,
+            dry_run=dry_run,
+            project_root=root,
+        )
 
     def version(self) -> str:
         """Return the platform version."""

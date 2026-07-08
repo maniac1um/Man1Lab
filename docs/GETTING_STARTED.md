@@ -67,7 +67,29 @@ Checks include Python, Pixi, Git, GitHub token, workspace paths, configuration, 
 
 ---
 
-## 4. Reproduce
+## 4. Clean
+
+Remove regeneratable workspace artifacts without touching configuration, papers, or source code.
+
+**SAFE mode (default)** removes `outputs/`, `logs/`, `mlruns/`, tool caches (`.pytest_cache`, `.mypy_cache`, `.ruff_cache`), `__pycache__/` directories, and `workspace/cache/` + `workspace/tmp/`. It preserves `workspace/tasks/`, `workspace/papers/`, `conf/`, and `.env`.
+
+```bash
+man1lab clean
+man1lab clean --dry-run
+```
+
+**ALL mode** additionally removes `workspace/tasks/` and `workspace/artifacts/`. Confirmation is required unless you pass `--yes`:
+
+```bash
+man1lab clean --all
+man1lab clean --all --yes
+```
+
+Lifecycle flow: `init` → `doctor` → reproduce → `clean`. The CLI delegates to `Man1Lab.clean()`; cleanup logic lives only in `application/lifecycle/`.
+
+---
+
+## 5. Reproduce
 
 Run the complete reproduction workflow on a PDF:
 
@@ -105,7 +127,7 @@ Coder → Runner → Verification → Review → Report
 
 ---
 
-## 5. Analyze (partial workflow)
+## 6. Analyze (partial workflow)
 
 Run analysis (Reader) only:
 
@@ -117,7 +139,7 @@ Other partial commands: `discover`, `plan`, `execute`. See `man1lab --help`.
 
 ---
 
-## 6. Python SDK
+## 7. Python SDK
 
 ```python
 from man1lab import Man1Lab

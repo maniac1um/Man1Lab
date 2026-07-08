@@ -5,7 +5,7 @@ from __future__ import annotations
 import typer
 
 from application import PLATFORM_VERSION
-from interfaces.cli.commands import analyze, config, discover, doctor, execute, init, plan, reproduce, version
+from interfaces.cli.commands import analyze, clean, config, discover, doctor, execute, init, plan, reproduce, version
 
 app = typer.Typer(
     name="man1lab",
@@ -46,6 +46,7 @@ app.command(
     help="Execute implementation and runtime for an existing strategy.",
 )(execute.command)
 app.command("doctor", help="Validate runtime environment and prerequisites.")(doctor.command)
+app.command("clean", help="Remove regeneratable workspace artifacts.")(clean.command)
 app.command("init", help="Initialize workspace directories and configuration templates.")(init.command)
 app.command("config", help="Show effective runtime configuration.")(config.command)
 app.command("version", help="Show the Man1Lab platform version.")(version.command)

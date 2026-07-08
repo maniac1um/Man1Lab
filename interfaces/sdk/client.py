@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from application.facade import DoctorReport, ExecuteResult
-    from application.lifecycle import InitReport
+    from application.lifecycle import CleanupReport, InitReport
     from configuration.models import AppSettings
     from models.execution_strategy import ExecutionStrategy
     from models.paper_reproduction_analysis import PaperReproductionAnalysis
     from models.report import ReportModel
     from models.research_resource_discovery import ResearchResourceDiscovery
+
+from application.lifecycle.clean import CleanPolicy
 
 
 class Man1Lab:
@@ -92,6 +94,16 @@ class Man1Lab:
     def init(self, *, workspace_root: Path | str | None = None) -> InitReport:
         """Initialize a Man1Lab workspace without overwriting existing user files."""
         return self._facade.init(workspace_root=workspace_root)
+
+    def clean(
+        self,
+        *,
+        policy: CleanPolicy = CleanPolicy.SAFE,
+        dry_run: bool = False,
+        project_root: Path | str | None = None,
+    ) -> CleanupReport:
+        """Remove regeneratable workspace artifacts according to cleanup policy."""
+        return self._facade.clean(policy=policy, dry_run=dry_run, project_root=project_root)
 
     def version(self) -> str:
         """Return the platform version."""

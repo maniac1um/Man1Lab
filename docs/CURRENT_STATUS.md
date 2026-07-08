@@ -31,10 +31,10 @@ CLI (man1lab)  ·  Python SDK (man1lab package)  ·  Future MCP  ·  Future REST
 
 | Interface | Location | Status |
 |-----------|----------|--------|
-| **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|reproduce\|…` |
+| **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|clean\|reproduce\|…` |
 | **Python SDK** | `man1lab/` + `interfaces/sdk/` | ✅ `from man1lab import Man1Lab` |
 | **Package** | `pyproject.toml` | ✅ `pip install man1lab` |
-| **Lifecycle** | `application/lifecycle.py` | ✅ `init`, `doctor` |
+| **Lifecycle** | `application/lifecycle/` | ✅ `init`, `doctor`, `clean` |
 | MCP | `interfaces/mcp/` | Reserved |
 | REST | `interfaces/api/` | Reserved |
 

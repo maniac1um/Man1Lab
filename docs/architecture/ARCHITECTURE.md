@@ -119,6 +119,7 @@ Legacy maintainer entry: `app.py` — not a public interface.
 ```text
 man1lab init      → Man1Lab.init()
 man1lab doctor    → Man1Lab.doctor()
+man1lab clean     → Man1Lab.clean()
 man1lab reproduce → Man1Lab.reproduce()
 man1lab analyze   → Man1Lab.analyze()
 man1lab discover  → Man1Lab.discover()
