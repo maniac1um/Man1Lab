@@ -27,6 +27,7 @@ class LLMProvider(ABC):
         *,
         temperature: float = 0.0,
         model: str | None = None,
+        max_tokens: int | None = None,
     ) -> str:
         """Generate a completion for the given messages."""
 

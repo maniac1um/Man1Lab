@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import sys
 import tempfile
 import unittest
 from io import StringIO
@@ -19,6 +20,19 @@ from configuration.models import (
     TrackingConfig,
     WorkflowConfig,
 )
+from datetime import UTC, datetime
+from models.execution_strategy import (
+    AnalysisReference,
+    DiscoveryReference,
+    ExecutionStrategy,
+    InputReferences,
+    PlanningStatus,
+    Strategy,
+    StrategyMetadata,
+    StrategyPosture,
+)
+from models.paper_reproduction_analysis import PaperReproductionAnalysis
+from models.research_resource_discovery import DiscoveryStatus, ResearchResourceDiscovery
 from runtime.console import (
     CommandRegistry,
     ConsoleCommand,
@@ -28,7 +42,9 @@ from runtime.console import (
     run_console,
 )
 from runtime.console.builtins import register_builtin_commands
+from runtime.console.input import create_console_input_fn, prompt_toolkit_available
 from runtime.console.renderer import ConsoleRenderer
+from runtime.session.workspace import SessionWorkspace
 from runtime.session.state import SessionState
 from typer.testing import CliRunner
 
@@ -54,10 +70,78 @@ def _test_settings(temp_dir: Path) -> AppSettings:
     )
 
 
+def _minimal_execution_strategy(strategy_id: str = "strategy-1") -> ExecutionStrategy:
+    now = datetime.now(UTC)
+    return ExecutionStrategy(
+        metadata=StrategyMetadata(
+            strategy_id=strategy_id,
+            created_at=now,
+            status=PlanningStatus.COMPLETE,
+        ),
+        input_references=InputReferences(
+            analysis_reference=AnalysisReference(
+                analysis_schema_version="1.0",
+                paper_title="Test Paper",
+                analysis_content_hash="analysis-hash",
+            ),
+            discovery_reference=DiscoveryReference(
+                discovery_schema_version="1.0",
+                discovery_id="disc-1",
+                discovery_content_hash="discovery-hash",
+                discovery_status=DiscoveryStatus.COMPLETE,
+            ),
+        ),
+        strategy=Strategy(
+            primary_posture=StrategyPosture.GREENFIELD,
+            rationale="Console integration test.",
+        ),
+    )
+
+
+def _sample_analysis(title: str = "Test Paper") -> PaperReproductionAnalysis:
+    from models.paper_reproduction_analysis import (
+        AnalysisGoal,
+        PaperMetadata,
+        PaperReproductionAnalysis,
+        ReproductionScope,
+    )
+
+    return PaperReproductionAnalysis(
+        metadata=PaperMetadata(title=title),
+        goal=AnalysisGoal(
+            scope=ReproductionScope.TRAINING,
+            research_goal="Console test goal.",
+        ),
+    )
+
+
+def _sample_discovery() -> ResearchResourceDiscovery:
+    from validation.research_resource_discovery import build_research_resource_discovery
+
+    return build_research_resource_discovery(
+        {
+            "metadata": {
+                "discovery_id": "disc-console",
+                "created_at": "2026-07-02T00:00:00+00:00",
+                "status": "complete",
+                "candidate_count": 0,
+                "selection_count": 0,
+                "unresolved_gap_count": 0,
+            },
+            "analysis_reference": {
+                "analysis_schema_version": "1.0",
+                "paper_title": "Test Paper",
+                "analysis_content_hash": "hash",
+            },
+        }
+    )
+
+
 def _mock_platform() -> MagicMock:
     platform = MagicMock()
-    platform.version.return_value = "1.2.3"
-    platform.settings.workspace_root = Path("/tmp/workspace")
+    platform.version.return_value = "1.2.4"
+    workspace_root = Path(tempfile.mkdtemp()) / "workspace"
+    platform.settings = MagicMock(workspace_root=workspace_root)
     platform.current_model.return_value = None
     platform.is_runtime_ready.return_value = True
     platform.is_session_active.return_value = False
@@ -65,10 +149,7 @@ def _mock_platform() -> MagicMock:
     session = MagicMock()
     session.state = SessionState.NEW
     session.is_active.return_value = False
-    session.workspace.current_paper = None
-    session.workspace.current_analysis = None
-    session.workspace.current_discovery = None
-    session.workspace.current_strategy = None
+    session.workspace = SessionWorkspace()
 
     def _open() -> None:
         session.state = SessionState.ACTIVE
@@ -126,6 +207,9 @@ class CommandRegistryTest(unittest.TestCase):
             "analyze",
             "discover",
             "plan",
+            "plan-all",
+            "execute-all",
+            "reproduce",
         }
         self.assertEqual(set(registry.names()), expected)
 
@@ -137,6 +221,8 @@ class ConsoleDispatchTest(unittest.TestCase):
         console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
         self.assertEqual(console.dispatch("help"), 0)
         self.assertIn("Available commands", output.getvalue())
+        self.assertIn("Workflow:", output.getvalue())
+        self.assertIn("plan-all", output.getvalue())
 
     def test_exit_command(self) -> None:
         output = StringIO()
@@ -183,7 +269,7 @@ class SessionIntegrationTest(unittest.TestCase):
         console = Man1LabConsole(
             platform,
             renderer=ConsoleRenderer(output=output),
-            input_fn=lambda _prompt: next(inputs),
+            input_fn=lambda _prompt: "exit",
         )
         console.run()
         platform.session.return_value.open.assert_called_once()
@@ -192,13 +278,13 @@ class SessionIntegrationTest(unittest.TestCase):
         output = StringIO()
         platform = _mock_platform()
         session = platform.session.return_value
-        analysis = MagicMock()
-        analysis.metadata.title = "Test Paper"
+        analysis = _sample_analysis()
         platform.analyze.return_value = analysis
 
         with tempfile.TemporaryDirectory() as temp_dir:
             paper = Path(temp_dir) / "paper.pdf"
             paper.write_bytes(b"%PDF-1.4 test")
+            platform.settings = MagicMock(workspace_root=Path(temp_dir) / "workspace")
 
             console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
             console.dispatch(f"analyze {paper}")
@@ -211,9 +297,8 @@ class SessionIntegrationTest(unittest.TestCase):
         output = StringIO()
         platform = _mock_platform()
         session = platform.session.return_value
-        analysis = MagicMock()
-        discovery = MagicMock()
-        discovery.metadata.status.value = "complete"
+        analysis = _sample_analysis()
+        discovery = _sample_discovery()
         session.workspace.current_analysis = analysis
         platform.discover.return_value = discovery
 
@@ -227,9 +312,9 @@ class SessionIntegrationTest(unittest.TestCase):
         output = StringIO()
         platform = _mock_platform()
         session = platform.session.return_value
-        analysis = MagicMock()
-        discovery = MagicMock()
-        strategy = MagicMock(strategy_id="strategy-1")
+        analysis = _sample_analysis()
+        discovery = _sample_discovery()
+        strategy = _minimal_execution_strategy("strategy-1")
         session.workspace.current_analysis = analysis
         session.workspace.current_discovery = discovery
         platform.plan.return_value = strategy
@@ -239,6 +324,25 @@ class SessionIntegrationTest(unittest.TestCase):
 
         platform.plan.assert_called_once_with(analysis, discovery)
         self.assertIs(session.workspace.current_strategy, strategy)
+        text = output.getvalue()
+        self.assertIn("✓ Execution strategy generated", text)
+        self.assertIn("Execution Strategy", text)
+        self.assertIn("Next: execute-all", text)
+
+    def test_plan_displays_metadata_strategy_id_not_top_level_attribute(self) -> None:
+        """Regression: plan must read strategy.metadata.strategy_id, not strategy.strategy_id."""
+        output = StringIO()
+        platform = _mock_platform()
+        session = platform.session.return_value
+        session.workspace.current_analysis = _sample_analysis()
+        session.workspace.current_discovery = _sample_discovery()
+        platform.plan.return_value = _minimal_execution_strategy("strategy-regression")
+
+        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+        code = console.dispatch("plan")
+
+        self.assertEqual(code, 0)
+        self.assertIn("✓ Execution strategy generated", output.getvalue())
 
 
 class ConsoleRunLoopTest(unittest.TestCase):
@@ -285,16 +389,18 @@ class ConsoleRunLoopTest(unittest.TestCase):
         console = Man1LabConsole(
             platform,
             renderer=ConsoleRenderer(output=output),
-            input_fn=lambda _prompt: next(inputs),
+            input_fn=lambda _prompt: "exit",
         )
         console.run()
         text = output.getvalue()
-        self.assertIn("Man1Lab Console", text)
-        self.assertIn("Version", text)
+        self.assertIn("MAN1LAB 1.2.4", text)
+        self.assertIn("Research Paper Reproduction Platform", text)
         self.assertIn("Workspace", text)
         self.assertIn("Active Model", text)
         self.assertIn("Runtime", text)
         self.assertIn("Session", text)
+        self.assertIn("Quick start:", text)
+        self.assertIn('Type "help" to see all commands.', text)
 
 
 class FacadeConsoleIntegrationTest(unittest.TestCase):
@@ -311,7 +417,8 @@ class FacadeConsoleIntegrationTest(unittest.TestCase):
             output = StringIO()
             code = run_console(platform, input_fn=lambda _p: "exit", output=output)
             self.assertEqual(code, 0)
-            self.assertIn("Man1Lab Console", output.getvalue())
+            self.assertIn("MAN1LAB", output.getvalue())
+            self.assertIn("Quick start:", output.getvalue())
 
 
 class CLIConsoleEntryTest(unittest.TestCase):
@@ -328,6 +435,183 @@ class CLIConsoleEntryTest(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         run_console_mock.assert_called_once()
         get_platform_mock.assert_called_once()
+
+
+class GuidedOutputTest(unittest.TestCase):
+    def test_analyze_shows_guided_success(self) -> None:
+        output = StringIO()
+        platform = _mock_platform()
+        analysis = _sample_analysis()
+        platform.analyze.return_value = analysis
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paper = Path(temp_dir) / "paper.pdf"
+            paper.write_bytes(b"%PDF-1.4 test")
+            platform.settings = MagicMock(workspace_root=Path(temp_dir) / "workspace")
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+            console.dispatch(f"analyze {paper}")
+
+        text = output.getvalue()
+        self.assertIn("✓ Paper analyzed successfully", text)
+        self.assertIn("Generated:", text)
+        self.assertIn("Analysis", text)
+        self.assertIn("Next: discover", text)
+
+    def test_discover_shows_guided_success(self) -> None:
+        output = StringIO()
+        platform = _mock_platform()
+        session = platform.session.return_value
+        analysis = _sample_analysis()
+        discovery = _sample_discovery()
+        session.workspace.current_analysis = analysis
+        platform.discover.return_value = discovery
+        platform.settings = MagicMock(workspace_root=Path(tempfile.mkdtemp()) / "workspace")
+
+        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+        console.dispatch("discover")
+
+        text = output.getvalue()
+        self.assertIn("✓ Resources discovered", text)
+        self.assertIn("Next: plan", text)
+
+
+class PipelineCommandTest(unittest.TestCase):
+    def test_plan_all_delegates_to_facade_stages(self) -> None:
+        output = StringIO()
+        platform = _mock_platform()
+        session = platform.session.return_value
+        analysis = _sample_analysis()
+        discovery = _sample_discovery()
+        strategy = _minimal_execution_strategy()
+        platform.analyze.return_value = analysis
+        platform.discover.return_value = discovery
+        platform.plan.return_value = strategy
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paper = Path(temp_dir) / "paper.pdf"
+            paper.write_bytes(b"%PDF-1.4 test")
+            platform.settings = MagicMock(workspace_root=Path(temp_dir) / "workspace")
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+            console.dispatch(f"plan-all {paper}")
+
+        platform.analyze.assert_called_once()
+        platform.discover.assert_called_once_with(analysis)
+        platform.plan.assert_called_once_with(analysis, discovery)
+        self.assertIs(session.workspace.current_strategy, strategy)
+        self.assertIn("✓ Execution strategy generated", output.getvalue())
+
+    def test_execute_all_reserved_message(self) -> None:
+        platform = _mock_platform()
+        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
+        with patch("runtime.console.renderer.print") as mock_print:
+            console.dispatch("execute-all")
+            messages = [
+                str(call.args[0])
+                for call in mock_print.call_args_list
+                if call.kwargs.get("file") is sys.stderr
+            ]
+            self.assertTrue(any("Execution engine is not available yet" in msg for msg in messages))
+
+    def test_reproduce_reserved_message(self) -> None:
+        platform = _mock_platform()
+        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
+        with patch("runtime.console.renderer.print") as mock_print:
+            console.dispatch("reproduce")
+            messages = [
+                str(call.args[0])
+                for call in mock_print.call_args_list
+                if call.kwargs.get("file") is sys.stderr
+            ]
+            self.assertTrue(any("Execution engine is not available yet" in msg for msg in messages))
+
+
+class WorkspacePersistenceConsoleTest(unittest.TestCase):
+    def test_analyze_persists_workspace_artifacts(self) -> None:
+        from models.paper_reproduction_analysis import (
+            AnalysisGoal,
+            PaperMetadata,
+            PaperReproductionAnalysis,
+            ReproductionScope,
+        )
+
+        platform = _mock_platform()
+        analysis = PaperReproductionAnalysis(
+            metadata=PaperMetadata(title="Persisted"),
+            goal=AnalysisGoal(
+                scope=ReproductionScope.TRAINING,
+                research_goal="Persist analysis artifact.",
+            ),
+        )
+        platform.analyze.return_value = analysis
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "workspace"
+            platform.settings = MagicMock(workspace_root=root)
+            paper = Path(temp_dir) / "paper.pdf"
+            paper.write_bytes(b"%PDF-1.4 test")
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
+            console.dispatch(f"analyze {paper}")
+
+            self.assertTrue((root / "analysis" / "analysis.json").exists())
+
+
+class ResumeConsoleTest(unittest.TestCase):
+    def test_discover_skips_analyze_when_persisted(self) -> None:
+        from models.paper_reproduction_analysis import (
+            AnalysisGoal,
+            PaperMetadata,
+            PaperReproductionAnalysis,
+            ReproductionScope,
+        )
+        from runtime.session.workspace_store import WorkspaceArtifactStore
+
+        platform = _mock_platform()
+        discovery = _sample_discovery()
+        platform.discover.return_value = discovery
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "workspace"
+            platform.settings = MagicMock(workspace_root=root)
+            analysis = PaperReproductionAnalysis(
+                metadata=PaperMetadata(title="Cached"),
+                goal=AnalysisGoal(
+                    scope=ReproductionScope.TRAINING,
+                    research_goal="Goal",
+                ),
+            )
+            WorkspaceArtifactStore(root).save_analysis(analysis)
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
+            console.dispatch("discover")
+
+        platform.analyze.assert_not_called()
+        platform.discover.assert_called_once()
+
+    def test_plan_diagnostic_when_analysis_missing(self) -> None:
+        platform = _mock_platform()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            platform.settings = MagicMock(workspace_root=Path(temp_dir) / "workspace")
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
+            with patch("runtime.console.renderer.print") as mock_print:
+                console.dispatch("plan")
+                messages = [
+                    str(call.args[0])
+                    for call in mock_print.call_args_list
+                    if call.kwargs.get("file") is sys.stderr
+                ]
+                self.assertTrue(any("analyze <paper.pdf>" in msg for msg in messages))
+
+
+class ConsoleInputTest(unittest.TestCase):
+    def test_create_console_input_fn_returns_callable(self) -> None:
+        input_fn = create_console_input_fn(["help", "exit"])
+        self.assertTrue(callable(input_fn))
+
+    def test_prompt_toolkit_availability_is_boolean(self) -> None:
+        self.assertIsInstance(prompt_toolkit_available(), bool)
 
 
 class ConsoleBoundaryTest(unittest.TestCase):

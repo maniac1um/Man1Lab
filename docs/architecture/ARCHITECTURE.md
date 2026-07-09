@@ -1,6 +1,6 @@
 # Man1Lab Architecture
 
-**Version:** v1.2.3  
+**Version:** v1.2.4  
 **Status:** Living document — platform-level design  
 **Audience:** Architects, contributors, and long-term maintainers  
 **Horizon:** 3–5 years
@@ -172,7 +172,8 @@ Interfaces must **never** call `WorkflowOrchestrator` directly.
 ```text
 PlatformRuntime
     ├── RuntimeContext → RuntimeResourceManager → lazy infrastructure
-    ├── RuntimeSession → SessionWorkspace (in-memory)
+    ├── RuntimeSession → SessionWorkspace (references + disk hydration)
+    │     └── WorkspaceArtifactStore → analysis/, discovery/, planning/, decision/
     └── RuntimeProfiler (per observation run)
 ```
 
@@ -256,7 +257,7 @@ It is **not** a task plan, specification for code generation, or execution resul
 | **Responsibility** | Collect, verify, and rank external resources that may satisfy reproduction needs |
 | **Input** | `PaperReproductionAnalysis` (read-only) |
 | **Output** | `ResearchResourceDiscovery` |
-| **Does** | Candidate collection, evidence gathering, verification, ranking |
+| **Does** | Candidate collection, evidence gathering, verification, ranking, **selection** |
 | **Does NOT** | Choose engineering strategy, decompose tasks, generate code, or execute repositories |
 
 See [ADR-0016](../adr/ADR-0016-GitHub-Discovery-Provider.md).
@@ -272,6 +273,10 @@ Provider Ports
         ↓
 Providers (GitHub, Embedded, NoOp)
         ↓
+Selection (discovery/selection.py)   ← commits primary/fallback per resource need
+        ↓
+Research assets + explainable confidence (discovery/assets.py, discovery/confidence.py)
+        ↓
 ResearchResourceDiscoveryBuilder ← canonical assembly
         ↓
 ResearchResourceDiscovery        ← only exported artifact
@@ -285,7 +290,7 @@ ResearchResourceDiscovery        ← only exported artifact
 |--|--|
 | **Responsibility** | Commit engineering strategy before task decomposition |
 | **Input** | `PaperReproductionAnalysis`, `ResearchResourceDiscovery` (both read-only) |
-| **Output** | `ExecutionStrategy` |
+| **Output** | `ExecutionStrategy`, `DecisionTrace`, `ExecutionGraph` (runtime-persisted) |
 | **Does** | Strategy decision, resource binding, reuse/adaptation/generation planning, risk assessment |
 | **Does NOT** | Re-run discovery, decompose tasks, generate code, or execute repositories |
 
@@ -557,7 +562,7 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 | **Parsing** | ✅ Complete | Docling default; PyMuPDF fallback |
 | **Analysis** | ✅ Complete | `PaperReproductionAnalysis` |
 | **Discovery** | ✅ Complete | `ResearchResourceDiscovery`; GitHub Provider |
-| **Execution Planning** | ✅ Foundation complete | `ExecutionStrategy`; skeleton providers wired |
+| **Execution Planning** | ✅ Complete | `ExecutionStrategy`; six embedded providers + Decision Foundation |
 | **Planning** | ✅ Complete | Strategy-driven `TaskModel` |
 | **Implementation** | ✅ Complete | GQ-1 + RAG |
 | **Execution** | ✅ Complete | Environment prep + script run |
@@ -677,4 +682,4 @@ Non-goals are **features intentionally deferred or excluded**, not missing bugs.
 | Backend swap (e.g. parser) | §3 Parsing only | Yes |
 | Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
 
-**Last aligned with:** Man1Lab v1.2.3 — Platform Runtime and Interactive Console
+**Last aligned with:** Man1Lab v1.2.4 — Console UX and Workspace Persistence

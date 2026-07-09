@@ -7,6 +7,18 @@ from pathlib import Path
 from runtime.console.command import ConsoleCommand, ConsoleContext
 from runtime.console.registry import CommandRegistry
 from runtime.session.state import SessionState
+from runtime.session.workspace_resume import (
+    diagnose_for_discover,
+    diagnose_for_plan,
+    diagnose_for_plan_all,
+    hydrate_workspace_from_disk,
+    render_diagnostic,
+)
+from runtime.session.workspace_store import WorkspaceArtifactStore
+from runtime.session.decision_artifacts import (
+    persist_discovery_decision_artifacts,
+    persist_planning_decision_artifacts,
+)
 
 
 def _format_check_status(status: str) -> str:
@@ -16,7 +28,7 @@ def _format_check_status(status: str) -> str:
 def register_builtin_commands(registry: CommandRegistry) -> None:
     """Register the initial interactive console command set."""
     commands = (
-        ConsoleCommand("help", "Show available commands.", _cmd_help),
+        ConsoleCommand("help", "Show available commands and guided steps.", _cmd_help),
         ConsoleCommand("doctor", "Validate runtime environment.", _cmd_doctor),
         ConsoleCommand("profile", "Profile startup and runtime initialization.", _cmd_profile),
         ConsoleCommand("model", "Model profile commands (list, current, use).", _cmd_model),
@@ -25,9 +37,29 @@ def register_builtin_commands(registry: CommandRegistry) -> None:
         ConsoleCommand("analyze", "Analyze a paper PDF.", _cmd_analyze),
         ConsoleCommand("discover", "Run discovery for the current paper.", _cmd_discover),
         ConsoleCommand("plan", "Run execution planning for the current session.", _cmd_plan),
+        ConsoleCommand(
+            "plan-all",
+            "Run analyze, discover, and plan for a paper.",
+            _cmd_plan_all,
+        ),
+        ConsoleCommand(
+            "execute-all",
+            "Execute the current strategy (reserved).",
+            _cmd_execute_all,
+        ),
+        ConsoleCommand(
+            "reproduce",
+            "Run full reproduction pipeline (reserved).",
+            _cmd_reproduce,
+        ),
     )
     for command in commands:
         registry.register(command)
+
+
+def _workspace_store(ctx: ConsoleContext) -> WorkspaceArtifactStore:
+    root = ctx.platform.settings.workspace_root
+    return WorkspaceArtifactStore(root)
 
 
 def _cmd_help(ctx: ConsoleContext, _args: list[str]) -> int:
@@ -118,42 +150,147 @@ def _cmd_analyze(ctx: ConsoleContext, args: list[str]) -> int:
     workspace.current_paper = path
     analysis = ctx.platform.analyze(path)
     workspace.current_analysis = analysis
-    ctx.renderer.write(f"Analysis complete: {analysis.metadata.title}")
+    _workspace_store(ctx).save_analysis(analysis)
+    ctx.renderer.render_command_success(
+        message="Paper analyzed successfully",
+        generated=("Analysis",),
+        next_command="discover",
+    )
     return 0
 
 
 def _cmd_discover(ctx: ConsoleContext, _args: list[str]) -> int:
     workspace = ctx.session.workspace
+    store = _workspace_store(ctx)
+    hydrate_workspace_from_disk(workspace)
+
     analysis = workspace.current_analysis
     if analysis is None and workspace.current_paper is not None:
         analysis = ctx.platform.analyze(workspace.current_paper)
         workspace.current_analysis = analysis
+        store.save_analysis(analysis)
     if analysis is None:
-        ctx.renderer.write_error("No paper in session. Run: analyze <paper.pdf>")
+        diagnostic = diagnose_for_discover(store.root)
+        if diagnostic is not None:
+            ctx.renderer.write_error(render_diagnostic(diagnostic))
+        else:
+            ctx.renderer.write_error("No paper in session. Run: analyze <paper.pdf>")
         return 0
+
     discovery = ctx.platform.discover(analysis)
     workspace.current_discovery = discovery
-    ctx.renderer.write(f"Discovery complete: {discovery.metadata.status.value}")
+    store.save_discovery(discovery)
+    persist_discovery_decision_artifacts(store, discovery)
+    ctx.renderer.render_command_success(
+        message="Resources discovered",
+        generated=("Discovery",),
+        next_command="plan",
+    )
     return 0
 
 
 def _cmd_plan(ctx: ConsoleContext, _args: list[str]) -> int:
     workspace = ctx.session.workspace
+    store = _workspace_store(ctx)
+    hydrate_workspace_from_disk(workspace)
+
     analysis = workspace.current_analysis
     if analysis is None:
-        ctx.renderer.write_error("No analysis in session. Run: analyze <paper.pdf>")
+        diagnostic = diagnose_for_plan(store.root)
+        if diagnostic is not None:
+            ctx.renderer.write_error(render_diagnostic(diagnostic))
+        else:
+            ctx.renderer.write_error("No analysis in session. Run: analyze <paper.pdf>")
         return 0
+
     discovery = workspace.current_discovery
     if discovery is None:
         discovery = ctx.platform.discover(analysis)
         workspace.current_discovery = discovery
+        store.save_discovery(discovery)
+
     strategy = ctx.platform.plan(analysis, discovery)
     workspace.current_strategy = strategy
-    ctx.renderer.write(f"Planning complete: {strategy.strategy_id}")
+    store.save_strategy(strategy)
+    persist_planning_decision_artifacts(store, discovery, strategy)
+    ctx.renderer.render_command_success(
+        message="Execution strategy generated",
+        generated=("Execution Strategy",),
+        next_command="execute-all",
+    )
+    return 0
+
+
+def _cmd_plan_all(ctx: ConsoleContext, args: list[str]) -> int:
+    workspace = ctx.session.workspace
+    store = _workspace_store(ctx)
+    hydrate_workspace_from_disk(workspace)
+
+    paper_path: Path | None = None
+    if args:
+        paper_path = Path(args[0]).expanduser().resolve()
+        if not paper_path.exists():
+            ctx.renderer.write_error(f"Paper not found: {paper_path}")
+            return 0
+        if paper_path.suffix.lower() != ".pdf":
+            ctx.renderer.write_error(f"Expected a PDF file: {paper_path}")
+            return 0
+        workspace.current_paper = paper_path
+    elif workspace.current_paper is not None:
+        paper_path = workspace.current_paper
+    else:
+        diagnostic = diagnose_for_plan_all(store.root, has_paper=False)
+        if diagnostic is not None:
+            ctx.renderer.write_error(render_diagnostic(diagnostic))
+        else:
+            ctx.renderer.write_error("Usage: plan-all <paper.pdf>")
+        return 0
+
+    analysis = workspace.current_analysis
+    if analysis is None:
+        if paper_path is None:
+            ctx.renderer.write_error("Usage: plan-all <paper.pdf>")
+            return 0
+        analysis = ctx.platform.analyze(paper_path)
+        workspace.current_analysis = analysis
+        store.save_analysis(analysis)
+
+    discovery = workspace.current_discovery
+    if discovery is None:
+        discovery = ctx.platform.discover(analysis)
+        workspace.current_discovery = discovery
+        store.save_discovery(discovery)
+
+    strategy = ctx.platform.plan(analysis, discovery)
+    workspace.current_strategy = strategy
+    store.save_strategy(strategy)
+    persist_planning_decision_artifacts(store, discovery, strategy)
+    ctx.renderer.render_command_success(
+        message="Execution strategy generated",
+        generated=("Analysis", "Discovery", "Execution Strategy"),
+        next_command="execute-all",
+    )
+    return 0
+
+
+def _cmd_execute_all(_ctx: ConsoleContext, _args: list[str]) -> int:
+    _ctx.renderer.write_error("Execution engine is not available yet.")
+    return 0
+
+
+def _cmd_reproduce(_ctx: ConsoleContext, _args: list[str]) -> int:
+    _ctx.renderer.write_error(
+        "Reproduce pipeline is reserved for plan-all followed by execute-all. "
+        "Execution engine is not available yet."
+    )
     return 0
 
 
 def ensure_session_open(ctx: ConsoleContext) -> None:
     session = ctx.session
+    workspace = session.workspace
+    if workspace.workspace_root is None:
+        workspace.workspace_root = ctx.platform.settings.workspace_root
     if session.state is SessionState.NEW:
         session.open()
+    hydrate_workspace_from_disk(workspace)

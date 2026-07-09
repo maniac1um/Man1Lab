@@ -46,13 +46,44 @@ def _resource_sufficiency(facts: ObservedFacts) -> DimensionLevel:
 
 
 def _resource_reliability(facts: ObservedFacts) -> DimensionLevel:
-    if facts.repository_verified:
+    verification_score = _contribution_score(facts, "verification")
+    if facts.repository_verified and verification_score >= 0.2:
         return DimensionLevel.HIGH
     if facts.selected_repository and facts.selected_repository.verification_status == VerificationStatus.PARTIAL:
         return DimensionLevel.MEDIUM
-    if facts.repository_available:
-        return DimensionLevel.LOW
+    overall = _selection_confidence_overall(facts)
+    if overall >= 0.75:
+        return DimensionLevel.HIGH
+    if overall >= 0.55 or facts.repository_available:
+        return DimensionLevel.MEDIUM if facts.repository_available else DimensionLevel.LOW
     return DimensionLevel.UNKNOWN
+
+
+def _reuse_opportunity(facts: ObservedFacts) -> DimensionLevel:
+    official_score = _contribution_score(facts, "official_organization")
+    paper_score = _contribution_score(facts, "paper_match")
+    if facts.repository_official and facts.repository_verified:
+        return DimensionLevel.HIGH
+    if facts.repository_usable and (official_score + paper_score) >= 0.25:
+        return DimensionLevel.HIGH if official_score >= 0.15 else DimensionLevel.MEDIUM
+    if facts.repository_usable:
+        return DimensionLevel.MEDIUM
+    return DimensionLevel.LOW
+
+
+def _contribution_score(facts: ObservedFacts, signal: str) -> float:
+    for contribution in facts.confidence_contributions:
+        if contribution.signal == signal:
+            return contribution.contribution
+    return 0.0
+
+
+def _selection_confidence_overall(facts: ObservedFacts) -> float:
+    if facts.selected_repository is not None:
+        return facts.selected_repository.selection_confidence
+    if facts.selected_assets:
+        return max(item.selection_confidence for item in facts.selected_assets)
+    return 0.0
 
 
 def _engineering_commitment(facts: ObservedFacts) -> DimensionLevel:
@@ -61,14 +92,6 @@ def _engineering_commitment(facts: ObservedFacts) -> DimensionLevel:
     if facts.repository_usable and facts.required_resource_gaps:
         return DimensionLevel.MEDIUM
     return DimensionLevel.HIGH
-
-
-def _reuse_opportunity(facts: ObservedFacts) -> DimensionLevel:
-    if facts.repository_official and facts.repository_verified:
-        return DimensionLevel.HIGH
-    if facts.repository_usable:
-        return DimensionLevel.MEDIUM
-    return DimensionLevel.LOW
 
 
 def _adaptation_requirement(facts: ObservedFacts) -> DimensionLevel:

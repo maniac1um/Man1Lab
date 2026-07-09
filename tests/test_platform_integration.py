@@ -99,10 +99,8 @@ class ExecutionPlanningWorkflowTest(unittest.TestCase):
         discovery = _embedded_discovery_workflow().run(analysis)
         strategy = ExecutionPlanningWorkflow.default().run(analysis, discovery)
         self.assertGreater(len(discovery.candidate_resources.candidates), 0)
-        self.assertIn(
-            strategy.strategy.primary_posture,
-            {StrategyPosture.OFFICIAL_REPOSITORY, StrategyPosture.HYBRID, StrategyPosture.GREENFIELD},
-        )
+        self.assertGreater(discovery.metadata.selection_count, 0)
+        self.assertEqual(strategy.strategy.primary_posture, StrategyPosture.OFFICIAL_REPOSITORY)
 
 
 class PlannerStrategyConsumptionTest(unittest.TestCase):

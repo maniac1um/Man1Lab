@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from models.explainable_confidence import ConfidenceContribution, ExplainableConfidence
 from models.research_resource_discovery import (
     SCHEMA_VERSION,
     AnalysisGapSnapshot,
@@ -46,6 +47,9 @@ from models.research_resource_discovery import (
     ResearchResourceDiscovery,
     ResourceIdentity,
     ResourceNeed,
+    ResearchAsset,
+    ResearchAssetCollection,
+    ResearchAssetType,
     ResourceType,
     SelectionReason,
     SelectionRecord,
@@ -109,6 +113,7 @@ def normalize_discovery_dict(data: dict) -> dict:
     selection = _normalize_selection(data.get("selection", {}))
     discovery_gaps = _normalize_discovery_gaps(data.get("discovery_gaps", {}))
     statistics = _normalize_statistics(data.get("statistics", {}))
+    research_assets = _normalize_research_assets(data.get("research_assets", {}))
     schema_version = _normalize_schema_version(data.get("schema_version"))
 
     return {
@@ -116,6 +121,7 @@ def normalize_discovery_dict(data: dict) -> dict:
         "provenance": provenance,
         "analysis_reference": analysis_reference,
         "candidate_resources": candidate_resources,
+        "research_assets": research_assets,
         "evidence": evidence,
         "verification": verification,
         "ranking": ranking,
@@ -134,6 +140,7 @@ def build_research_resource_discovery(data: dict) -> ResearchResourceDiscovery:
         provenance=DiscoveryProvenance(**normalized["provenance"]),
         analysis_reference=AnalysisReference(**normalized["analysis_reference"]),
         candidate_resources=CandidateResources(**normalized["candidate_resources"]),
+        research_assets=ResearchAssetCollection(**normalized["research_assets"]),
         evidence=EvidenceCollection(**normalized["evidence"]),
         verification=VerificationCollection(**normalized["verification"]),
         ranking=RankingResult(**normalized["ranking"]),
@@ -386,6 +393,90 @@ def _normalize_statistics(data: dict) -> dict:
         "evidence_count": _normalize_int(data.get("evidence_count"), default=0),
         "verification_count": _normalize_int(data.get("verification_count"), default=0),
     }
+
+
+def _normalize_explainable_confidence(data: object) -> dict:
+    if not isinstance(data, dict):
+        return ExplainableConfidence().model_dump(mode="json")
+    contributions = data.get("contributions", [])
+    if contributions is None:
+        contributions = []
+    if not isinstance(contributions, list):
+        raise DiscoveryValidationError("Invalid field: confidence_composition.contributions must be a list")
+    return {
+        "overall": _normalize_float(data.get("overall"), default=0.0),
+        "contributions": [
+            _normalize_confidence_contribution(item, index) for index, item in enumerate(contributions)
+        ],
+        "composition_rule": _normalize_optional_string(data.get("composition_rule"), "weighted_sum_capped"),
+    }
+
+
+def _normalize_confidence_contribution(data: object, index: int) -> dict:
+    if not isinstance(data, dict):
+        raise DiscoveryValidationError(f"Invalid confidence contribution at index {index}")
+    return {
+        "signal": _require_non_empty_string(data, "signal", path=f"contributions[{index}]"),
+        "weight": _normalize_float(data.get("weight"), default=0.0),
+        "score": _normalize_float(data.get("score"), default=0.0),
+        "contribution": _normalize_float(data.get("contribution"), default=0.0),
+        "summary": _normalize_optional_string(data.get("summary")),
+    }
+
+
+def _normalize_research_assets(data: object) -> dict:
+    if not isinstance(data, dict):
+        return ResearchAssetCollection().model_dump(mode="json")
+    assets = data.get("assets", [])
+    if assets is None:
+        assets = []
+    if not isinstance(assets, list):
+        raise DiscoveryValidationError("Invalid field: research_assets.assets must be a list")
+    indexes = data.get("indexes", {})
+    if indexes is None:
+        indexes = {}
+    if not isinstance(indexes, dict):
+        raise DiscoveryValidationError("Invalid field: research_assets.indexes must be a dict")
+    return {
+        "assets": [_normalize_research_asset(item, index) for index, item in enumerate(assets)],
+        "indexes": {
+            str(key): _normalize_string_list(value) for key, value in indexes.items()
+        },
+        "schema_version": _normalize_optional_string(data.get("schema_version"), "1.0"),
+    }
+
+
+def _normalize_research_asset(data: object, index: int) -> dict:
+    if not isinstance(data, dict):
+        raise DiscoveryValidationError(f"Invalid research asset at index {index}")
+    identity = data.get("identity")
+    if not isinstance(identity, dict):
+        raise DiscoveryValidationError(f"Missing identity for research_assets.assets[{index}]")
+    return {
+        "asset_id": _require_non_empty_string(data, "asset_id", path=f"research_assets.assets[{index}]"),
+        "candidate_id": _require_non_empty_string(data, "candidate_id", path=f"research_assets.assets[{index}]"),
+        "asset_type": _normalize_research_asset_type(data.get("asset_type"), index=index),
+        "resource_type": _normalize_resource_type(data.get("resource_type"), path=f"research_assets.assets[{index}]"),
+        "identity": _normalize_resource_identity(identity, index),
+        "url": _normalize_optional_string(data.get("url")),
+        "title": _normalize_optional_string(data.get("title")),
+        "officiality": _normalize_officiality(data.get("officiality"), path=f"research_assets.assets[{index}]"),
+        "status": _normalize_candidate_status(data.get("status"), path=f"research_assets.assets[{index}]"),
+        "addresses_needs": _normalize_string_list(data.get("addresses_needs")),
+        "confidence": _normalize_float(data.get("confidence"), default=0.0),
+        "confidence_composition": _normalize_explainable_confidence(data.get("confidence_composition")),
+        "selected_primary": bool(data.get("selected_primary", False)),
+        "selected_fallback": bool(data.get("selected_fallback", False)),
+        "collected_at": _normalize_optional_datetime(data.get("collected_at")),
+    }
+
+
+def _normalize_research_asset_type(value: object, *, index: int) -> str:
+    if isinstance(value, ResearchAssetType):
+        return value.value
+    if isinstance(value, str) and value in {item.value for item in ResearchAssetType}:
+        return value
+    raise DiscoveryValidationError(f"Invalid asset_type for research_assets.assets[{index}]")
 
 
 def _normalize_candidate(data: dict, index: int) -> dict:
@@ -674,6 +765,7 @@ def _normalize_selection_record(data: dict, index: int) -> dict:
         "fallback_candidate_ids": _normalize_string_list(data.get("fallback_candidate_ids")),
         "selection_reason": _normalize_selection_reason(selection_reason),
         "confidence": _normalize_float(data.get("confidence"), default=0.0),
+        "confidence_composition": _normalize_explainable_confidence(data.get("confidence_composition")),
         "selected_at": _normalize_optional_datetime(data.get("selected_at")),
         "rank_list_id": _normalize_optional_string(data.get("rank_list_id")),
         "verification_snapshot": {str(key): str(value) for key, value in snapshot.items()},

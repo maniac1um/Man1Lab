@@ -66,12 +66,13 @@ class AnthropicProvider(LLMProvider):
         *,
         temperature: float = 0.0,
         model: str | None = None,
+        max_tokens: int | None = None,
     ) -> str:
         try:
             system_prompt, chat_messages = _split_messages(messages)
             response = self._client.messages.create(
                 model=model or self._model,
-                max_tokens=self._default_max_tokens,
+                max_tokens=max_tokens or self._default_max_tokens,
                 temperature=temperature,
                 system=system_prompt or None,
                 messages=chat_messages,

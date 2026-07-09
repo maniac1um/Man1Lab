@@ -61,15 +61,28 @@ def normalize_url(url: str) -> str:
     return normalized.rstrip("/")
 
 
+def normalize_candidate_identity(candidate: RepositoryCandidate) -> RepositoryCandidate:
+    """Ensure identity.normalized_url is populated from candidate.url when missing."""
+    normalized = candidate.identity.normalized_url or normalize_url(candidate.url)
+    if normalized == candidate.identity.normalized_url:
+        return candidate
+    return candidate.model_copy(
+        update={
+            "identity": candidate.identity.model_copy(update={"normalized_url": normalized}),
+        }
+    )
+
+
 def merge_candidates(
     existing: list[RepositoryCandidate],
     incoming: list[RepositoryCandidate],
 ) -> list[RepositoryCandidate]:
     """Merge incoming candidates into existing list without discarding provenance."""
-    merged = list(existing)
+    merged = [normalize_candidate_identity(candidate) for candidate in existing]
     index_by_key = {deduplication_key(candidate): index for index, candidate in enumerate(merged)}
 
     for candidate in incoming:
+        candidate = normalize_candidate_identity(candidate)
         key = deduplication_key(candidate)
         if key not in index_by_key:
             index_by_key[key] = len(merged)

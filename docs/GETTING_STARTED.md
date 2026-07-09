@@ -1,6 +1,6 @@
 # Getting Started
 
-Quick orientation for installing and running Man1Lab v1.2.3. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
+Quick orientation for installing and running Man1Lab v1.2.4. For implementation state, see [CURRENT_STATUS.md](CURRENT_STATUS.md).
 
 ---
 
@@ -137,7 +137,52 @@ Run `man1lab` with **no arguments** to enter the interactive console:
 man1lab
 ```
 
-Built-in commands include `help`, `doctor`, `profile`, `analyze`, `discover`, `plan`, `reproduce`, and `exit`. The console delegates exclusively to the Platform Facade and opens a `RuntimeSession` for the interaction scope.
+The console shows an ASCII **MAN1LAB** banner with version, workspace, active model, runtime, and session status.
+
+### Guided workflow
+
+```text
+analyze <paper.pdf>  →  discover  →  plan  →  execute-all (reserved)
+```
+
+After each successful stage the console prints:
+
+- A ✓ success message
+- Generated artifacts (Analysis, Discovery, Execution Strategy)
+- The recommended next command
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `help` | Commands, workflow, and pipeline summary |
+| `analyze <paper.pdf>` | Analyze paper and persist to `workspace/analysis/` |
+| `discover` | Run discovery; resumes from persisted analysis when available |
+| `plan` | Run execution planning; resumes from persisted artifacts |
+| `plan-all <paper.pdf>` | Analyze → discover → plan in one step |
+| `execute-all` | Reserved — execution engine not available yet |
+| `reproduce` | Reserved — full pipeline (future) |
+| `doctor`, `profile`, `model`, `clear`, `exit` | As in v1.2.3 |
+
+### Workspace persistence
+
+Successful stages persist canonical artifacts under the configured workspace root:
+
+```text
+workspace/
+  analysis/analysis.json, analysis.md
+  discovery/resources.json, summary.md
+  planning/execution_strategy.json, summary.md
+  decision/decision_trace.json, decision_trace.md, execution_graph.json, execution_graph.md
+```
+
+Persistence is runtime-owned (`WorkspaceArtifactStore`). Business modules do not know file paths. The session holds in-memory references; disk artifacts enable resume across console sessions.
+
+### Input enhancements
+
+When `prompt_toolkit` is installed, the console provides command history (↑↓), line editing, persistent history (`~/.man1lab/console_history`), and tab completion for command names. Without it, standard `input()` is used — CLI compatibility is unchanged.
+
+The console delegates exclusively to the Platform Facade and opens a `RuntimeSession` for the interaction scope.
 
 ---
 
@@ -267,7 +312,7 @@ Or after `pip install -e ".[dev]"`:
 python -m pytest tests/ -v
 ```
 
-Current suite: **765 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
+Current suite: **826 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 
 ---
 
@@ -278,5 +323,5 @@ Current suite: **765 tests** (see [CURRENT_STATUS.md](CURRENT_STATUS.md)).
 3. [architecture/EXECUTION_PLANNING.md](architecture/EXECUTION_PLANNING.md)
 4. [ROADMAP.md](../ROADMAP.md)
 5. [architecture/CAPABILITIES.md](architecture/CAPABILITIES.md)
-6. [releases/v1.2.3.md](releases/v1.2.3.md)
+6. [releases/v1.2.4.md](releases/v1.2.4.md)
 7. [CHANGELOG.md](../CHANGELOG.md)

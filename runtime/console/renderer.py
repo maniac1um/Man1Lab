@@ -5,14 +5,17 @@ from __future__ import annotations
 import sys
 from typing import Any, TextIO
 
+from runtime.console.banner import build_startup_banner
 from runtime.console.platform import ConsolePlatform
+from runtime.console.terminal_style import TerminalStyle
 
 
 class ConsoleRenderer:
     """Render console banners, help, and command output."""
 
-    def __init__(self, output: TextIO | None = None) -> None:
+    def __init__(self, output: TextIO | None = None, *, use_color: bool | None = None) -> None:
         self._output = output or sys.stdout
+        self._style = TerminalStyle(enabled=use_color, stream=self._output)
 
     def write(self, message: str = "", *, end: str = "\n") -> None:
         print(message, file=self._output, end=end)
@@ -31,27 +34,36 @@ class ConsoleRenderer:
         self.write("")
 
     def render_banner(self, platform: ConsolePlatform) -> None:
-        self.write("Man1Lab Console")
-        self.write("")
-        self.write(f"Version ........ {platform.version()}")
-        self.write(f"Workspace ...... {platform.settings.workspace_root}")
-        current = platform.current_model()
-        if current is None:
-            model_label = "none"
-        else:
-            model_label = f"{current.profile_name} ({current.provider}/{current.model})"
-        self.write(f"Active Model ... {model_label}")
-        runtime_label = "ready" if platform.is_runtime_ready() else platform.runtime.state.value
-        session_label = platform.session().state.value
-        self.write(f"Runtime ........ {runtime_label}")
-        self.write(f"Session ........ {session_label}")
-        self.write("")
-        self.write("Type 'help' for available commands.")
+        self.write(build_startup_banner(platform, style=self._style))
 
     def render_help(self, registry) -> None:
         self.write("Available commands:")
         for command in registry.commands():
-            self.write(f"  {command.name:<10} {command.help}")
+            self.write(f"  {command.name:<12} {command.help}")
+        self.write("")
+        self.write("Workflow:")
+        self.write("  analyze <paper.pdf>  →  discover  →  plan  →  execute (future)")
+        self.write("")
+        self.write("Pipeline:")
+        self.write("  plan-all <paper.pdf>   Run analyze, discover, and plan")
+        self.write("  execute-all            Reserved — execution engine not available yet")
+        self.write("  reproduce              Reserved — plan-all then execute-all (future)")
+
+    def render_command_success(
+        self,
+        *,
+        message: str,
+        generated: tuple[str, ...],
+        next_command: str,
+    ) -> None:
+        self.write(f"✓ {message}")
+        if generated:
+            self.write("")
+            self.write("Generated:")
+            for item in generated:
+                self.write(f"  - {item}")
+        self.write("")
+        self.write(f"Next: {next_command}")
 
     def render_json(self, payload: Any) -> None:
         if hasattr(payload, "model_dump_json"):

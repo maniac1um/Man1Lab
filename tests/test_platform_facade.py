@@ -41,6 +41,7 @@ from services.discovery.verification_service import VerificationService
 from providers.noop.noop_evidence_provider import NoOpEvidenceProvider
 from providers.noop.noop_ranking_provider import NoOpRankingProvider
 from providers.noop.noop_verification_provider import NoOpVerificationProvider
+from runtime.session.workspace_store import WorkspaceArtifactStore
 from tests.fixtures import create_sample_paper_pdf, sample_reproduction_analysis
 from tests.runner_mocks import mock_command_runner
 from tests.test_execution_strategy_builder import _input_references, _minimal_risk_result
@@ -88,7 +89,7 @@ class Man1LabConstructionTest(unittest.TestCase):
                 configure_logging=False,
             )
             self.assertEqual(platform.version(), PLATFORM_VERSION)
-            self.assertEqual(PLATFORM_VERSION, "1.2.3")
+            self.assertEqual(PLATFORM_VERSION, "1.2.4")
 
     def test_configuration_returns_effective_settings(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -172,6 +173,30 @@ class Man1LabDelegationTest(unittest.TestCase):
             analysis = platform.analyze(paper_path)
             self.assertIsInstance(analysis, PaperReproductionAnalysis)
             self.assertIn("Diffusion Policy", analysis.metadata.title)
+
+    def test_analyze_reuses_parsed_document_without_reparsing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            paper_path = temp_path / "paper.pdf"
+            create_sample_paper_pdf(paper_path)
+            platform = Man1Lab(
+                settings=_test_settings(temp_path),
+                initialize_configuration=False,
+                configure_logging=False,
+            )
+            parser = MagicMock()
+            parser.parse.return_value = MagicMock(markdown="SHOULD_NOT_BE_USED")
+            reader = Reader(
+                document_parser=parser,
+                prompt_builder=default_prompt_builder(),
+                llm=MockLLMProvider(),
+            )
+            platform._reader = reader
+            store = WorkspaceArtifactStore(temp_path / "workspace")
+            store.save_parsed_document(paper_path, "Cached paper text for analysis.")
+            analysis = platform.analyze(paper_path)
+            parser.parse.assert_not_called()
+            self.assertIsInstance(analysis, PaperReproductionAnalysis)
 
     def test_discover_delegates_to_discovery_workflow(self) -> None:
         analysis = sample_reproduction_analysis(source_path=Path("paper.pdf"))

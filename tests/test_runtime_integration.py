@@ -424,6 +424,46 @@ class ExistingWorkflowBehaviorTest(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 
+class PromptRegistryPathResolutionTest(unittest.TestCase):
+    """Regression: runtime-owned PromptLoader must resolve bundled prompts."""
+
+    def test_prompt_registry_resolves_from_non_repo_cwd(self) -> None:
+        import os
+
+        previous = os.getcwd()
+        try:
+            os.chdir("/tmp")
+            settings = _test_settings(REPO_ROOT)
+            manager = RuntimeResourceManager()
+            wire_runtime_resources(manager, settings=settings, initialize_configuration=False)
+            loader = manager.get(RESOURCE_PROMPT_REGISTRY)
+            prompt_path = loader._prompts_dir / "reader" / "system.md"  # noqa: SLF001
+            self.assertTrue(prompt_path.is_absolute())
+            self.assertTrue(prompt_path.is_file(), msg=str(prompt_path))
+        finally:
+            os.chdir(previous)
+
+    def test_facade_prompt_registry_finds_reader_system_from_tmp_cwd(self) -> None:
+        import os
+
+        previous = os.getcwd()
+        try:
+            os.chdir("/tmp")
+            with tempfile.TemporaryDirectory() as temp_dir:
+                settings = _test_settings(Path(temp_dir))
+                platform = Man1Lab(
+                    settings=settings,
+                    initialize_configuration=False,
+                    configure_logging=False,
+                )
+                loader = platform.runtime.context.resources.get(RESOURCE_PROMPT_REGISTRY)
+                self.assertTrue(
+                    (loader._prompts_dir / "reader" / "system.md").is_file()  # noqa: SLF001
+                )
+        finally:
+            os.chdir(previous)
+
+
 class RuntimeIntegrationBoundaryTest(unittest.TestCase):
     """Verify no forbidden dependency patterns introduced by integration."""
 
@@ -468,6 +508,7 @@ class RuntimeIntegrationBoundaryTest(unittest.TestCase):
             "runtime.profiling.report.RuntimeProfile",
             "runtime.runtime.PlatformRuntime",
             "runtime.session.RuntimeSession",
+            "runtime.session.workspace_store.WorkspaceArtifactStore",
             "runtime.state.RuntimeState",
             "application.runtime.accessors.RuntimeInfrastructure",
             "application.runtime.resource_wiring.wire_runtime_resources",

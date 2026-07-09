@@ -51,6 +51,10 @@ class LLMConfig:
     openai_model: str = "gpt-4o-mini"
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-3-5-haiku-latest"
+    llm_connect_timeout_seconds: float = 60.0
+    llm_read_timeout_seconds: float = 600.0
+    llm_write_timeout_seconds: float = 600.0
+    llm_pool_timeout_seconds: float = 60.0
 
 
 @dataclass(frozen=True)

@@ -8,7 +8,10 @@ from openai import OpenAI
 
 from configuration.models import LLMConfig
 from providers.llm.base import LLMProvider
+from providers.llm.errors import LLMProviderError
 from providers.llm.models import LLMHealthStatus, LLMMessage
+from providers.llm.openai_errors import translate_openai_error
+from providers.llm.timeouts import build_openai_client_timeout
 
 OPENAI_MODELS = (
     "gpt-4o-mini",
@@ -34,7 +37,11 @@ class OpenAIProvider(LLMProvider):
         if not key:
             raise ValueError("OPENAI_API_KEY is not set")
 
-        client_kwargs: dict[str, str] = {"api_key": key}
+        client_kwargs: dict[str, object] = {
+            "api_key": key,
+            "timeout": build_openai_client_timeout(config),
+            "max_retries": 2,
+        }
         resolved_base_url = base_url if base_url is not None else config.openai_base_url
         if resolved_base_url:
             client_kwargs["base_url"] = resolved_base_url
@@ -55,15 +62,22 @@ class OpenAIProvider(LLMProvider):
         *,
         temperature: float = 0.0,
         model: str | None = None,
+        max_tokens: int | None = None,
     ) -> str:
-        response = self._client.chat.completions.create(
-            model=model or self._model,
-            temperature=temperature,
-            messages=[{"role": message.role, "content": message.content} for message in messages],
-        )
+        request_kwargs: dict[str, object] = {
+            "model": model or self._model,
+            "temperature": temperature,
+            "messages": [{"role": message.role, "content": message.content} for message in messages],
+        }
+        if max_tokens is not None:
+            request_kwargs["max_tokens"] = max_tokens
+        try:
+            response = self._client.chat.completions.create(**request_kwargs)
+        except Exception as exc:
+            raise translate_openai_error(exc) from exc
         content = response.choices[0].message.content
         if not content:
-            raise RuntimeError("OpenAI returned an empty response")
+            raise LLMProviderError("OpenAI returned an empty response")
         return content
 
     def stream(

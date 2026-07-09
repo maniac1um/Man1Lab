@@ -326,13 +326,25 @@ CLOSED
 
 ### SessionWorkspace
 
-`SessionWorkspace` holds **in-memory placeholders** for the current interaction scope:
+`SessionWorkspace` holds **session-scoped references** for the current interaction:
 
 - Workspace root path
 - Current paper reference
-- Cached handles to recent analysis, discovery, or strategy artifacts (in-memory only)
+- Cached handles to analysis, discovery, and strategy artifacts
 
-Session workspace is **not** persistent storage. It does not replace on-disk workspace directories, workflow history, or experiment tracking artifacts.
+As of v1.2.4, successful console stages also persist canonical artifacts via `WorkspaceArtifactStore` (runtime-owned):
+
+```text
+{workspace_root}/analysis/     → analysis.json, analysis.md
+{workspace_root}/discovery/    → resources.json, summary.md
+{workspace_root}/planning/     → execution_strategy.json, summary.md
+{workspace_root}/decision/     → decision_trace.json, decision_trace.md,
+                                 execution_graph.json, execution_graph.md
+```
+
+`hydrate_workspace_from_disk()` loads persisted artifacts when session references are absent. Diagnostics recommend the next command when required artifacts are missing.
+
+Session references remain in-memory for the interaction scope. On-disk artifacts enable resume across sessions without replacing experiment tracking or workflow history.
 
 ### Facade delegation
 
@@ -367,7 +379,9 @@ PlatformRuntime
     ↓
 RuntimeSession                  ← interaction lifetime
     ↓
-SessionWorkspace                ← in-memory interaction placeholders
+SessionWorkspace                ← interaction references + hydration
+    ↓
+WorkspaceArtifactStore          ← runtime-owned stage persistence
 ```
 
 ### Dependency rules
@@ -396,7 +410,7 @@ Honest constraints as of v1.2.3 (phases 8.1–8.6):
 
 | Limitation | Notes |
 |------------|-------|
-| **No persistent session workspace** | `SessionWorkspace` is in-memory only |
+| **No persistent session workspace** | Resolved in v1.2.4 — `WorkspaceArtifactStore` persists stage artifacts; session holds references |
 | **No conversation memory** | Console does not retain dialogue history |
 | **No daemon mode** | Process lifetime follows facade / CLI invocation |
 | **No distributed runtime** | Single-process ownership model |
@@ -484,4 +498,4 @@ Future: GUI
 
 ---
 
-**Last aligned with:** Man1Lab v1.2.3 — Platform Runtime and Interactive Console
+**Last aligned with:** Man1Lab v1.2.4 — Console UX and Workspace Persistence

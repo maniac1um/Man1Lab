@@ -54,11 +54,11 @@ def decide_bindings(
     selection_ids: list[str] = []
 
     if facts.selected_repository is not None:
-        binding = _bind_primary_if_verified(
+        binding = _bind_primary_if_usable(
             facts.selected_repository,
             role=BindingRole.PRIMARY_REPOSITORY,
             usage_intent=UsageIntent.EXECUTE_DIRECTLY,
-            rationale="Verified selected official repository bound as primary.",
+            rationale=_repository_binding_rationale(facts.selected_repository),
             dimensions=dimensions,
         )
         if binding is not None:
@@ -164,6 +164,25 @@ def _bind_primary_if_verified(
 ) -> ResourceBinding | None:
     if not _is_verified(resource):
         return None
+    return _bind_primary_if_usable(
+        resource,
+        role=role,
+        usage_intent=usage_intent,
+        rationale=rationale,
+        dimensions=dimensions,
+    )
+
+
+def _bind_primary_if_usable(
+    resource: SelectedResourceFact,
+    *,
+    role: BindingRole,
+    usage_intent: UsageIntent,
+    rationale: str,
+    dimensions: DecisionDimensions,
+) -> ResourceBinding | None:
+    if not _is_usable(resource):
+        return None
     if role == BindingRole.PRIMARY_REPOSITORY and dimensions.resource_reliability == DimensionLevel.LOW:
         return None
     return ResourceBinding(
@@ -175,6 +194,22 @@ def _bind_primary_if_verified(
         usage_intent=usage_intent,
         binding_rationale=rationale,
     )
+
+
+def _repository_binding_rationale(resource: SelectedResourceFact) -> str:
+    if resource.verification_status == VerificationStatus.PARTIAL:
+        return (
+            "Partially verified selected repository bound as primary; "
+            "adaptation stage may authorize remediation."
+        )
+    return "Verified selected official repository bound as primary."
+
+
+def _is_usable(resource: SelectedResourceFact) -> bool:
+    return resource.verification_status in {
+        VerificationStatus.PASS,
+        VerificationStatus.PARTIAL,
+    }
 
 
 def _is_verified(resource: SelectedResourceFact) -> bool:

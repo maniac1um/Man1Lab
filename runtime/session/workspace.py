@@ -1,4 +1,4 @@
-"""Lightweight session workspace placeholder — no persistence."""
+"""Session-scoped workspace references with optional on-disk hydration."""
 
 from __future__ import annotations
 

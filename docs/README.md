@@ -1,6 +1,6 @@
 # Documentation Index
 
-Navigation hub for Man1Lab v1.2.3 documentation.
+Navigation hub for Man1Lab v1.2.4 documentation.
 
 **Principle:** Current documents answer *"What does the project do today?"* Historical reviews answer *"How did the project evolve?"*
 
@@ -12,10 +12,11 @@ Navigation hub for Man1Lab v1.2.3 documentation.
 |----------|---------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Install, init, doctor, reproduce; CLI and SDK workflow |
 | [CURRENT_STATUS.md](CURRENT_STATUS.md) | **Single source of truth** — capabilities, pipeline, benchmarks, limitations |
-| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.2.3) |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history (v1.0.0 – v1.2.4) |
 | [ROADMAP.md](../ROADMAP.md) | Completed milestones and planned work |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Research prototype — issues welcome, PRs not accepted |
 | [releases/README.md](releases/README.md) | Release history |
+| [releases/v1.2.4.md](releases/v1.2.4.md) | v1.2.4 Console UX & Workspace Persistence |
 | [releases/v1.2.3.md](releases/v1.2.3.md) | v1.2.3 Platform Runtime & Interactive Console |
 | [releases/v1.2.2.md](releases/v1.2.2.md) | v1.2.2 LLM Platform & First-run Experience |
 | [releases/v1.2.1.md](releases/v1.2.1.md) | v1.2.1 Execution Planning Stabilization |

@@ -48,6 +48,7 @@ from providers.llm.persistence import ModelImportReport
 from runtime.profiling.report import RuntimeProfile
 from runtime.runtime import PlatformRuntime
 from runtime.session import RuntimeSession
+from runtime.session.workspace_store import WorkspaceArtifactStore
 from runtime.state import RuntimeState
 from models.execution import ExecutionResult
 from models.execution_strategy import ExecutionStrategy
@@ -136,7 +137,17 @@ class Man1Lab:
             run_name=path.stem,
             tags={"entry": "facade", "operation": "analyze"},
         ):
-            return self._reader.run(path)
+            store = WorkspaceArtifactStore(self.settings.workspace_root)
+            cached_text = store.load_parsed_document(path)
+            if store.has_analysis():
+                loaded = store.load_analysis()
+                if loaded is not None:
+                    return loaded
+            if cached_text is not None:
+                return self._reader.run_analysis(path, paper_text=cached_text)
+            text = self._reader.read_text(path)
+            store.save_parsed_document(path, text)
+            return self._reader.run_analysis(path, paper_text=text)
 
     def discover(
         self,

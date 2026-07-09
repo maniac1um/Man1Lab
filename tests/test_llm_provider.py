@@ -94,6 +94,22 @@ class OpenAIProviderTest(unittest.TestCase):
         result = provider.generate([LLMMessage(role="user", content="hello")])
         self.assertEqual(result, "generated")
         client.chat.completions.create.assert_called_once()
+        _, kwargs = openai_cls.call_args
+        self.assertIn("timeout", kwargs)
+        self.assertEqual(kwargs["max_retries"], 2)
+
+    @patch("providers.llm.openai_provider.OpenAI")
+    def test_openai_client_uses_extended_connect_timeout(self, openai_cls: MagicMock) -> None:
+        config = LLMConfig(
+            openai_api_key="test-key",
+            llm_connect_timeout_seconds=45.0,
+            llm_read_timeout_seconds=120.0,
+        )
+        OpenAIProvider(config)
+        _, kwargs = openai_cls.call_args
+        timeout = kwargs["timeout"]
+        self.assertEqual(timeout.connect, 45.0)
+        self.assertEqual(timeout.read, 120.0)
 
     @patch("providers.llm.openai_provider.OpenAI")
     def test_supported_models_and_health_check(self, openai_cls: MagicMock) -> None:

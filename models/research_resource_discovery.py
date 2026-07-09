@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from models.explainable_confidence import ExplainableConfidence
+
 SCHEMA_VERSION = "1.0"
 
 
@@ -475,6 +477,10 @@ class SelectionRecord(BaseModel):
     fallback_candidate_ids: list[str] = Field(default_factory=list)
     selection_reason: SelectionReason = Field(default_factory=SelectionReason)
     confidence: float = 0.0
+    confidence_composition: ExplainableConfidence = Field(
+        default_factory=ExplainableConfidence,
+        description="Explainable confidence with per-signal contributions.",
+    )
     selected_at: datetime | None = None
     rank_list_id: str = ""
     verification_snapshot: dict[str, str] = Field(default_factory=dict)
@@ -533,6 +539,51 @@ class DiscoveryStatistics(BaseModel):
     verification_count: int = 0
 
 
+class ResearchAssetType(str, Enum):
+    REPOSITORY = "repository"
+    CHECKPOINT_WEIGHTS = "checkpoint_weights"
+    DATASET = "dataset"
+    CONFIGURATION = "configuration"
+    DOCKER_IMAGE = "docker_image"
+    ENVIRONMENT = "environment"
+    REQUIREMENTS = "requirements"
+    DOCUMENTATION = "documentation"
+    BENCHMARK = "benchmark"
+    EVALUATION_SCRIPT = "evaluation_script"
+
+
+class ResearchAsset(BaseModel):
+    """Generalized research asset derived from a discovery candidate."""
+
+    model_config = ConfigDict(frozen=True)
+
+    asset_id: str
+    candidate_id: str
+    asset_type: ResearchAssetType
+    resource_type: ResourceType
+    identity: ResourceIdentity
+    url: str = ""
+    title: str = ""
+    officiality: Officiality = Officiality.UNKNOWN
+    status: CandidateStatus = CandidateStatus.COLLECTED
+    addresses_needs: list[str] = Field(default_factory=list)
+    confidence: float = 0.0
+    confidence_composition: ExplainableConfidence = Field(default_factory=ExplainableConfidence)
+    selected_primary: bool = False
+    selected_fallback: bool = False
+    collected_at: datetime | None = None
+
+
+class ResearchAssetCollection(BaseModel):
+    """Normalized asset view over discovery candidates."""
+
+    model_config = ConfigDict(frozen=True)
+
+    assets: list[ResearchAsset] = Field(default_factory=list)
+    indexes: dict[str, list[str]] = Field(default_factory=dict)
+    schema_version: str = "1.0"
+
+
 class ResearchResourceDiscovery(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -540,6 +591,10 @@ class ResearchResourceDiscovery(BaseModel):
     provenance: DiscoveryProvenance = Field(default_factory=DiscoveryProvenance)
     analysis_reference: AnalysisReference
     candidate_resources: CandidateResources = Field(default_factory=CandidateResources)
+    research_assets: ResearchAssetCollection = Field(
+        default_factory=ResearchAssetCollection,
+        description="Unified asset view over candidates (repository is one asset type).",
+    )
     evidence: EvidenceCollection = Field(default_factory=EvidenceCollection)
     verification: VerificationCollection = Field(default_factory=VerificationCollection)
     ranking: RankingResult = Field(default_factory=RankingResult)

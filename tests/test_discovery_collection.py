@@ -215,6 +215,7 @@ class DiscoveryWorkflowCollectionIntegrationTest(unittest.TestCase):
             "embedded_resource",
         )
         self.assertEqual(discovery.metadata.candidate_count, 3)
+        self.assertGreaterEqual(discovery.metadata.selection_count, 1)
 
     def test_empty_analysis_still_runs(self) -> None:
         workflow = DiscoveryWorkflow(

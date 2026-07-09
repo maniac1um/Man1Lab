@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "man1lab"
-version = "1.2.3"
+version = "1.2.4"
 description = "Autonomous research paper reproduction platform"
 readme = "README.md"
 license = {text = "MIT"}

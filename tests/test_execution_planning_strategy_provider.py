@@ -170,6 +170,69 @@ class EmbeddedStrategyProviderDecisionTest(unittest.TestCase):
         self.assertIn("rule:hybrid", result.strategy.deciding_factors)
         self.assertIn("invocation_reason:discovery_partial", result.strategy.deciding_factors)
 
+    def test_official_usable_partial_no_gaps(self) -> None:
+        from datetime import UTC, datetime
+        from pathlib import Path
+
+        from models.research_resource_discovery import (
+            AnalysisReference,
+            CandidateResources,
+            CollectionSource,
+            CollectionSourceType,
+            DiscoveryMetadata,
+            DiscoveryProvider,
+            DiscoveryStatus,
+            NeedCategory,
+            Officiality,
+            RepositoryCandidate,
+            ResearchResourceDiscovery,
+            ResourceIdentity,
+            ResourceNeed,
+            ResourceType,
+            SelectionRecord,
+            SelectionResult,
+            VerificationCollection,
+            VerificationRecord,
+            VerificationStatus,
+        )
+        from tests.fixtures import sample_reproduction_analysis
+
+        analysis = sample_reproduction_analysis(source_path=Path("paper.pdf"))
+        candidate = _repository_candidate()
+        discovery = ResearchResourceDiscovery(
+            metadata=DiscoveryMetadata(
+                discovery_id="disc-test",
+                created_at=datetime.now(UTC),
+                status=DiscoveryStatus.COMPLETE,
+            ),
+            analysis_reference=AnalysisReference(
+                analysis_schema_version="1.0",
+                paper_title=analysis.metadata.title,
+                analysis_content_hash="hash",
+            ),
+            candidate_resources=CandidateResources(candidates=[candidate]),
+            verification=VerificationCollection(
+                records=[_verification_record(candidate.candidate_id, status=VerificationStatus.PARTIAL)]
+            ),
+            selection=SelectionResult(
+                selections=[
+                    SelectionRecord(
+                        selection_id="selection-repo",
+                        resource_need=ResourceNeed(
+                            need_id="need-repo",
+                            need_category=NeedCategory.CODE_REPOSITORY,
+                            description="Official repository",
+                        ),
+                        primary_candidate_id=candidate.candidate_id,
+                        confidence=0.65,
+                    )
+                ]
+            ),
+        )
+        result = self.provider.execute(analysis, discovery)
+        self.assertEqual(result.strategy.primary_posture, StrategyPosture.OFFICIAL_REPOSITORY)
+        self.assertIn("rule:official_usable", result.strategy.deciding_factors)
+
     def test_greenfield_decision(self) -> None:
         discovery = _discovery_greenfield(self.analysis)
         result = self.provider.execute(self.analysis, discovery)

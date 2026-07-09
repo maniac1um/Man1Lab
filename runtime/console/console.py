@@ -7,10 +7,12 @@ from typing import TextIO
 
 from runtime.console.builtins import ensure_session_open, register_builtin_commands
 from runtime.console.command import ConsoleContext, ConsolePlatform
+from runtime.console.input import create_console_input_fn
 from runtime.console.parser import parse_command_line
 from runtime.console.registry import CommandRegistry
 from runtime.console.renderer import ConsoleRenderer
 from runtime.session.state import SessionState
+from runtime.console.errors import format_exception_chain
 
 
 class Man1LabConsole:
@@ -31,7 +33,9 @@ class Man1LabConsole:
         if registry is None:
             register_builtin_commands(self._registry)
         self._renderer = renderer or ConsoleRenderer()
-        self._input_fn = input_fn or input
+        if input_fn is None:
+            input_fn = create_console_input_fn(self._registry.names())
+        self._input_fn = input_fn
 
     @property
     def registry(self) -> CommandRegistry:
@@ -72,7 +76,7 @@ class Man1LabConsole:
                 self._renderer.write_error(f"Error: {exc}")
                 continue
             except Exception as exc:
-                self._renderer.write_error(f"Error: {exc}")
+                self._renderer.write_error(f"Error: {format_exception_chain(exc)}")
                 continue
 
             if exit_code != 0:

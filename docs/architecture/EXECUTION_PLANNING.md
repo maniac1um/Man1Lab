@@ -63,8 +63,8 @@ Runtime Snapshots      ← workflow-internal stage outputs
 
 | Module | Decision |
 |--------|----------|
-| `facts.py` | Observed facts extraction |
-| `dimensions.py` | Dimension evaluation |
+| `facts.py` | Observed facts extraction (assets + confidence contributions) |
+| `dimensions.py` | Dimension evaluation (consumes explainable confidence) |
 | `common.py` | Shared formatting helpers |
 | `strategy_decision.py` | Strategy |
 | `binding_decision.py` | Resource binding |
@@ -73,7 +73,13 @@ Runtime Snapshots      ← workflow-internal stage outputs
 | `generation_decision.py` | Generation |
 | `risk_decision.py` | Execution readiness + risk |
 
-The Decision Foundation is **not** a public API and does not appear in canonical artifacts.
+The Decision Foundation is **not** a public API. Planning also emits `DecisionTrace` and `ExecutionGraph` as separate runtime-persisted artifacts under `workspace/decision/`.
+
+---
+
+## Execution Graph (Phase 2)
+
+`execution_planning/execution_graph.py` builds a deterministic dependency graph (clone → environment → dataset → checkpoints → config → training → evaluation → comparison) from strategy posture and discovery assets. This is planning output only — not execution.
 
 ---
 

@@ -1,6 +1,6 @@
 # API Documentation
 
-Public API reference for Man1Lab v1.2.3.
+Public API reference for Man1Lab v1.2.4.
 
 ## Purpose
 

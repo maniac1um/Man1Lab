@@ -103,10 +103,12 @@ class LLMManager:
             profile.temperature if profile is not None and profile.temperature is not None else temperature
         )
         resolved_model = model or (profile.model if profile is not None else None)
+        resolved_max_tokens = profile.max_tokens if profile is not None else None
         return self.get_provider().generate(
             messages,
             temperature=resolved_temperature,
             model=resolved_model,
+            max_tokens=resolved_max_tokens,
         )
 
     def stream(

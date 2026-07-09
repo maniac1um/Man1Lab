@@ -30,6 +30,13 @@ def resolve_prompts_dir() -> Path:
     raise FileNotFoundError("Man1Lab prompts directory not found.")
 
 
+def resolve_configured_prompts_dir(configured: Path) -> Path:
+    """Resolve ``prompts_dir`` from settings; relative values use bundled/dev layout."""
+    if configured.is_absolute():
+        return configured
+    return resolve_prompts_dir()
+
+
 def resolve_env_example() -> Path | None:
     """Return the bundled .env.example template when available."""
     candidates = (

@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-07-09
+
+**Console UX & Workspace Persistence** — guided console workflow, pipeline commands, runtime-owned artifact persistence, and resume utilities.
+
+### Added
+
+- **Guided console output** — success messages, generated artifacts, and next-step hints after `analyze`, `discover`, and `plan`
+- **Pipeline commands** — `plan-all`, reserved `execute-all` and `reproduce`
+- **Workspace artifact persistence** — runtime-owned `WorkspaceArtifactStore` under `analysis/`, `discovery/`, `planning/`, `decision/`
+- **Resume utilities** — `hydrate_workspace_from_disk`, deterministic diagnostics for missing artifacts
+- **Console enhancements** — ASCII startup banner, optional `prompt_toolkit` input (history, completion) with fallback
+- **Decision Quality Phase 1** — Discovery selection stage; Planning consumes selections end-to-end
+- **Decision Quality Phase 2** — `ResearchAsset`, explainable confidence, `DecisionTrace`, `ExecutionGraph` artifacts
+- **Golden Benchmark framework** — regression suite for decision trace and execution graph
+- **LLM reliability** — connection timeouts, structured exception chains for provider failures
+- Release notes: [docs/releases/v1.2.4.md](docs/releases/v1.2.4.md)
+
+### Changed
+
+- Interactive console help documents the full analyze → discover → plan workflow
+- `PLATFORM_VERSION` → 1.2.4
+
+### Compatibility
+
+- No breaking changes to facade APIs, CLI subcommands, or canonical artifacts
+- Console remains presentation-only; business logic unchanged
+
+### Tests
+
+- 826 unit tests passing
+
+[1.2.4]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.2.4
+
 ## [1.2.3] - 2026-07-08
 
 **Platform Runtime & Interactive Console** — process-level infrastructure, runtime resource ownership, and REPL-style interface.

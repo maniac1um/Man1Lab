@@ -250,7 +250,14 @@ def decide_risk(
     confidence = _overall_confidence(strategy, readiness, blocking, degraded, dimensions)
     status_hint = _artifact_status_hint(blocking, degraded, confidence)
 
+    assessment_rationale = _assessment_rationale(strategy, readiness, blocking, degraded)
     notes.append(f"Execution readiness: {readiness.execution_ready.value}.")
+    notes.append(
+        "Readiness breakdown: "
+        f"resource={readiness.resource_ready.value}, "
+        f"engineering={readiness.engineering_ready.value}, "
+        f"dependency={readiness.dependency_ready.value}."
+    )
     notes.append(f"Overall confidence: {confidence:.2f}.")
 
     return RiskDecision(
@@ -263,7 +270,7 @@ def decide_risk(
         abort_conditions=abort_conditions,
         overall_confidence=confidence,
         artifact_status_hint=status_hint,
-        assessment_rationale=_assessment_rationale(strategy, readiness, blocking, degraded),
+        assessment_rationale=assessment_rationale,
         decision_notes=tuple(notes),
         provider_factors=_provider_factors(dimensions, readiness, len(blocking), len(degraded)),
         diagnostics=_diagnostics(strategy, reuse_plan, readiness, confidence, blocking, degraded, informational),

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from configuration.bootstrap import initialize_app_configuration
 from configuration.models import AppSettings
+from configuration.paths import resolve_configured_prompts_dir
 from prompt.loader import PromptLoader
 from providers.llm.manager import LLMManager
 from providers.llm.provider_registry import ProviderRegistry, create_default_registry
@@ -35,7 +36,7 @@ def wire_runtime_resources(
     )
     manager.register(
         RESOURCE_PROMPT_REGISTRY,
-        PromptLoader,
+        lambda: _create_prompt_registry(manager),
         resource_type="prompt_registry",
         cache_policy=CachePolicy.RUNTIME,
     )
@@ -65,6 +66,11 @@ def _resolve_configuration(
     from configuration.legacy_provider import LegacySettingsProvider
 
     return LegacySettingsProvider().get_settings()
+
+
+def _create_prompt_registry(manager: RuntimeResourceManager) -> PromptLoader:
+    configuration = manager.get(RESOURCE_CONFIGURATION)
+    return PromptLoader(resolve_configured_prompts_dir(configuration.prompts_dir))
 
 
 def _create_llm_manager(manager: RuntimeResourceManager) -> LLMManager:

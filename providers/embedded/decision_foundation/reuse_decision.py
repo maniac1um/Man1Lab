@@ -211,6 +211,8 @@ def _resolve_reuse_mode(
     components: list[ReuseComponent],
     bindings: ResourceBindingSnapshot,
 ) -> ReuseMode:
+    if strategy.primary_posture == StrategyPosture.COMMUNITY_FORK:
+        return ReuseMode.AS_IS
     if strategy.primary_posture == StrategyPosture.HYBRID:
         return ReuseMode.HYBRID_COMPONENTS
     primary_roles = {

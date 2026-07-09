@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from models.paper_reproduction_analysis import (
@@ -15,9 +16,7 @@ from models.research_resource_discovery import (
     AnalysisReference,
     CandidateResources,
     CollectionSource,
-    DiscoveryGap,
     DiscoveryGaps,
-    DiscoveryGapType,
     DiscoveryMetadata,
     DiscoveryProvenance,
     DiscoveryStatistics,
@@ -25,19 +24,14 @@ from models.research_resource_discovery import (
     EvidenceCollection,
     EvidenceRecord,
     EvidenceSource,
-    GapSeverity,
     InvocationReason,
     ObservedFact,
     PaperRelation,
     ProviderRecord,
     RankingResult,
-    RecommendedAction,
     RepositoryCandidate,
     ResearchResourceDiscovery,
     ResourceIdentity,
-    ResourceNeed,
-    SelectionReason,
-    SelectionRecord,
     SelectionResult,
     VerificationCollection,
     VerificationDimension,
@@ -50,6 +44,8 @@ from services.discovery.collection_service import CollectionService
 from services.discovery.evidence_service import EvidenceService
 from services.discovery.ranking_service import RankingService
 from services.discovery.verification_service import VerificationService
+from discovery.selection import run_selection, update_candidate_statuses_after_selection
+from discovery.assets import build_research_assets
 from validation.research_resource_discovery import build_research_resource_discovery
 
 
@@ -90,6 +86,7 @@ class ResearchResourceDiscoveryBuilder:
             candidates=candidates,
             indexes=_index_candidates(candidates),
         )
+        research_assets = build_research_assets(candidates, selection)
         evidence_collection = EvidenceCollection(
             records=evidence_records,
             indexes=_index_evidence(evidence_records),
@@ -140,6 +137,7 @@ class ResearchResourceDiscoveryBuilder:
             provenance=provenance,
             analysis_reference=analysis_reference,
             candidate_resources=candidate_resources,
+            research_assets=research_assets,
             evidence=evidence_collection,
             verification=verification_collection,
             ranking=ranking,
@@ -182,10 +180,17 @@ class DiscoveryWorkflow:
         ranking = self._ranking_service.rank(analysis, collection, evidence, verification)
 
         timestamps["selection"] = datetime.now(UTC)
-        selection, discovery_gaps = _run_selection_stage(
-            collection.resource_needs,
-            ranking,
-            analysis,
+        selection, discovery_gaps = run_selection(
+            resource_needs=collection.resource_needs,
+            ranking=ranking,
+            candidates=collection.candidates,
+            verification_records=verification.verification_records,
+            evidence_records=evidence.evidence_records,
+            analysis=analysis,
+        )
+        collection = replace(
+            collection,
+            candidates=update_candidate_statuses_after_selection(collection.candidates, selection),
         )
 
         timestamps["assembly"] = datetime.now(UTC)
@@ -208,102 +213,6 @@ class DiscoveryWorkflow:
             verification_service=VerificationService.default(),
             ranking_service=RankingService.default(),
         )
-
-
-def _run_selection_stage(
-    resource_needs: list[ResourceNeed],
-    ranking: RankingResult,
-    analysis: PaperReproductionAnalysis,
-) -> tuple[SelectionResult, DiscoveryGaps]:
-    selections = [
-        SelectionRecord(
-            selection_id=f"selection-{need.need_id}",
-            resource_need=need,
-            primary_candidate_id=None,
-            fallback_candidate_ids=[],
-            selection_reason=SelectionReason(
-                summary="Skeleton selection — no eligible candidates.",
-            ),
-            confidence=0.0,
-            selected_at=datetime.now(UTC),
-            rank_list_id=f"rank-{need.need_id}",
-            verification_snapshot={},
-        )
-        for need in resource_needs
-    ]
-    gaps = _derive_discovery_gaps(analysis, resource_needs)
-    closed, remaining = _gap_closure_lists(analysis, gaps)
-    discovery_gaps = DiscoveryGaps(
-        gaps=gaps,
-        analysis_gaps_closed=closed,
-        analysis_gaps_remaining=remaining,
-    )
-    del ranking
-    return SelectionResult(selections=selections), discovery_gaps
-
-
-def _derive_discovery_gaps(
-    analysis: PaperReproductionAnalysis,
-    resource_needs: list[ResourceNeed],
-) -> list[DiscoveryGap]:
-    if resource_needs:
-        return []
-
-    gaps: list[DiscoveryGap] = []
-    for index, gap in enumerate(analysis.reproduction_gaps):
-        gaps.append(
-            DiscoveryGap(
-                gap_id=f"gap-{index}",
-                gap_type=_map_analysis_gap_to_discovery_gap(gap.category.value),
-                severity=GapSeverity.BLOCKING,
-                resource_need_id=None,
-                description=f"Discovery skeleton could not resolve: {gap.description}",
-                related_analysis_gap_index=index,
-                candidate_ids_examined=[],
-                recommended_action=RecommendedAction.MANUAL_INPUT,
-            )
-        )
-    if not gaps and not analysis.reproduction_gaps:
-        gaps.append(
-            DiscoveryGap(
-                gap_id="gap-empty",
-                gap_type=DiscoveryGapType.PROVIDER_UNAVAILABLE,
-                severity=GapSeverity.INFORMATIONAL,
-                description="Skeleton discovery produced no resource needs or candidates.",
-                recommended_action=RecommendedAction.RETRY_DISCOVERY,
-            )
-        )
-    return gaps
-
-
-def _map_analysis_gap_to_discovery_gap(category: str) -> DiscoveryGapType:
-    mapping = {
-        "repository": DiscoveryGapType.NO_OFFICIAL_REPOSITORY,
-        "checkpoint": DiscoveryGapType.CHECKPOINT_MISSING,
-        "config": DiscoveryGapType.CONFIG_MISSING,
-        "dataset_link": DiscoveryGapType.DATASET_UNAVAILABLE,
-    }
-    return mapping.get(category, DiscoveryGapType.OTHER)
-
-
-def _gap_closure_lists(
-    analysis: PaperReproductionAnalysis,
-    discovery_gaps: list[DiscoveryGap],
-) -> tuple[list[str], list[str]]:
-    unresolved_indexes = {
-        gap.related_analysis_gap_index
-        for gap in discovery_gaps
-        if gap.related_analysis_gap_index is not None
-    }
-    closed: list[str] = []
-    remaining: list[str] = []
-    for index, gap in enumerate(analysis.reproduction_gaps):
-        category = gap.category.value
-        if index in unresolved_indexes:
-            remaining.append(category)
-        else:
-            closed.append(category)
-    return closed, remaining
 
 
 def _build_analysis_reference(analysis: PaperReproductionAnalysis) -> AnalysisReference:
@@ -334,7 +243,9 @@ def _index_candidates(candidates: list[RepositoryCandidate]) -> dict[str, list[s
     for candidate in candidates:
         key = candidate.resource_type.value
         by_type.setdefault(key, []).append(candidate.candidate_id)
-    return {"by_resource_type": by_type.get("official_repository", [])} if by_type else {}
+    if not by_type:
+        return {}
+    return {"by_resource_type": by_type.get("official_repository", [])}
 
 
 def _index_evidence(records: list[EvidenceRecord]) -> dict[str, list[str]]:

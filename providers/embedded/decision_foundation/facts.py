@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
+from models.explainable_confidence import ConfidenceContribution, ExplainableConfidence
 from models.research_resource_discovery import (
     DiscoveryGap,
     DiscoveryGapType,
@@ -13,6 +14,7 @@ from models.research_resource_discovery import (
     NeedCategory,
     Officiality,
     RepositoryCandidate,
+    ResearchAssetType,
     ResearchResourceDiscovery,
     ResourceType,
     SelectionRecord,
@@ -30,6 +32,9 @@ class SelectedResourceFact:
     candidate_id: str
     candidate: RepositoryCandidate
     verification_status: VerificationStatus | None
+    selection_confidence: float = 0.0
+    confidence_composition: ExplainableConfidence = field(default_factory=ExplainableConfidence)
+    asset_type: ResearchAssetType | None = None
     is_primary: bool = True
 
 
@@ -51,6 +56,8 @@ class ObservedFacts:
     checkpoint_available: bool
     dataset_available: bool
     repository_usable: bool
+    selected_assets: tuple[SelectedResourceFact, ...]
+    confidence_contributions: tuple[ConfidenceContribution, ...]
 
 
 def build_observed_facts(
@@ -61,8 +68,11 @@ def build_observed_facts(
     candidate_index = {
         candidate.candidate_id: candidate for candidate in discovery.candidate_resources.candidates
     }
-    selections = _selected_resources(discovery, candidate_index)
-    supplementary = _supplementary_resources(discovery, candidate_index)
+    asset_type_by_candidate = {
+        asset.candidate_id: asset.asset_type for asset in discovery.research_assets.assets
+    }
+    selections = _selected_resources(discovery, candidate_index, asset_type_by_candidate)
+    supplementary = _supplementary_resources(discovery, candidate_index, asset_type_by_candidate)
 
     selected_repository = _first_for_category(selections, NeedCategory.CODE_REPOSITORY)
     selected_checkpoint = _first_for_category(selections, NeedCategory.CHECKPOINT)
@@ -102,20 +112,27 @@ def build_observed_facts(
         checkpoint_available=_resource_verified(selected_checkpoint),
         dataset_available=_resource_verified(selected_dataset),
         repository_usable=repository_usable,
+        selected_assets=selections,
+        confidence_contributions=_aggregate_confidence_contributions(discovery),
     )
 
 
 def _selected_resources(
     discovery: ResearchResourceDiscovery,
     candidate_index: dict[str, RepositoryCandidate],
+    asset_type_by_candidate: dict[str, ResearchAssetType],
 ) -> tuple[SelectedResourceFact, ...]:
     facts: list[SelectedResourceFact] = []
+    composition_by_selection = {
+        record.selection_id: record.confidence_composition for record in discovery.selection.selections
+    }
     for selection in discovery.selection.selections:
         if not selection.primary_candidate_id:
             continue
         candidate = candidate_index.get(selection.primary_candidate_id)
         if candidate is None:
             continue
+        composition = composition_by_selection.get(selection.selection_id, selection.confidence_composition)
         facts.append(
             SelectedResourceFact(
                 selection_id=selection.selection_id,
@@ -124,6 +141,9 @@ def _selected_resources(
                 candidate_id=candidate.candidate_id,
                 candidate=candidate,
                 verification_status=_verification_status(discovery, candidate.candidate_id),
+                selection_confidence=selection.confidence,
+                confidence_composition=composition,
+                asset_type=asset_type_by_candidate.get(candidate.candidate_id),
                 is_primary=True,
             )
         )
@@ -133,9 +153,11 @@ def _selected_resources(
 def _supplementary_resources(
     discovery: ResearchResourceDiscovery,
     candidate_index: dict[str, RepositoryCandidate],
+    asset_type_by_candidate: dict[str, ResearchAssetType],
 ) -> tuple[SelectedResourceFact, ...]:
     facts: list[SelectedResourceFact] = []
     for selection in discovery.selection.selections:
+        composition = selection.confidence_composition
         for fallback_id in selection.fallback_candidate_ids:
             candidate = candidate_index.get(fallback_id)
             if candidate is None:
@@ -148,10 +170,27 @@ def _supplementary_resources(
                     candidate_id=candidate.candidate_id,
                     candidate=candidate,
                     verification_status=_verification_status(discovery, candidate.candidate_id),
+                    selection_confidence=selection.confidence,
+                    confidence_composition=composition,
+                    asset_type=asset_type_by_candidate.get(candidate.candidate_id),
                     is_primary=False,
                 )
             )
     return tuple(facts)
+
+
+def _aggregate_confidence_contributions(
+    discovery: ResearchResourceDiscovery,
+) -> tuple[ConfidenceContribution, ...]:
+    merged: dict[str, ConfidenceContribution] = {}
+    for selection in discovery.selection.selections:
+        if selection.primary_candidate_id is None:
+            continue
+        for contribution in selection.confidence_composition.contributions:
+            existing = merged.get(contribution.signal)
+            if existing is None or contribution.contribution > existing.contribution:
+                merged[contribution.signal] = contribution
+    return tuple(merged[s] for s in sorted(merged))
 
 
 def _first_for_category(

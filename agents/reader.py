@@ -39,8 +39,16 @@ class Reader:
     def run(self, paper_path: Path) -> PaperReproductionAnalysis:
         return self.run_analysis(paper_path)
 
-    def run_analysis(self, paper_path: Path) -> PaperReproductionAnalysis:
-        text = self.read_text(paper_path)
+    def run_analysis(
+        self,
+        paper_path: Path,
+        *,
+        paper_text: str | None = None,
+    ) -> PaperReproductionAnalysis:
+        text = paper_text if paper_text is not None else self.read_text(paper_path)
+        return self._extract_analysis(paper_path, text)
+
+    def _extract_analysis(self, paper_path: Path, text: str) -> PaperReproductionAnalysis:
         self._last_prompt = self._prompt_builder.build_reader_prompt()
         messages = [
             LLMMessage(role="system", content=self._last_prompt),

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: man1lab
-Version: 1.2.3
+Version: 1.2.4
 Summary: Autonomous research paper reproduction platform
 Author: maniac1um
 License: MIT
@@ -38,182 +38,217 @@ Dynamic: license-file
 
 **Engineering-first autonomous research paper reproduction platform.**
 
-Man1Lab automates the engineering workflow behind AI paper reproduction — from reading a PDF to discovering official code and checkpoints, planning how to run the work, and driving implementation through a structured pipeline. One command. One platform.
+Man1Lab transforms AI paper reproduction into a structured engineering workflow.
+
+Starting from a research paper, it analyzes the methodology, discovers official repositories and resources, builds an execution strategy, and prepares everything required for software reproduction.
+
+**From paper → engineering decisions → reproducible implementation.**
 
 [![PyPI version](https://img.shields.io/pypi/v/man1lab)](https://pypi.org/project/man1lab/)
 [![Python Version](https://img.shields.io/pypi/pyversions/man1lab)](https://pypi.org/project/man1lab/)
 [![Latest Release](https://img.shields.io/github/v/release/maniac1um/Man1Lab)](https://github.com/maniac1um/Man1Lab/releases)
-[![Tests](https://img.shields.io/badge/tests-765%20passing-brightgreen)](docs/CURRENT_STATUS.md)
+[![Tests](https://img.shields.io/badge/tests-826%20passing-brightgreen)](docs/CURRENT_STATUS.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-Getting%20Started-blue)](docs/GETTING_STARTED.md)
 
 ---
 
 ## Why Man1Lab?
 
-Reproducing a modern AI paper is an engineering project, not a reading exercise.
+Reproducing modern AI papers is rarely just reading code.
 
-Researchers and engineers routinely spend days on work that follows the same pattern:
+A typical workflow requires:
 
-| Pain point | What you do today |
-|------------|-------------------|
-| Understand the paper | Read, highlight, and manually extract methods and requirements |
-| Find official resources | Search GitHub, Hugging Face, and project pages by hand |
-| Locate checkpoints and data | Track down weights, configs, and dataset links across sites |
-| Prepare the environment | Create repos, install dependencies, wire configs manually |
-| Bridge paper → code | Map sections of the paper to modules, scripts, and training steps |
-| Connect everything | Stitch analysis, resources, and execution into one coherent plan |
+- Reading and understanding the paper
+- Finding the official implementation
+- Locating checkpoints and datasets
+- Preparing the runtime environment
+- Connecting paper concepts to source code
+- Planning how the reproduction should actually be executed
 
 **Man1Lab automates this engineering workflow.**
 
-Give it a paper. It produces structured analysis, discovers resources, commits an execution strategy, and runs the reproduction pipeline — so you start from engineering decisions, not from scratch.
+Instead of starting from scattered resources, you start from structured engineering decisions.
 
 ---
 
-## Core Workflow
+## Workflow
 
 ```text
 Paper
-  ↓
-Analysis          — Extract reproduction requirements from the PDF
-  ↓
-Discovery         — Find official repositories, checkpoints, and datasets
-  ↓
-Execution Planning — Commit how the work should be engineered
-  ↓
-Execution         — Plan tasks, generate code, run training, verify, report
+   │
+   ▼
+Analysis
+   │
+   ▼
+Research Resource Discovery
+   │
+   ▼
+Execution Planning
+   │
+   ▼
+Execution (ongoing)
 ```
 
-Each stage produces a structured artifact that feeds the next. The full pipeline is available through the CLI and Python SDK.
+Each stage produces structured artifacts that become the input of the next stage.
 
 ---
 
 ## Key Features
 
-| Capability | Description | Status |
-|------------|-------------|--------|
-| Paper Analysis | Structured extraction from research PDFs | ✅ |
-| Research Resource Discovery | Evidence-backed search for repos, models, and data | ✅ |
-| Execution Planning | Engineering strategy before implementation | ✅ |
-| CLI | `man1lab` — init, reproduce, model management, and more | ✅ |
-| Python SDK | `from man1lab import Man1Lab` | ✅ |
-| Multi-model Support | Switch LLM providers without editing config files | ✅ |
-| Model Registry | Named profiles, active model, portable export/import | ✅ |
-| OpenAI | GPT-family models | ✅ |
-| DeepSeek | DeepSeek API-compatible models | ✅ |
-| Anthropic | Claude models | ✅ |
-| Package Distribution | `pip install man1lab` | ✅ |
-| Platform Runtime | Process lifecycle, resources, profiling, session | ✅ |
-| Interactive Console | `man1lab` with no args — REPL-style interface | ✅ |
-| Platform Facade | Single entry point for CLI, SDK, and Console | ✅ |
-
----
-
-## Current Scope
-
-Man1Lab targets **engineering-oriented software reproduction** of AI research papers.
-
-| Domain | Supported as software reproduction |
-|--------|-------------------------------------|
-| Computer Vision | ✅ |
-| Embodied AI (software stack) | ✅ |
-| LLM Systems | ✅ |
-| Agent Frameworks | ✅ |
-| Reinforcement Learning | ✅ |
-
-**What Man1Lab does:** automate analysis, resource discovery, execution planning, and the software reproduction pipeline.
-
-**What is outside current scope:** physical robot deployment, hardware setup, calibration, and real-world deployment. Those remain manual engineering work. Man1Lab focuses on the software path from paper to runnable reproduction.
+- Structured paper analysis
+- Evidence-backed research resource discovery
+- Engineering-oriented execution planning
+- Interactive CLI and Console
+- Multi-provider LLM support (OpenAI / DeepSeek / Anthropic)
+- Python SDK
+- Workspace persistence and resume
+- Explainable Decision Trace
+- Execution Graph generation
+- Golden Benchmark framework
 
 ---
 
 ## Quick Start
 
+Install:
+
 ```bash
 pip install man1lab
+```
+
+Initialize:
+
+```bash
 man1lab init
+```
+
+Validate your environment:
+
+```bash
 man1lab doctor
+```
+
+Run a complete planning pipeline:
+
+```bash
 man1lab reproduce paper.pdf
 ```
 
-During `init`, you can configure your first LLM provider interactively. Full installation and configuration: [Getting Started](docs/GETTING_STARTED.md).
-
----
-
-## Example Workflow
+Or enter the interactive console:
 
 ```bash
-man1lab reproduce OpenVLA.pdf
+man1lab
 ```
-
-```text
-Analysis completed
-  ↓
-Official repository discovered
-  ↓
-Checkpoint and dataset candidates ranked
-  ↓
-Execution strategy generated
-  ↓
-Engineering tasks planned → repository built → training run → report
-```
-
-The platform handles the chain from paper to execution. You review outputs and iterate on results.
 
 ---
 
-## Project Architecture
+## Interactive Console
+
+The interactive console guides the complete engineering workflow.
+
+```text
+man1lab
+│
+├── analyze <paper.pdf>
+├── discover
+├── plan
+├── plan-all <paper.pdf>
+├── doctor
+├── model
+└── profile
+```
+
+Workspace artifacts are persisted automatically, allowing interrupted sessions to resume.
+
+---
+
+## Generated Workspace
+
+Running Man1Lab produces structured engineering artifacts.
+
+```text
+workspace/
+├── analysis/
+│   ├── analysis.json
+│   └── analysis.md
+├── discovery/
+│   ├── resources.json
+│   └── summary.md
+├── planning/
+│   ├── execution_strategy.json
+│   └── summary.md
+├── decision/
+│   ├── decision_trace.json
+│   └── execution_graph.json
+└── logs/
+```
+
+These artifacts can be inspected, version-controlled, and reused in later stages.
+
+---
+
+## Current Scope
+
+Man1Lab focuses on **software reproduction** of AI research.
+
+Supported domains include:
+
+- Computer Vision
+- Embodied AI (software stack)
+- LLM Systems
+- Agent Frameworks
+- Reinforcement Learning
+
+Hardware deployment, robot calibration, and physical experiments are outside the current scope.
+
+---
+
+## Architecture
 
 ```text
 Platform
-  ↓
-Analysis → Discovery → Execution Planning → Execution
+        │
+        ▼
+Analysis
+        │
+        ▼
+Discovery
+        │
+        ▼
+Execution Planning
+        │
+        ▼
+Execution
 ```
 
-Man1Lab is organized as a single platform with a clear stage-by-stage pipeline. Interfaces (CLI, SDK) delegate to one composition root — no direct coupling to internal agents from user code.
+Interfaces (CLI, Console, SDK) share the same Platform Runtime and Decision Foundation.
 
-Details: [Architecture](docs/architecture/ARCHITECTURE.md)
+Architecture documentation:
+
+- Architecture
+- Runtime
+- Execution Planning
 
 ---
 
 ## Roadmap
 
-| Version | Focus | Status |
-|---------|-------|--------|
-| **v1.2.x** | Platform foundation, Runtime, Console, Execution Planning, LLM platform | **Completed** |
-| **v1.3** | Repository Understanding — semantic mapping of discovered code to paper modules | Planned |
-| **v1.4** | Repository Adaptation — align discovered repos with paper requirements | Planned |
-| **v1.5** | Knowledge Memory — cross-run reproduction knowledge | Planned |
-
-Live status: [Current Status](docs/CURRENT_STATUS.md) · Full roadmap: [ROADMAP.md](ROADMAP.md)
+| Version | Focus |
+|----------|------|
+| **v1.2.x** | Platform Runtime & Decision Foundation ✅ |
+| **v1.3** | Repository Understanding |
+| **v1.4** | Repository Adaptation |
+| **v1.5** | Knowledge Memory |
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Getting Started](docs/GETTING_STARTED.md) | Install, configure models, run your first reproduction |
-| [Architecture](docs/architecture/ARCHITECTURE.md) | Platform design and canonical artifacts |
-| [Current Status](docs/CURRENT_STATUS.md) | Capabilities, tests, and known limitations |
-| [Runtime Architecture](docs/architecture/RUNTIME.md) | Platform Runtime subsystem |
-| [Release Notes](docs/releases/v1.2.3.md) | v1.2.3 — Platform Runtime and interactive console |
-| [Contributing](CONTRIBUTING.md) | Development setup and contribution guidelines |
-| [Security](SECURITY.md) | Vulnerability reporting |
-| [Support](SUPPORT.md) | Questions, bugs, and feature requests |
-
----
-
-## Community
-
-| Channel | Use for |
-|---------|---------|
-| [GitHub Issues](https://github.com/maniac1um/Man1Lab/issues) | Bug reports and feature requests |
-| [GitHub Discussions](https://github.com/maniac1um/Man1Lab/discussions) | Questions and ideas |
-| [Pull Requests](https://github.com/maniac1um/Man1Lab/pulls) | Code contributions ([guidelines](CONTRIBUTING.md)) |
-| [Security Advisories](https://github.com/maniac1um/Man1Lab/security/advisories/new) | Private vulnerability reports only |
-
-Man1Lab is an active research prototype for academic demonstration. See [Contributing](CONTRIBUTING.md) before opening large changes.
+- Getting Started
+- Architecture
+- Runtime
+- Current Status
+- Roadmap
 
 ---
 
@@ -221,23 +256,18 @@ Man1Lab is an active research prototype for academic demonstration. See [Contrib
 
 ```bibtex
 @software{man1lab_2026,
-  author       = {maniac1um},
-  title        = {Man1Lab: An Autonomous Research Paper Reproduction Platform},
-  year         = {2026},
-  version      = {1.2.3},
-  url          = {https://github.com/maniac1um/Man1Lab},
-  note         = {Engineering-first autonomous research paper reproduction platform.}
+  author  = {maniac1um},
+  title   = {Man1Lab: An Autonomous Research Paper Reproduction Platform},
+  year    = {2026},
+  version = {1.2.4},
+  url     = {https://github.com/maniac1um/Man1Lab}
 }
 ```
 
-Also see [CITATION.cff](CITATION.cff).
+See **CITATION.cff** for the preferred citation format.
 
 ---
 
 ## License
 
-Man1Lab is released under the MIT License. See the `LICENSE` file for details.
-
----
-
-**Maintainer:** [maniac1um](https://github.com/maniac1um)
+Released under the MIT License.
