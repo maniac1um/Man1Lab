@@ -9,6 +9,7 @@ from runtime.console.registry import CommandRegistry
 from runtime.session.state import SessionState
 from runtime.session.workspace_resume import (
     diagnose_for_discover,
+    diagnose_for_execute,
     diagnose_for_plan,
     diagnose_for_plan_all,
     hydrate_workspace_from_disk,
@@ -37,6 +38,12 @@ def register_builtin_commands(registry: CommandRegistry) -> None:
         ConsoleCommand("analyze", "Analyze a paper PDF.", _cmd_analyze),
         ConsoleCommand("discover", "Run discovery for the current paper.", _cmd_discover),
         ConsoleCommand("plan", "Run execution planning for the current session.", _cmd_plan),
+        ConsoleCommand("execute", "Run the planned execution graph.", _cmd_execute),
+        ConsoleCommand(
+            "execution",
+            "Execution run commands (status, report).",
+            _cmd_execution,
+        ),
         ConsoleCommand(
             "plan-all",
             "Run analyze, discover, and plan for a paper.",
@@ -44,7 +51,7 @@ def register_builtin_commands(registry: CommandRegistry) -> None:
         ),
         ConsoleCommand(
             "execute-all",
-            "Execute the current strategy (reserved).",
+            "Run the planned execution graph (alias for execute).",
             _cmd_execute_all,
         ),
         ConsoleCommand(
@@ -216,8 +223,96 @@ def _cmd_plan(ctx: ConsoleContext, _args: list[str]) -> int:
     ctx.renderer.render_command_success(
         message="Execution strategy generated",
         generated=("Execution Strategy",),
-        next_command="execute-all",
+        next_command="execute",
     )
+    return 0
+
+
+def _cmd_execute(ctx: ConsoleContext, args: list[str]) -> int:
+    workspace = ctx.session.workspace
+
+    resume = True
+    run_id: str | None = None
+    if args:
+        if args[0] == "--no-resume":
+            resume = False
+            run_id = args[1] if len(args) > 1 else None
+        else:
+            run_id = args[0]
+
+    try:
+        outcome = ctx.platform.run_execution(run_id=run_id, resume=resume)
+    except ValueError as exc:
+        ctx.renderer.write_error(str(exc))
+        return 0
+
+    workspace.current_execution_run_id = outcome.run_id
+    action = "resumed" if outcome.resumed else "started"
+    ctx.renderer.write(f"✓ Execution run {action}: {outcome.run_id}")
+    ctx.renderer.write(f"Status: {outcome.status.value}")
+    ctx.renderer.write(f"Run directory: {outcome.run_directory}")
+    if outcome.report is not None:
+        ctx.renderer.write(f"Report: {outcome.run_directory}/report.json")
+    ctx.renderer.write("")
+    ctx.renderer.write("Next: execution status")
+    return 0
+
+
+def _cmd_execution(ctx: ConsoleContext, args: list[str]) -> int:
+    if not args:
+        ctx.renderer.write_error("Usage: execution <status|report> [run_id]")
+        return 0
+
+    subcommand = args[0]
+    run_id = args[1] if len(args) > 1 else None
+
+    if subcommand == "status":
+        try:
+            status = ctx.platform.execution_status(run_id)
+        except ValueError as exc:
+            ctx.renderer.write_error(str(exc))
+            return 0
+        ctx.renderer.write(f"Run: {status.run_id}")
+        ctx.renderer.write(f"Status: {status.status.value}")
+        ctx.renderer.write(f"Graph: {status.graph_id}")
+        ctx.renderer.write(f"Backend: {status.backend_kind or 'n/a'}")
+        ctx.renderer.write(f"Run directory: {status.run_directory}")
+        if status.report_path is not None:
+            ctx.renderer.write(f"Report: {status.report_path}")
+        ctx.renderer.write("Tasks:")
+        for task in status.tasks:
+            ctx.renderer.write(f"  - {task.name} ({task.task_id}): {task.status.value}")
+        return 0
+
+    if subcommand == "report":
+        try:
+            report_view = ctx.platform.execution_report(run_id)
+        except ValueError as exc:
+            ctx.renderer.write_error(str(exc))
+            return 0
+        report = report_view.report
+        ctx.renderer.write(f"Run: {report_view.run_id}")
+        ctx.renderer.write(f"Status: {report.status.value}")
+        ctx.renderer.write(f"Report path: {report_view.report_path}")
+        ctx.renderer.write(f"Run directory: {report_view.run_directory}")
+        if report_view.completed_task_ids:
+            ctx.renderer.write("Completed tasks:")
+            for task_id in report_view.completed_task_ids:
+                ctx.renderer.write(f"  - {task_id}")
+        if report_view.failed_task_ids:
+            ctx.renderer.write("Failed tasks:")
+            for task_id in report_view.failed_task_ids:
+                ctx.renderer.write(f"  - {task_id}")
+        if report_view.artifact_ids:
+            ctx.renderer.write("Artifacts:")
+            for artifact_id in report_view.artifact_ids:
+                ctx.renderer.write(f"  - {artifact_id}")
+        if report.summary:
+            ctx.renderer.write("")
+            ctx.renderer.write(report.summary)
+        return 0
+
+    ctx.renderer.write_error("Usage: execution <status|report> [run_id]")
     return 0
 
 
@@ -268,22 +363,20 @@ def _cmd_plan_all(ctx: ConsoleContext, args: list[str]) -> int:
     ctx.renderer.render_command_success(
         message="Execution strategy generated",
         generated=("Analysis", "Discovery", "Execution Strategy"),
-        next_command="execute-all",
+        next_command="execute",
     )
     return 0
 
 
-def _cmd_execute_all(_ctx: ConsoleContext, _args: list[str]) -> int:
-    _ctx.renderer.write_error("Execution engine is not available yet.")
-    return 0
+def _cmd_execute_all(ctx: ConsoleContext, args: list[str]) -> int:
+    return _cmd_execute(ctx, args)
 
 
-def _cmd_reproduce(_ctx: ConsoleContext, _args: list[str]) -> int:
-    _ctx.renderer.write_error(
-        "Reproduce pipeline is reserved for plan-all followed by execute-all. "
-        "Execution engine is not available yet."
-    )
-    return 0
+def _cmd_reproduce(ctx: ConsoleContext, args: list[str]) -> int:
+    code = _cmd_plan_all(ctx, args)
+    if code != 0:
+        return code
+    return _cmd_execute(ctx, [])
 
 
 def ensure_session_open(ctx: ConsoleContext) -> None:

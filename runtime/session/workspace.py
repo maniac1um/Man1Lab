@@ -16,3 +16,4 @@ class SessionWorkspace:
     current_analysis: Any | None = None
     current_discovery: Any | None = None
     current_strategy: Any | None = None
+    current_execution_run_id: str | None = None

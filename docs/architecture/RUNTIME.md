@@ -4,7 +4,7 @@
 **Status:** Canonical architecture specification  
 **Audience:** Architects, contributors, and long-term maintainers  
 **Horizon:** 3–5 years  
-**Last updated:** 2026-07-08
+**Last updated:** 2026-07-13
 
 This document specifies the **Platform Runtime** subsystem — process-level infrastructure that supports all Man1Lab interfaces and business capabilities.
 
@@ -33,6 +33,7 @@ Runtime is a **first-class architecture** alongside Analysis, Discovery, and Exe
 | **Lazy initialization** | Deferred creation of expensive infrastructure until first access |
 | **Profiling** | Startup and infrastructure observation — timelines, measurements, reports |
 | **Session lifecycle** | User interaction lifetime distinct from process lifetime |
+| **Execution persistence** | Workspace-scoped durable execution state through a dedicated `ExecutionStore` (Phase 1–2 implemented) |
 
 ### What Runtime Does NOT Own
 
@@ -87,7 +88,9 @@ Interfaces
                               ↓
                     PlatformRuntime
                     ├── RuntimeContext
-                    │     └── RuntimeResourceManager
+                    │     ├── RuntimeResourceManager
+                    │     ├── WorkspaceArtifactStore
+                    │     └── ExecutionStore ✅
                     ├── RuntimeSession
                     │     └── SessionWorkspace
                     └── RuntimeProfiler (per observation run)
@@ -109,6 +112,7 @@ Interfaces
 | **RuntimeResourceManager** | Registers, resolves, and describes infrastructure resources. Exposes health and cache policy metadata. |
 | **RuntimeSession** | User interaction lifetime. Holds in-memory workspace placeholders for the current interaction scope. |
 | **RuntimeProfiler** | Captures hierarchical timing for observation runs. Independent of business workflow stages. |
+| **ExecutionStore** | Runtime-owned durable adapter for execution runs, task attempts, traces, artifact manifests, and reports. It does not schedule tasks. |
 | **Business workflows** | Domain capabilities scheduled by the workflow coordinator. Unaware of Runtime internals. |
 
 ### Dependency direction
@@ -384,6 +388,20 @@ SessionWorkspace                ← interaction references + hydration
 WorkspaceArtifactStore          ← runtime-owned stage persistence
 ```
 
+Execution persistence branch (v1.3 architecture; not yet implemented):
+
+```text
+PlatformRuntime
+    ↓
+RuntimeContext                  ← owns/provides durable infrastructure
+    ↓
+ExecutionStore                  ← workspace-scoped persistence adapter
+    ↑ injected by application composition
+ExecutionEngine                 ← owns state semantics and scheduling
+```
+
+`ExecutionStore` is separate from `WorkspaceArtifactStore`. The latter persists low-frequency Analysis, Discovery, Planning, and Decision snapshots; the former persists a live execution state machine with task attempts, append-only trace events, artifact manifests, and crash recovery metadata. A session may reference a run ID but never owns the run.
+
 ### Dependency rules
 
 | Rule | Rationale |
@@ -392,6 +410,7 @@ WorkspaceArtifactStore          ← runtime-owned stage persistence
 | Business → runtime internals forbidden | Capabilities stay testable without process infrastructure |
 | Facade mediates all access | Single public entry preserves interface stability |
 | Wiring lives in application layer | Factories may import configuration and providers; runtime core stays pure |
+| Runtime owns storage; Execution owns semantics | Runtime supplies the concrete store through an Execution-defined port and never schedules or reconciles tasks |
 | Profiling is orthogonal | Observation does not participate in lifecycle transitions |
 
 ### Composition flow (conceptual)
@@ -420,6 +439,7 @@ Honest constraints as of v1.2.3 (phases 8.1–8.6):
 | **No persistent profiling storage** | Reports are ephemeral per run |
 | **Session not auto-opened on CLI subcommands** | Subcommands use one-shot facade calls; console opens session on start |
 | **Workspace slot on context unused** | Reserved; not yet migrated from legacy paths |
+| **No durable ExecutionStore** | Resolved in v1.3 Phase 1–2 — `FileExecutionStore` with journal-plus-snapshot durability |
 
 These limitations are **intentional scope boundaries** for the foundation phases, not architectural oversights.
 
@@ -459,6 +479,8 @@ Runtime was designed to support progressive enhancement without restructuring bu
 
 ### Planned interfaces and modes
 
+Before additional interfaces, v1.3 introduces Runtime-owned execution persistence in this order: dedicated `ExecutionStore`, Runtime/Application injection, LocalExecutor, console facade integration, then an end-to-end crash/resume reproduction. See [EXECUTION_RUNTIME.md](EXECUTION_RUNTIME.md).
+
 ```text
 Future: Daemon
 Future: REST
@@ -486,6 +508,7 @@ Future: GUI
 | Document | Relationship |
 |----------|--------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Platform pipeline and capability layers |
+| [EXECUTION_RUNTIME.md](EXECUTION_RUNTIME.md) | Runtime-owned execution persistence, crash recovery, and resume boundaries |
 | [infrastructure.md](infrastructure.md) | External tool adoption (Hydra, Pixi, MLflow) |
 | [CURRENT_STATUS.md](../CURRENT_STATUS.md) | Live implementation status |
 | [reviews/8.1_runtime_performance_audit/](../reviews/8.1_runtime_performance_audit/) | Profiling phase audit |
@@ -498,4 +521,4 @@ Future: GUI
 
 ---
 
-**Last aligned with:** Man1Lab v1.2.4 — Console UX and Workspace Persistence
+**Last aligned with:** Man1Lab v1.3 Execution Runtime Integration architecture (implementation pending)

@@ -90,6 +90,44 @@ def diagnose_for_plan(workspace_root: Path) -> WorkspaceDiagnostic | None:
     )
 
 
+def diagnose_for_execute(workspace_root: Path) -> WorkspaceDiagnostic | None:
+    store = WorkspaceArtifactStore(workspace_root)
+    if store.has_execution_graph():
+        return None
+    status = artifact_status(workspace_root)
+    missing: list[str] = []
+    if not status.analysis:
+        missing.append("analysis")
+    if not status.discovery:
+        missing.append("discovery")
+    if not status.planning:
+        missing.append("planning")
+    missing.append("execution_graph")
+    if "analysis" in missing:
+        return WorkspaceDiagnostic(
+            message="Execution graph is missing from the workspace.",
+            recommended_command="analyze <paper.pdf>",
+            missing=tuple(missing),
+        )
+    if "discovery" in missing:
+        return WorkspaceDiagnostic(
+            message="Execution graph is missing from the workspace.",
+            recommended_command="discover",
+            missing=tuple(missing),
+        )
+    if "planning" in missing:
+        return WorkspaceDiagnostic(
+            message="Execution graph is missing from the workspace.",
+            recommended_command="plan",
+            missing=tuple(missing),
+        )
+    return WorkspaceDiagnostic(
+        message="Execution graph is missing from the workspace.",
+        recommended_command="plan",
+        missing=tuple(missing),
+    )
+
+
 def diagnose_for_plan_all(workspace_root: Path, *, has_paper: bool) -> WorkspaceDiagnostic | None:
     if has_paper:
         return None

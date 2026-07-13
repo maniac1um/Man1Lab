@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from runtime.execution_store.factory import ExecutionStoreFactory
+from runtime.execution_store.file_store import FileExecutionStore
 from runtime.lazy.lazy_resource import LazyResource
 from runtime.resources.manager import (
     RESOURCE_CONFIGURATION,
@@ -26,6 +28,28 @@ class RuntimeContext:
     resource_manager: RuntimeResourceManager
     workspace: Any | None = None
     session: Any | None = None
+    execution_store_factory: ExecutionStoreFactory | None = None
+    _owned_stores: list[FileExecutionStore] = field(default_factory=list, repr=False)
+
+    def bind_execution_store(self, factory: ExecutionStoreFactory) -> None:
+        """Attach a workspace-scoped execution store factory."""
+        self.execution_store_factory = factory
+
+    def execution_store(self) -> FileExecutionStore:
+        """Return the workspace-scoped execution store for this context."""
+        if self.execution_store_factory is None:
+            raise RuntimeError("execution store factory is not configured")
+        store = self.execution_store_factory.store()
+        if store not in self._owned_stores:
+            self._owned_stores.append(store)
+        return store
+
+    def release_execution_locks(self) -> None:
+        """Release all execution writer locks held by this context."""
+        if self.execution_store_factory is not None:
+            self.execution_store_factory.release_all_writers()
+        for store in self._owned_stores:
+            store.release_all_writers()
 
     @classmethod
     def create(

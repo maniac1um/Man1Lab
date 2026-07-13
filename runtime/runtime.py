@@ -85,6 +85,8 @@ class PlatformRuntime:
                 self._session.close()
             except SessionTransitionError:
                 pass
+        if self._context is not None:
+            self._context.release_execution_locks()
         self._context = None
         self._session = None
         self._transition(PlatformRuntimeState.STOPPED)

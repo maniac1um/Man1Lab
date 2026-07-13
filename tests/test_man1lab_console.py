@@ -207,6 +207,8 @@ class CommandRegistryTest(unittest.TestCase):
             "analyze",
             "discover",
             "plan",
+            "execute",
+            "execution",
             "plan-all",
             "execute-all",
             "reproduce",
@@ -327,7 +329,7 @@ class SessionIntegrationTest(unittest.TestCase):
         text = output.getvalue()
         self.assertIn("✓ Execution strategy generated", text)
         self.assertIn("Execution Strategy", text)
-        self.assertIn("Next: execute-all", text)
+        self.assertIn("Next: execute", text)
 
     def test_plan_displays_metadata_strategy_id_not_top_level_attribute(self) -> None:
         """Regression: plan must read strategy.metadata.strategy_id, not strategy.strategy_id."""
@@ -476,6 +478,111 @@ class GuidedOutputTest(unittest.TestCase):
         self.assertIn("Next: plan", text)
 
 
+class ExecutionConsoleCommandTest(unittest.TestCase):
+    def test_execute_delegates_to_facade(self) -> None:
+        output = StringIO()
+        platform = _mock_platform()
+        session = platform.session.return_value
+        outcome = MagicMock(
+            run_id="run-console",
+            status=MagicMock(value="success"),
+            resumed=False,
+            run_directory="/workspace/execution/runs/run-console",
+            report=MagicMock(),
+        )
+        platform.run_execution.return_value = outcome
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "workspace"
+            platform.settings = MagicMock(workspace_root=root)
+            from models.execution_graph import ExecutionGraph, ExecutionGraphNode, ExecutionGraphStageType
+            from runtime.session.workspace_store import WorkspaceArtifactStore
+
+            graph = ExecutionGraph(
+                graph_id="graph-console",
+                created_at=datetime.now(UTC),
+                strategy_id="strategy-1",
+                nodes=[
+                    ExecutionGraphNode(
+                        node_id="node-1",
+                        stage_type=ExecutionGraphStageType.PREPARE_ENVIRONMENT,
+                        label="Prepare Environment",
+                    )
+                ],
+            )
+            WorkspaceArtifactStore(root).save_execution_graph(graph)
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+            code = console.dispatch("execute")
+
+        self.assertEqual(code, 0)
+        platform.run_execution.assert_called_once_with(run_id=None, resume=True)
+        self.assertEqual(session.workspace.current_execution_run_id, "run-console")
+        self.assertIn("run-console", output.getvalue())
+
+    def test_execute_missing_graph_shows_diagnostic(self) -> None:
+        platform = _mock_platform()
+        platform.run_execution.side_effect = ValueError(
+            "Execution graph not found in workspace. Run plan before execute."
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            platform.settings = MagicMock(workspace_root=Path(temp_dir) / "workspace")
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
+            with patch("runtime.console.renderer.print") as mock_print:
+                console.dispatch("execute")
+                messages = [
+                    str(call.args[0])
+                    for call in mock_print.call_args_list
+                    if call.kwargs.get("file") is sys.stderr
+                ]
+                self.assertTrue(any("plan" in msg for msg in messages))
+        platform.run_execution.assert_called_once_with(run_id=None, resume=True)
+
+    def test_execution_status_delegates_to_facade(self) -> None:
+        output = StringIO()
+        platform = _mock_platform()
+        task = MagicMock(task_id="task-1", name="Prepare Environment", status=MagicMock(value="success"))
+        status = MagicMock(
+            run_id="run-console",
+            status=MagicMock(value="success"),
+            graph_id="graph-console",
+            backend_kind="fake",
+            run_directory="/workspace/execution/runs/run-console",
+            report_path="/workspace/execution/runs/run-console/report.json",
+            tasks=[task],
+        )
+        platform.execution_status.return_value = status
+
+        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+        console.dispatch("execution status")
+
+        platform.execution_status.assert_called_once_with(None)
+        self.assertIn("run-console", output.getvalue())
+        self.assertIn("Prepare Environment", output.getvalue())
+
+    def test_execution_report_delegates_to_facade(self) -> None:
+        output = StringIO()
+        platform = _mock_platform()
+        report = MagicMock(status=MagicMock(value="success"), summary="done")
+        report_view = MagicMock(
+            run_id="run-console",
+            report=report,
+            report_path="/workspace/execution/runs/run-console/report.json",
+            run_directory="/workspace/execution/runs/run-console",
+            completed_task_ids=("task-1",),
+            failed_task_ids=(),
+            artifact_ids=("artifact-1",),
+        )
+        platform.execution_report.return_value = report_view
+
+        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+        console.dispatch("execution report run-console")
+
+        platform.execution_report.assert_called_once_with("run-console")
+        self.assertIn("report.json", output.getvalue())
+        self.assertIn("artifact-1", output.getvalue())
+
+
 class PipelineCommandTest(unittest.TestCase):
     def test_plan_all_delegates_to_facade_stages(self) -> None:
         output = StringIO()
@@ -502,29 +609,73 @@ class PipelineCommandTest(unittest.TestCase):
         self.assertIs(session.workspace.current_strategy, strategy)
         self.assertIn("✓ Execution strategy generated", output.getvalue())
 
-    def test_execute_all_reserved_message(self) -> None:
+    def test_execute_all_delegates_to_execute(self) -> None:
+        output = StringIO()
         platform = _mock_platform()
-        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
-        with patch("runtime.console.renderer.print") as mock_print:
-            console.dispatch("execute-all")
-            messages = [
-                str(call.args[0])
-                for call in mock_print.call_args_list
-                if call.kwargs.get("file") is sys.stderr
-            ]
-            self.assertTrue(any("Execution engine is not available yet" in msg for msg in messages))
+        outcome = MagicMock(
+            run_id="run-all",
+            status=MagicMock(value="success"),
+            resumed=False,
+            run_directory="/workspace/execution/runs/run-all",
+            report=None,
+        )
+        platform.run_execution.return_value = outcome
 
-    def test_reproduce_reserved_message(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "workspace"
+            platform.settings = MagicMock(workspace_root=root)
+            from models.execution_graph import ExecutionGraph, ExecutionGraphNode, ExecutionGraphStageType
+            from runtime.session.workspace_store import WorkspaceArtifactStore
+
+            graph = ExecutionGraph(
+                graph_id="graph-all",
+                created_at=datetime.now(UTC),
+                strategy_id="strategy-1",
+                nodes=[
+                    ExecutionGraphNode(
+                        node_id="node-1",
+                        stage_type=ExecutionGraphStageType.PREPARE_ENVIRONMENT,
+                        label="Prepare Environment",
+                    )
+                ],
+            )
+            WorkspaceArtifactStore(root).save_execution_graph(graph)
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+            console.dispatch("execute-all")
+
+        platform.run_execution.assert_called_once()
+
+    def test_reproduce_runs_plan_all_then_execute(self) -> None:
+        output = StringIO()
         platform = _mock_platform()
-        console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=StringIO()))
-        with patch("runtime.console.renderer.print") as mock_print:
-            console.dispatch("reproduce")
-            messages = [
-                str(call.args[0])
-                for call in mock_print.call_args_list
-                if call.kwargs.get("file") is sys.stderr
-            ]
-            self.assertTrue(any("Execution engine is not available yet" in msg for msg in messages))
+        analysis = _sample_analysis()
+        discovery = _sample_discovery()
+        strategy = _minimal_execution_strategy()
+        outcome = MagicMock(
+            run_id="run-reproduce",
+            status=MagicMock(value="success"),
+            resumed=False,
+            run_directory="/workspace/execution/runs/run-reproduce",
+            report=None,
+        )
+        platform.analyze.return_value = analysis
+        platform.discover.return_value = discovery
+        platform.plan.return_value = strategy
+        platform.run_execution.return_value = outcome
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "workspace"
+            platform.settings = MagicMock(workspace_root=root)
+            paper = Path(temp_dir) / "paper.pdf"
+            paper.write_bytes(b"%PDF-1.4 test")
+
+            console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
+            console.dispatch(f"reproduce {paper}")
+
+        platform.analyze.assert_called_once()
+        platform.plan.assert_called_once()
+        platform.run_execution.assert_called_once()
 
 
 class WorkspacePersistenceConsoleTest(unittest.TestCase):
@@ -621,6 +772,7 @@ class ConsoleBoundaryTest(unittest.TestCase):
         "discovery",
         "agents",
         "providers",
+        "execution",
     )
 
     def test_console_package_has_no_forbidden_imports(self) -> None:
@@ -649,6 +801,8 @@ class ConsoleBoundaryTest(unittest.TestCase):
         )
         self.assertNotIn("workflow.", source)
         self.assertNotIn("providers.", source)
+        self.assertNotIn("execution.", source)
+        self.assertNotIn("LocalExecutor", source)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,12 @@ from agents.reader import Reader
 from agents.reporter import Reporter
 from agents.reviewer import Reviewer
 from agents.runner import Runner
+from application.platform_execution import (
+    ExecutionReportView,
+    ExecutionRunOutcome,
+    ExecutionStatusView,
+    PlatformExecutionService,
+)
 from application.lifecycle import (
     CleanPolicy,
     CleanupReport,
@@ -95,6 +101,7 @@ class Man1Lab:
         orchestrator: WorkflowOrchestrator | None = None,
         reporter: Reporter | None = None,
         runtime: PlatformRuntime | None = None,
+        platform_execution: PlatformExecutionService | None = None,
     ) -> None:
         self._runtime = runtime or PlatformRuntime()
         if self._runtime.state is RuntimeState.NEW:
@@ -122,6 +129,10 @@ class Man1Lab:
         self._discovery_workflow = DiscoveryWorkflow.default()
         self._execution_planning_workflow = ExecutionPlanningWorkflow.default()
         self._orchestrator = orchestrator or self._build_orchestrator(reporter=reporter)
+        self._platform_execution = platform_execution or PlatformExecutionService(
+            self._runtime.context,
+            self._settings.workspace_root,
+        )
 
     def reproduce(self, paper_path: Path | str | None = None) -> ReportModel:
         """Run the complete reproduction workflow."""
@@ -215,6 +226,39 @@ class Man1Lab:
             Path(analysis_path).read_text(encoding="utf-8")
         )
         return self.execute(strategy, analysis)
+
+    def run_execution(
+        self,
+        *,
+        run_id: str | None = None,
+        resume: bool = True,
+    ) -> ExecutionRunOutcome:
+        """Execute the planned execution graph in the current workspace."""
+        with self._tracker.start_run(
+            run_name="run-execution",
+            tags={"entry": "facade", "operation": "run_execution"},
+        ):
+            outcome = self._platform_execution.run_execution(
+                run_id=run_id,
+                resume=resume,
+                workspace_ref=str(self._settings.workspace_root),
+            )
+            self._runtime.session.workspace.current_execution_run_id = outcome.run_id
+            return outcome
+
+    def execution_status(self, run_id: str | None = None) -> ExecutionStatusView:
+        """Return durable status for the current or specified execution run."""
+        resolved_run_id = run_id or self._runtime.session.workspace.current_execution_run_id
+        if resolved_run_id is None:
+            raise ValueError("No execution run is selected. Run execute first or pass run_id.")
+        return self._platform_execution.execution_status(resolved_run_id)
+
+    def execution_report(self, run_id: str | None = None) -> ExecutionReportView:
+        """Return the execution report for the current or specified run."""
+        resolved_run_id = run_id or self._runtime.session.workspace.current_execution_run_id
+        if resolved_run_id is None:
+            raise ValueError("No execution run is selected. Run execute first or pass run_id.")
+        return self._platform_execution.execution_report(resolved_run_id)
 
     def init(
         self,

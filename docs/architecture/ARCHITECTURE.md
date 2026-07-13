@@ -1,6 +1,6 @@
 # Man1Lab Architecture
 
-**Version:** v1.2.4  
+**Version:** v1.3 architecture baseline
 **Status:** Living document — platform-level design  
 **Audience:** Architects, contributors, and long-term maintainers  
 **Horizon:** 3–5 years
@@ -11,7 +11,7 @@ For **specific decisions** (orchestrator ownership, parsing backend, canonical a
 
 For **implementation status and benchmarks**, see [CURRENT_STATUS.md](../CURRENT_STATUS.md) and [CAPABILITIES.md](CAPABILITIES.md).
 
-For **Platform Runtime** (process lifecycle, resources, session, console), see [RUNTIME.md](RUNTIME.md).
+For **Platform Runtime** (process lifecycle, resources, session, console), see [RUNTIME.md](RUNTIME.md). For Runtime-owned execution persistence, see [EXECUTION_RUNTIME.md](EXECUTION_RUNTIME.md).
 
 For **infrastructure governance** (Hydra, Pixi, adoption matrix), see [infrastructure.md](infrastructure.md).
 
@@ -39,7 +39,8 @@ The platform treats a paper as the **source of truth** for what should be reprod
 |---------|--------|
 | **v1.1.x** | **Foundation** — infrastructure adoption, canonical analysis artifact |
 | **v1.2.x (now)** | **Platform Capability** — CLI, SDK, Discovery, Execution Planning, GitHub Provider |
-| **v1.3+ (next)** | Repository Understanding → Adaptation → Knowledge Memory |
+| **v1.3 (current architecture milestone)** | Execution Engine Foundation → Runtime-owned persistence → Local execution integration |
+| **v1.4+** | Repository Understanding → Adaptation → Knowledge Memory |
 
 The architecture is intentionally **paper-first** and **analysis-first** so that future capabilities attach to stable layers rather than re-implementing paper understanding in every feature.
 
@@ -172,6 +173,7 @@ Interfaces must **never** call `WorkflowOrchestrator` directly.
 ```text
 PlatformRuntime
     ├── RuntimeContext → RuntimeResourceManager → lazy infrastructure
+    │                    └── ExecutionStore (v1.3 Phase 1–2 ✅)
     ├── RuntimeSession → SessionWorkspace (references + disk hydration)
     │     └── WorkspaceArtifactStore → analysis/, discovery/, planning/, decision/
     └── RuntimeProfiler (per observation run)
@@ -180,6 +182,8 @@ PlatformRuntime
 Business workflows run **below** Runtime. Agents receive injected dependencies resolved through `RuntimeInfrastructure` — they do not import runtime internals.
 
 Full specification: [RUNTIME.md](RUNTIME.md).
+
+Execution persistence is a Runtime-owned infrastructure concern, while execution transitions and scheduling remain Execution Engine concerns. Application composition injects the Runtime-provided store through a narrow Execution port. See [EXECUTION_RUNTIME.md](EXECUTION_RUNTIME.md).
 
 ---
 
@@ -380,6 +384,8 @@ Implementation **consumes** analysis modules (goal, resources, method, evaluatio
 
 Execution is **runtime-only**. Repository artifacts and runtime artifacts have distinct ownership — see [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md) and [ADR-0007](../adr/ADR-0007-Execution-Capability.md).
 
+The v1.3 `Execution Engine Foundation` adds canonical run/task/result/trace/report models, decomposition, scheduling, state transitions, artifact tracking, reporting, and memory-level resume. Durable resume is provided by Runtime through a dedicated `ExecutionStore` (`FileExecutionStore`) injected into the engine via an execution-owned persistence port. Phase 1–2 (store, injection, cross-process resume) are implemented; LocalExecutor and facade integration remain Phase 3+.
+
 ---
 
 ### Verification Layer
@@ -551,7 +557,7 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 
 ---
 
-## 6. Current Scope (v1.2)
+## 6. Current Scope (v1.2 implemented baseline; v1.3 in progress)
 
 ### Completed
 
@@ -576,14 +582,19 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 | Review loop re-implementation | Patch plan produced; automatic Coder/Runner retry not enabled |
 | Full training reproduction success | Pipeline runs end-to-end; success not guaranteed |
 | MCP / REST interfaces | Reserved layout only |
+| Execution Engine Foundation | Core models, scheduling, state machine, trace, artifacts, report, and memory-level resume implemented; real backend/integration partial |
+| Runtime-owned execution persistence | ✅ Phase 1–2 — `FileExecutionStore`, engine injection, cross-process resume |
 
 ### Planned (roadmap)
 
 | Capability | Milestone |
 |------------|-----------|
-| **Repository Understanding** | v1.3 — `RepositoryKnowledge` artifact |
-| **Repository Adaptation** | v1.4 |
-| **Knowledge Memory** | v1.5 |
+| **ExecutionStore + Runtime injection** | ✅ v1.3 Phase 1–2 |
+| **LocalExecutor + facade/console** | v1.3 Phase 3–4 (deferred) |
+| **LocalExecutor + console integration** | v1.3 — first real persistent execution path |
+| **Repository Understanding** | v1.4 — `RepositoryKnowledge` artifact |
+| **Repository Adaptation** | v1.5 |
+| **Knowledge Memory** | Future |
 | **Failure recovery loop** | Future — re-invoke Coder/Runner on patch |
 
 ---

@@ -2,7 +2,7 @@
 
 **Project:** Man1Lab  
 **Single source of truth for implementation and integration state.**  
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-13
 
 | Field | Value |
 |-------|-------|
@@ -10,7 +10,7 @@
 | **License** | MIT ([LICENSE](../../LICENSE)) |
 | **Milestone** | **Platform Capability** |
 | **Previous Release** | v1.2.3 (Platform Runtime & Interactive Console) |
-| **Next Milestone** | **Repository Understanding (v1.3)** |
+| **Next Milestone** | **Execution Runtime Integration (v1.3)** |
 
 Release notes: [releases/v1.2.4.md](releases/v1.2.4.md) · Previous: [releases/v1.2.3.md](releases/v1.2.3.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
 
@@ -114,6 +114,22 @@ Planner → Coder → Runner → Verification → Reviewer → Reporter
 | Reporter | ✅ | `ReportModel` |
 | Experiment Tracking | ✅ | MLflow (optional noop) |
 | Platform Runtime | ✅ | Lifecycle, resources, profiling, session |
+| Execution Engine Foundation | 🚧 Foundation complete | Canonical models, decomposition, sequential scheduler, state machine, trace, artifact tracking, report, memory-level resume |
+| Runtime Execution Persistence | ✅ Phase 1–2 + audit | Journal replay, revision-tagged snapshots, O_EXCL locks, typed runtime wiring |
+
+### Execution Engine maturity (v1.3 foundation)
+
+| Component | Status |
+|-----------|--------|
+| `ExecutionRun`, `ExecutionTask`, `ExecutionResult`, `ExecutionTrace`, `ExecutionReport` | ✅ |
+| Graph validation and task decomposition | ✅ |
+| Sequential scheduler and state transitions | ✅ |
+| Artifact model/tracker port | ✅ |
+| Memory-level resume and reconciliation contracts | ✅ |
+| Runtime-owned `ExecutionStore` | ✅ Phase 1–2 |
+| Cross-process crash recovery | ✅ Phase 1–2 (file store; LocalExecutor E2E deferred) |
+| Real `LocalExecutor` | ❌ |
+| Facade/console execution integration | ❌ |
 
 ### Execution Planning maturity (v1.2.1+)
 
@@ -196,7 +212,7 @@ Phase audits: [reviews/8.1_runtime_performance_audit/](reviews/8.1_runtime_perfo
 
 | Metric | Value |
 |--------|-------|
-| **Unit tests** | **826 passing** (`python -m pytest tests/`) |
+| **Unit tests** | **109 Execution Engine + persistence tests passing** (verified 2026-07-13); full `tests/` suite requires project dependencies |
 | Runtime | `tests/test_runtime_*.py`, `tests/test_man1lab_console.py` |
 | Platform facade | `tests/test_platform_facade.py` |
 | CLI | `tests/test_cli.py` |
@@ -205,8 +221,22 @@ Phase audits: [reviews/8.1_runtime_performance_audit/](reviews/8.1_runtime_perfo
 | Package | `tests/test_package_distribution.py` |
 | Platform integration | `tests/test_platform_integration.py` |
 | Discovery / GitHub / Execution Planning | Dedicated test modules |
-| Golden benchmarks | `tests/benchmarks/`, `tests/test_decision_quality_benchmarks.py` |
-| Integration runner | `scripts/run_integration_m7_1.py` (manual, API key) |
+| Execution persistence | `tests/test_execution_store.py`, `tests/test_execution_runtime_integration.py` |
+Execution Engine + persistence (109 tests):
+
+```bash
+python -m pytest tests/test_execution_engine_models.py tests/test_execution_graph_validation.py tests/test_execution_decomposition.py tests/test_execution_scheduler.py tests/test_execution_resume.py tests/test_execution_ports.py tests/test_execution_audit_remediation.py tests/test_execution_second_audit_remediation.py tests/test_execution_store.py tests/test_execution_runtime_integration.py -q
+```
+
+The 109-test verification was also executed with the equivalent `unittest` module list in the available audit runtime. The broader `test_execution*.py` discovery reached 166 tests but 9 Execution Planning modules could not be collected because that audit runtime does not include `fitz`; this is an environment limitation, not recorded as a passing full-suite result.
+
+Regression subset:
+
+```bash
+python -m pytest tests/test_execution_store.py tests/test_execution_runtime_integration.py -q
+```
+
+Full suite (`python -m pytest tests/`) requires project dependencies (`python-dotenv`, `PyMuPDF`/fitz, etc.); collection fails in minimal environments without them.
 
 ---
 
@@ -223,21 +253,24 @@ Phase audits: [reviews/8.1_runtime_performance_audit/](reviews/8.1_runtime_perfo
 | L-07 | `execution_planning.enabled=false` uses legacy Planner path | Transitional |
 | L-08 | SDK does not expose model management methods | Optional polish |
 | L-09 | Console `execute-all` / `reproduce` await execution engine | Runtime |
-| L-10 | Execution artifact restore not implemented (design only) | Runtime |
+| L-10 | Real-backend artifact materialization/restore deferred until LocalExecutor | Phase 3 |
+| L-11 | Execution runs, attempts, and trace durably persisted | Resolved (v1.3 Phase 1–2) |
+| L-12 | Interrupted `RUNNING` tasks reconciled across processes | Resolved (v1.3 Phase 2; LocalExecutor E2E deferred) |
 
 Full benchmark history: [benchmark section in prior releases](releases/v1.1.0.md).
 
 ---
 
-## Next Milestone — Repository Understanding (v1.3)
+## Next Milestone — Execution Runtime Integration (v1.3)
 
 | Capability | Direction |
 |------------|-----------|
-| **Repository Understanding** | Semantic mapping of selected repo structure to analysis modules |
-| **RepositoryKnowledge artifact** | New canonical object (design TBD) |
-| **Downstream** | Informs Execution Planning refinements and Coder context |
+| **ExecutionStore** | ✅ Phase 1–2 complete |
+| **Runtime injection** | ✅ Phase 1–2 complete |
+| **Crash resume** | ✅ Phase 1–2 (file store + engine; E2E with LocalExecutor deferred) |
+| **First backend** | Durable LocalExecutor followed by facade/console integration |
 
-See [ROADMAP.md](../ROADMAP.md).
+See [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md) and [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -247,7 +280,9 @@ See [ROADMAP.md](../ROADMAP.md).
 |------|----------|
 | Install and run | [GETTING_STARTED.md](GETTING_STARTED.md) |
 | Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md), [architecture/RUNTIME.md](architecture/RUNTIME.md) |
-| Roadmap | [ROADMAP.md](../ROADMAP.md) |
+| Execution Runtime architecture | [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md) |
+| Execution Runtime roadmap | [ROADMAP.md](ROADMAP.md) |
+| Product roadmap | [ROADMAP.md](../ROADMAP.md) |
 | Release notes | [releases/v1.2.4.md](releases/v1.2.4.md) |
 | ADRs | [adr/README.md](adr/README.md) |
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |

@@ -10,6 +10,21 @@ from models.research_resource_discovery import ProviderInvocationStatus, Provide
 from ports.collection_provider import CollectionProviderResult
 from ports.evidence_provider import EvidenceProviderResult
 
+_EXECUTION_ENGINE_ONLY_TESTS = {
+    "test_execution_engine_models.py",
+    "test_execution_graph_validation.py",
+    "test_execution_decomposition.py",
+    "test_execution_scheduler.py",
+    "test_execution_resume.py",
+    "test_execution_ports.py",
+    "test_execution_audit_remediation.py",
+    "test_execution_second_audit_remediation.py",
+    "test_execution_store.py",
+    "test_execution_runtime_integration.py",
+    "test_execution_local_runtime_integration.py",
+    "test_local_executor.py",
+}
+
 
 @pytest.fixture(autouse=True)
 def disable_live_github_collection_in_default_providers(request, monkeypatch):
@@ -19,6 +34,7 @@ def disable_live_github_collection_in_default_providers(request, monkeypatch):
         "test_github_evidence_provider.py",
         "test_github_verification_provider.py",
         "test_github_ranking_provider.py",
+        *_EXECUTION_ENGINE_ONLY_TESTS,
     }:
         return
 
@@ -59,6 +75,7 @@ def disable_live_github_evidence_in_default_providers(request, monkeypatch):
         "test_github_evidence_provider.py",
         "test_github_verification_provider.py",
         "test_github_ranking_provider.py",
+        *_EXECUTION_ENGINE_ONLY_TESTS,
     }:
         return
 
@@ -98,6 +115,7 @@ def disable_live_github_verification_in_default_providers(request, monkeypatch):
     if request.node.fspath.basename in {
         "test_github_verification_provider.py",
         "test_github_ranking_provider.py",
+        *_EXECUTION_ENGINE_ONLY_TESTS,
     }:
         return
 
@@ -135,7 +153,10 @@ def disable_live_github_verification_in_default_providers(request, monkeypatch):
 @pytest.fixture(autouse=True)
 def disable_live_github_ranking_in_default_providers(request, monkeypatch):
     """Keep existing discovery tests offline while GitHub ranking is registered by default."""
-    if request.node.fspath.basename == "test_github_ranking_provider.py":
+    if request.node.fspath.basename in {
+        "test_github_ranking_provider.py",
+        *_EXECUTION_ENGINE_ONLY_TESTS,
+    }:
         return
 
     def _providers_without_live_github_ranking():

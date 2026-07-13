@@ -42,12 +42,16 @@ class ConsoleRenderer:
             self.write(f"  {command.name:<12} {command.help}")
         self.write("")
         self.write("Workflow:")
-        self.write("  analyze <paper.pdf>  →  discover  →  plan  →  execute (future)")
+        self.write("  analyze <paper.pdf>  →  discover  →  plan  →  execute")
         self.write("")
         self.write("Pipeline:")
         self.write("  plan-all <paper.pdf>   Run analyze, discover, and plan")
-        self.write("  execute-all            Reserved — execution engine not available yet")
-        self.write("  reproduce              Reserved — plan-all then execute-all (future)")
+        self.write("  execute-all            Run the planned execution graph")
+        self.write("  reproduce <paper.pdf>  Run plan-all then execute")
+        self.write("")
+        self.write("Execution:")
+        self.write("  execution status [run_id]   Show current run task status")
+        self.write("  execution report [run_id]   Show execution report and artifacts")
 
     def render_command_success(
         self,
