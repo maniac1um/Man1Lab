@@ -73,13 +73,13 @@ Runtime Snapshots      ← workflow-internal stage outputs
 | `generation_decision.py` | Generation |
 | `risk_decision.py` | Execution readiness + risk |
 
-The Decision Foundation is **not** a public API. Planning also emits `DecisionTrace` and `ExecutionGraph` as separate runtime-persisted artifacts under `workspace/decision/`.
+The Decision Foundation is **not** a public API. Planning also emits `DecisionTrace` and an **abstract** `ExecutionGraph` as separate runtime-persisted artifacts under `workspace/decision/`. The graph expresses stages and dependencies; it does not claim that backend commands or machine paths are available.
 
 ---
 
 ## Execution Graph (Phase 2)
 
-`execution_planning/execution_graph.py` builds a deterministic dependency graph (clone → environment → dataset → checkpoints → config → training → evaluation → comparison) from strategy posture and discovery assets. This is planning output only — not execution.
+`execution_planning/execution_graph.py` builds a deterministic dependency graph (clone → environment → dataset → checkpoints → config → training → evaluation → comparison) from strategy posture and discovery assets. This is planning output only — not execution. It must pass through Planning-to-Execution Materialization before submission to the Execution Engine.
 
 ---
 
@@ -92,6 +92,7 @@ The Decision Foundation is **not** a public API. Planning also emits `DecisionTr
 | Providers | Build runtime snapshots from decisions | Bypass foundation, call workflow/builder |
 | Decision Foundation | Deterministic engineering decisions | Network, LLM, code generation |
 | Builder | Assemble and validate `ExecutionStrategy` | Engineering reasoning |
+| Materialization handoff | Provide immutable strategy, graph, binding, and asset references | Resolve paths, generate commands, or assert backend readiness |
 
 ---
 
@@ -100,3 +101,4 @@ The Decision Foundation is **not** a public API. Planning also emits `DecisionTr
 - Design: [execution-planning-workflow.md](../design/execution-planning-workflow.md)
 - Phase audits: [reviews/5.1_execution_planning_workflow](../reviews/5.1_execution_planning_workflow/audit.md) through [6.6_execution_planning_risk_provider](../reviews/6.6_execution_planning_risk_provider/audit.md)
 - Stabilization: [reviews/6.7_execution_planning_architecture_stabilization](../reviews/6.7_execution_planning_architecture_stabilization/audit.md)
+- Executable handoff: [EXECUTION_MATERIALIZATION.md](EXECUTION_MATERIALIZATION.md)

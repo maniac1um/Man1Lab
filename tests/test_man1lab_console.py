@@ -646,23 +646,11 @@ class PipelineCommandTest(unittest.TestCase):
 
         platform.run_execution.assert_called_once()
 
-    def test_reproduce_runs_plan_all_then_execute(self) -> None:
+    def test_reproduce_delegates_to_facade_only(self) -> None:
         output = StringIO()
         platform = _mock_platform()
-        analysis = _sample_analysis()
-        discovery = _sample_discovery()
-        strategy = _minimal_execution_strategy()
-        outcome = MagicMock(
-            run_id="run-reproduce",
-            status=MagicMock(value="success"),
-            resumed=False,
-            run_directory="/workspace/execution/runs/run-reproduce",
-            report=None,
-        )
-        platform.analyze.return_value = analysis
-        platform.discover.return_value = discovery
-        platform.plan.return_value = strategy
-        platform.run_execution.return_value = outcome
+        report = MagicMock(final_status="success", reproduction_summary="done", report_path=None)
+        platform.reproduce.return_value = report
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir) / "workspace"
@@ -673,9 +661,9 @@ class PipelineCommandTest(unittest.TestCase):
             console = Man1LabConsole(platform, renderer=ConsoleRenderer(output=output))
             console.dispatch(f"reproduce {paper}")
 
-        platform.analyze.assert_called_once()
-        platform.plan.assert_called_once()
-        platform.run_execution.assert_called_once()
+        platform.reproduce.assert_called_once_with(paper)
+        platform.analyze.assert_not_called()
+        platform.run_execution.assert_not_called()
 
 
 class WorkspacePersistenceConsoleTest(unittest.TestCase):

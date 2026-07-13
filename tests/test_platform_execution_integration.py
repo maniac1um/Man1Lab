@@ -28,8 +28,14 @@ from execution.backends.fake_executor import FakeExecutor
 from execution.input_resolver.in_memory import InMemoryInputResolver
 from models.execution_engine import ExecutionRunStatus
 from runtime.runtime import PlatformRuntime
-from runtime.session.workspace_store import WorkspaceArtifactStore
-from tests.execution_engine_fixtures import linear_graph
+from models.execution_materialization import (
+    ExecutionMaterialization,
+    MaterializationReport,
+    MaterializationStatus,
+    NodeMaterializationResult,
+)
+from runtime.session.materialization_artifacts import MaterializationArtifactStore
+from tests.execution_engine_fixtures import materialized_linear_graph
 
 
 def _test_settings(temp_dir: Path) -> AppSettings:
@@ -81,8 +87,28 @@ class PlatformExecutionIntegrationTest(unittest.TestCase):
                 runtime=runtime,
                 platform_execution=service,
             )
-            graph = linear_graph()
-            WorkspaceArtifactStore(settings.workspace_root).save_execution_graph(graph)
+            graph = materialized_linear_graph()
+            report = MaterializationReport(
+                status=MaterializationStatus.READY,
+                node_results=tuple(
+                    NodeMaterializationResult(
+                        node_id=node.node_id,
+                        stage_type=node.stage_type.value,
+                        status=MaterializationStatus.READY,
+                    )
+                    for node in graph.nodes
+                ),
+            )
+            MaterializationArtifactStore(settings.workspace_root).save(
+                ExecutionMaterialization(
+                    materialization_id=graph.materialization_id or "mat-test",
+                    strategy_id=graph.strategy_id,
+                    graph_id=graph.graph_id,
+                    materialized_graph=graph,
+                    report=report,
+                    created_at=datetime.now(UTC),
+                )
+            )
 
             outcome = platform.run_execution()
 
@@ -121,8 +147,28 @@ class PlatformExecutionIntegrationTest(unittest.TestCase):
                 runtime=runtime,
                 platform_execution=service,
             )
-            graph = linear_graph()
-            WorkspaceArtifactStore(settings.workspace_root).save_execution_graph(graph)
+            graph = materialized_linear_graph()
+            report = MaterializationReport(
+                status=MaterializationStatus.READY,
+                node_results=tuple(
+                    NodeMaterializationResult(
+                        node_id=node.node_id,
+                        stage_type=node.stage_type.value,
+                        status=MaterializationStatus.READY,
+                    )
+                    for node in graph.nodes
+                ),
+            )
+            MaterializationArtifactStore(settings.workspace_root).save(
+                ExecutionMaterialization(
+                    materialization_id=graph.materialization_id or "mat-test",
+                    strategy_id=graph.strategy_id,
+                    graph_id=graph.graph_id,
+                    materialized_graph=graph,
+                    report=report,
+                    created_at=datetime.now(UTC),
+                )
+            )
 
             first = platform.run_execution()
             second = platform.run_execution()

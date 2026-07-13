@@ -76,6 +76,8 @@ Discovery Layer
     ↓
 Execution Planning Layer
     ↓
+Execution Materialization Layer
+    ↓
 Planning Layer
     ↓
 Implementation Layer
@@ -335,6 +337,22 @@ See [architecture/EXECUTION_PLANNING.md](EXECUTION_PLANNING.md), [ADR-0017](../a
 
 ---
 
+### Execution Materialization Layer
+
+| | |
+|--|--|
+| **Responsibility** | Convert committed Planning decisions and abstract graph nodes into validated backend-ready instructions |
+| **Input** | `ExecutionStrategy`, `ResearchResourceDiscovery`, abstract `ExecutionGraph`, application-provided workspace context |
+| **Output** | `ExecutionMaterialization` containing a materialized `ExecutionGraph` and `MaterializationReport` |
+| **Does** | Resolve deterministic paths/references, select versioned task templates, produce typed invocation specifications, validate readiness |
+| **Does NOT** | Change strategy/topology, clone/download/install, execute commands, schedule tasks, or manage Runtime |
+
+Only a `READY` materialization may create an `ExecutionRun`. Missing entrypoints or output contracts are reported as `BLOCKED`; they are never guessed from stage labels.
+
+See [EXECUTION_MATERIALIZATION.md](EXECUTION_MATERIALIZATION.md).
+
+---
+
 ### Planning Layer
 
 | | |
@@ -376,15 +394,15 @@ Implementation **consumes** analysis modules (goal, resources, method, evaluatio
 
 | | |
 |--|--|
-| **Responsibility** | Run the reproduction project in a prepared runtime |
-| **Input** | `Workspace` |
-| **Output** | `ExecutionResult` — exit status, logs, duration |
-| **Does** | Prepare environment (e.g. virtualenv, dependencies), plan invocation, execute entrypoint scripts |
-| **Does NOT** | Generate or modify repository source, parse papers, or perform LLM-based paper analysis |
+| **Responsibility** | Execute a validated task graph and durably record its lifecycle and outcomes |
+| **Input** | `READY` materialized `ExecutionGraph` plus Runtime-provided execution services |
+| **Output** | `ExecutionReport`, `ExecutionTrace`, task results, and registered artifacts |
+| **Does** | Decompose, schedule, dispatch to an executor, persist state transitions, and collect outcomes |
+| **Does NOT** | Invent commands or paths, generate or modify repository source, parse papers, or perform LLM-based analysis |
 
 Execution is **runtime-only**. Repository artifacts and runtime artifacts have distinct ownership — see [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md) and [ADR-0007](../adr/ADR-0007-Execution-Capability.md).
 
-The v1.3 `Execution Engine Foundation` adds canonical run/task/result/trace/report models, decomposition, scheduling, state transitions, artifact tracking, reporting, and memory-level resume. Durable resume is provided by Runtime through a dedicated `ExecutionStore` (`FileExecutionStore`) injected into the engine via an execution-owned persistence port. Phase 1–2 (store, injection, cross-process resume) are implemented; LocalExecutor and facade integration remain Phase 3+.
+The v1.3 `Execution Engine Foundation` adds canonical run/task/result/trace/report models, decomposition, scheduling, state transitions, artifact tracking, reporting, and resume. Runtime provides durable persistence through `ExecutionStore`; `LocalExecutor` and Facade/Console integration are implemented. Planning-to-Execution Materialization remains the gate required to turn ordinary Planning graphs into runnable local instructions.
 
 ---
 
@@ -502,26 +520,19 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
                     │ Execution Planning Layer │
                     └────────┬─────────────────┘
                                    ↓
-                          ExecutionStrategy
+                 ExecutionStrategy + abstract ExecutionGraph
                                    ↓
-                          ┌─────────────────┐
-                          │ Planning Layer  │
-                          └────────┬────────┘
+                    ┌───────────────────────────┐
+                    │ Execution Materialization │
+                    └─────────────┬─────────────┘
                                    ↓
-                              TaskModel
-                         (engineering task graph)
-                                   ↓
-                          ┌─────────────────────┐
-                          │ Implementation Layer│
-                          └────────┬────────────┘
-                                   ↓
-                              Workspace
+                 READY materialized ExecutionGraph
                                    ↓
                           ┌─────────────────┐
                           │ Execution Layer │
                           └────────┬────────┘
                                    ↓
-                           ExecutionResult
+                  ExecutionReport + ExecutionTrace
                                    ↓
                           ┌───────────────────┐
                           │ Verification Layer│
@@ -545,11 +556,10 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 | **Parsing** | `ParsedDocument` | PDF bytes |
 | **Analysis** | `PaperReproductionAnalysis` | `ParsedDocument` |
 | **Discovery** | `ResearchResourceDiscovery` | `PaperReproductionAnalysis` |
-| **Execution Planning** | `ExecutionStrategy` | `PaperReproductionAnalysis`, `ResearchResourceDiscovery` |
-| **Planning** | `TaskModel` | `ExecutionStrategy` |
-| **Implementation** | `Workspace` | `PaperReproductionAnalysis`, `TaskModel` |
-| **Execution** | `ExecutionResult` | `Workspace` |
-| **Verification** | `VerificationResult` | `Workspace`, `ExecutionResult`, analysis goal/evaluation (criteria) |
+| **Execution Planning** | `ExecutionStrategy`, abstract `ExecutionGraph` | `PaperReproductionAnalysis`, `ResearchResourceDiscovery` |
+| **Execution Materialization** | `ExecutionMaterialization`, materialized `ExecutionGraph`, `MaterializationReport` | Strategy, discovery, abstract graph, workspace context |
+| **Execution** | `ExecutionRun`, `ExecutionReport`, `ExecutionTrace`, artifacts | `READY` materialized `ExecutionGraph`, Runtime-provided services |
+| **Verification** | `VerificationResult` | Execution report/artifacts, analysis goal/evaluation criteria |
 | **Review** | Review report, patch plan | Analysis (context), tasks, verification result |
 | **Reporting** | Final report | Full workflow history |
 
@@ -584,14 +594,15 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 | MCP / REST interfaces | Reserved layout only |
 | Execution Engine Foundation | Core models, scheduling, state machine, trace, artifacts, report, and memory-level resume implemented; real backend/integration partial |
 | Runtime-owned execution persistence | ✅ Phase 1–2 — `FileExecutionStore`, engine injection, cross-process resume |
+| Planning-to-Execution Materialization | Foundation implemented; preparation-stage coverage and controlled E2E pending |
 
 ### Planned (roadmap)
 
 | Capability | Milestone |
 |------------|-----------|
 | **ExecutionStore + Runtime injection** | ✅ v1.3 Phase 1–2 |
-| **LocalExecutor + facade/console** | v1.3 Phase 3–4 (deferred) |
-| **LocalExecutor + console integration** | v1.3 — first real persistent execution path |
+| **LocalExecutor + facade/console** | ✅ implemented |
+| **Planning-to-Execution Materialization** | v1.3 — executable graph readiness gate |
 | **Repository Understanding** | v1.4 — `RepositoryKnowledge` artifact |
 | **Repository Adaptation** | v1.5 |
 | **Knowledge Memory** | Future |

@@ -12,9 +12,28 @@ from application.platform_execution import PlatformExecutionService
 from execution.engine import EngineRunResult
 from execution.ports.persistence import ResumableRunSummary
 from models.execution_engine import ExecutionRun, ExecutionRunStatus
+from models.execution_materialization import (
+    MaterializationReport,
+    MaterializationStatus,
+    NodeMaterializationResult,
+)
 from runtime.context import RuntimeContext
 from runtime.execution_store import ExecutionStoreFactory
-from tests.execution_engine_fixtures import linear_graph
+from tests.execution_engine_fixtures import linear_graph, materialized_linear_graph
+
+
+def _ready_report(graph) -> MaterializationReport:
+    return MaterializationReport(
+        status=MaterializationStatus.READY,
+        node_results=tuple(
+            NodeMaterializationResult(
+                node_id=node.node_id,
+                stage_type=node.stage_type.value,
+                status=MaterializationStatus.READY,
+            )
+            for node in graph.nodes
+        ),
+    )
 
 
 class PlatformExecutionServiceResumeTest(unittest.TestCase):
@@ -25,7 +44,7 @@ class PlatformExecutionServiceResumeTest(unittest.TestCase):
             factory = ExecutionStoreFactory(root)
             context.bind_execution_store(factory)
             service = PlatformExecutionService(context, root)
-            graph = linear_graph()
+            graph = materialized_linear_graph()
 
             existing_run = ExecutionRun(
                 run_id="run-resume",
@@ -64,7 +83,11 @@ class PlatformExecutionServiceResumeTest(unittest.TestCase):
                 patch.object(service, "_engine_factory", return_value=engine),
                 patch.object(service, "_find_resumable_run", return_value=resumable),
             ):
-                outcome = service.run_execution(graph, resume=True)
+                outcome = service.run_execution(
+                    graph,
+                    materialization_report=_ready_report(graph),
+                    resume=True,
+                )
 
             engine.load_and_resume_run.assert_called_once_with(graph, "run-resume")
             engine.start_run.assert_not_called()
@@ -78,7 +101,7 @@ class PlatformExecutionServiceResumeTest(unittest.TestCase):
             factory = ExecutionStoreFactory(root)
             context.bind_execution_store(factory)
             service = PlatformExecutionService(context, root)
-            graph = linear_graph()
+            graph = materialized_linear_graph()
             engine = MagicMock()
             engine.persistence = factory.store()
             started_run = ExecutionRun(
@@ -89,6 +112,7 @@ class PlatformExecutionServiceResumeTest(unittest.TestCase):
                 task_ids=(),
                 trace_id="trace-requested",
                 created_at=datetime.now(UTC),
+                completed_at=datetime.now(UTC),
             )
             engine.start_run.return_value = EngineRunResult(
                 run=started_run,
@@ -113,6 +137,7 @@ class PlatformExecutionServiceResumeTest(unittest.TestCase):
             ):
                 outcome = service.run_execution(
                     graph,
+                    materialization_report=_ready_report(graph),
                     run_id="run-requested",
                     resume=True,
                 )

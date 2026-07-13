@@ -6,11 +6,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Version** | **v1.2.4** |
+| **Current Version** | **v1.3 (in progress)** |
 | **License** | MIT ([LICENSE](../../LICENSE)) |
-| **Milestone** | **Platform Capability** |
-| **Previous Release** | v1.2.3 (Platform Runtime & Interactive Console) |
-| **Next Milestone** | **Execution Runtime Integration (v1.3)** |
+| **Milestone** | **Planning-to-Execution Materialization** |
+| **Previous Release** | v1.2.4 (Console UX and Workspace Persistence) |
+| **Next Milestone** | **Repository Understanding (v1.4)** |
 
 Release notes: [releases/v1.2.4.md](releases/v1.2.4.md) · Previous: [releases/v1.2.3.md](releases/v1.2.3.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
 
@@ -72,6 +72,16 @@ ReportModel                     ← Reporter
 
 ### Planned (roadmap only)
 
+The canonical v1.3 execution path extends the implemented planning pipeline as follows:
+
+```text
+ExecutionStrategy + abstract ExecutionGraph
+    → ExecutionMaterialization
+    → READY materialized ExecutionGraph
+    → ExecutionRun
+    → ExecutionReport + ExecutionTrace + artifacts
+```
+
 | Artifact | Milestone |
 |----------|-----------|
 | `RepositoryKnowledge` | v1.3 Repository Understanding |
@@ -116,6 +126,8 @@ Planner → Coder → Runner → Verification → Reviewer → Reporter
 | Platform Runtime | ✅ | Lifecycle, resources, profiling, session |
 | Execution Engine Foundation | 🚧 Foundation complete | Canonical models, decomposition, sequential scheduler, state machine, trace, artifact tracking, report, memory-level resume |
 | Runtime Execution Persistence | ✅ Phase 1–2 + audit | Journal replay, revision-tagged snapshots, O_EXCL locks, typed runtime wiring |
+| Local execution platform integration | ✅ | `LocalExecutor`, `PlatformExecutionService`, Facade and Console execution commands |
+| Planning-to-Execution Materialization | 🚧 Foundation implemented | Typed specs, supported templates, resolvers, strict readiness gate, reproduction pipeline; default full Planning graph coverage remains incomplete |
 
 ### Execution Engine maturity (v1.3 foundation)
 
@@ -128,8 +140,9 @@ Planner → Coder → Runner → Verification → Reviewer → Reporter
 | Memory-level resume and reconciliation contracts | ✅ |
 | Runtime-owned `ExecutionStore` | ✅ Phase 1–2 |
 | Cross-process crash recovery | ✅ Phase 1–2 (file store; LocalExecutor E2E deferred) |
-| Real `LocalExecutor` | ❌ |
-| Facade/console execution integration | ❌ |
+| Real `LocalExecutor` | ✅ |
+| Facade/console execution integration | ✅ |
+| Ordinary Planning graph materialization | 🚧 Partial — unsupported preparation stages block safely |
 
 ### Execution Planning maturity (v1.2.1+)
 
@@ -252,8 +265,8 @@ Full suite (`python -m pytest tests/`) requires project dependencies (`python-do
 | L-06 | MCP / REST interfaces not implemented | Roadmap |
 | L-07 | `execution_planning.enabled=false` uses legacy Planner path | Transitional |
 | L-08 | SDK does not expose model management methods | Optional polish |
-| L-09 | Console `execute-all` / `reproduce` await execution engine | Runtime |
-| L-10 | Real-backend artifact materialization/restore deferred until LocalExecutor | Phase 3 |
+| L-09 | Console execution is wired, but some ordinary Planning graphs contain preparation stages without supported templates | Partially resolved; readiness gate blocks safely |
+| L-10 | Repository entrypoint/output resolution is not yet materialized from verified evidence | Partial (evidence-backed v1.3 path only) |
 | L-11 | Execution runs, attempts, and trace durably persisted | Resolved (v1.3 Phase 1–2) |
 | L-12 | Interrupted `RUNNING` tasks reconciled across processes | Resolved (v1.3 Phase 2; LocalExecutor E2E deferred) |
 
@@ -261,16 +274,18 @@ Full benchmark history: [benchmark section in prior releases](releases/v1.1.0.md
 
 ---
 
-## Next Milestone — Execution Runtime Integration (v1.3)
+## Next Milestone — Repository Understanding (v1.4)
 
 | Capability | Direction |
 |------------|-----------|
 | **ExecutionStore** | ✅ Phase 1–2 complete |
 | **Runtime injection** | ✅ Phase 1–2 complete |
 | **Crash resume** | ✅ Phase 1–2 (file store + engine; E2E with LocalExecutor deferred) |
-| **First backend** | Durable LocalExecutor followed by facade/console integration |
+| **First backend** | ✅ LocalExecutor + facade/console integration |
+| **Materialization models and readiness gate** | ✅ Implemented |
+| **One-command reproduction** | ✅ `ReproductionPipelineService` + facade/console delegation |
 
-See [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md) and [ROADMAP.md](ROADMAP.md).
+See [architecture/EXECUTION_MATERIALIZATION.md](architecture/EXECUTION_MATERIALIZATION.md), [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md), and [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -280,6 +295,7 @@ See [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md) and [
 |------|----------|
 | Install and run | [GETTING_STARTED.md](GETTING_STARTED.md) |
 | Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md), [architecture/RUNTIME.md](architecture/RUNTIME.md) |
+| Planning-to-Execution Materialization | [architecture/EXECUTION_MATERIALIZATION.md](architecture/EXECUTION_MATERIALIZATION.md) |
 | Execution Runtime architecture | [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md) |
 | Execution Runtime roadmap | [ROADMAP.md](ROADMAP.md) |
 | Product roadmap | [ROADMAP.md](../ROADMAP.md) |

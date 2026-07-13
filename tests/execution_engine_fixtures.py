@@ -9,6 +9,32 @@ from models.execution_graph import (
     ExecutionGraphNode,
     ExecutionGraphStageType,
 )
+from models.execution_materialization import ExecutableTaskSpec
+
+
+def _noop_spec() -> ExecutableTaskSpec:
+    return ExecutableTaskSpec(
+        command=("python", "-c", "print('ok')"),
+        working_directory=".",
+        template_id="test/noop",
+        template_version="1.0",
+    )
+
+
+def materialized_linear_graph() -> ExecutionGraph:
+    """Linear graph with READY materialization fields for execution gate tests."""
+    base = linear_graph()
+    nodes = [
+        node.model_copy(update={"execution_spec": _noop_spec()})
+        for node in base.nodes
+    ]
+    return base.model_copy(
+        update={
+            "nodes": nodes,
+            "materialization_id": "mat-test-linear",
+            "materialization_schema_version": "1.0",
+        }
+    )
 
 
 def linear_graph() -> ExecutionGraph:

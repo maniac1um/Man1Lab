@@ -47,7 +47,7 @@ class ConsoleRenderer:
         self.write("Pipeline:")
         self.write("  plan-all <paper.pdf>   Run analyze, discover, and plan")
         self.write("  execute-all            Run the planned execution graph")
-        self.write("  reproduce <paper.pdf>  Run plan-all then execute")
+        self.write("  reproduce <paper.pdf>  Full pipeline via facade")
         self.write("")
         self.write("Execution:")
         self.write("  execution status [run_id]   Show current run task status")

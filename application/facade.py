@@ -20,6 +20,7 @@ from application.platform_execution import (
     ExecutionStatusView,
     PlatformExecutionService,
 )
+from application.reproduction_pipeline import ReproductionPipelineService
 from application.lifecycle import (
     CleanPolicy,
     CleanupReport,
@@ -135,10 +136,28 @@ class Man1Lab:
         )
 
     def reproduce(self, paper_path: Path | str | None = None) -> ReportModel:
-        """Run the complete reproduction workflow."""
+        """Run the complete reproduction workflow through the application pipeline."""
         path = self._resolve_paper_path(paper_path)
         self._ensure_paper_exists(path)
-        return self._orchestrator.run(path)
+        pipeline = ReproductionPipelineService(
+            analyze=self.analyze,
+            discover=self.discover,
+            plan=self.plan,
+            platform_execution=self._platform_execution,
+            workspace_root=self._settings.workspace_root,
+        )
+        with self._tracker.start_run(
+            run_name=path.stem,
+            tags={"entry": "facade", "operation": "reproduce"},
+        ):
+            result = pipeline.reproduce(path)
+            if result.execution is not None:
+                self._runtime.session.workspace.current_execution_run_id = result.execution.run_id
+            return result.report or ReportModel(
+                reproduction_summary=result.diagnostics or "Reproduction pipeline produced no report.",
+                implementation_summary="",
+                final_status="blocked" if result.blocked else "unknown",
+            )
 
     def analyze(self, paper_path: Path | str) -> PaperReproductionAnalysis:
         """Run analysis (Reader) only."""

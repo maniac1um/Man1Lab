@@ -1,7 +1,7 @@
 # Execution Engine Architecture
 
 **Target:** Man1Lab v1.3 foundation  
-**Status:** Phase 1 foundation under implementation and audit
+**Status:** Foundation, Runtime persistence, LocalExecutor, platform integration, and Materialization foundation implemented; full executable graph coverage pending
 **Audience:** Architects and Execution Engine implementers  
 **Canonical model specification:** [EXECUTION_MODEL.md](EXECUTION_MODEL.md)
 
@@ -21,7 +21,7 @@ Execution answers:
 
 The distinction is architectural, not merely procedural. Planning may decide that a repository must be prepared before a dataset and that evaluation follows training. It must not clone the repository, install packages, download data, start a process, retry a failed task, or claim that an output exists. Those are execution concerns.
 
-The existing `ExecutionGraph` is therefore an immutable planning handoff. It contains stage intent, dependencies, resource bindings, asset references, and rationale. It deliberately does not contain backend commands, mutable task state, attempts, process handles, logs, or produced artifacts. The Execution Engine translates that handoff into executable tasks and observes their lifecycle without changing the planning decision.
+The Planning-produced `ExecutionGraph` is therefore an immutable abstract handoff. It contains stage intent, dependencies, resource bindings, asset references, and rationale. It deliberately does not contain backend commands, mutable task state, attempts, process handles, logs, or produced artifacts. Materialization enriches a copy with immutable executable specifications; the Execution Engine then decomposes that `READY` graph into runtime tasks and observes their lifecycle without changing the planning decision.
 
 The v1.3 foundation must establish four properties before adding broad automation:
 
@@ -60,7 +60,9 @@ Analysis
 Discovery
    ↓
 Execution Planning
-   ↓  ExecutionGraph (immutable handoff)
+   ↓  abstract ExecutionGraph
+Planning-to-Execution Materialization
+   ↓  READY materialized ExecutionGraph (immutable handoff)
 Execution Engine
    ↓  ExecutionReport + ExecutionTrace + artifacts
 Results / Verification / Reporting
@@ -93,13 +95,13 @@ models/
   execution_engine.py      canonical execution models
   execution.py             legacy local command ExecutionResult
 
-application/               composition and Runtime-to-engine adapters (future)
-workflow/                  invokes the engine as one pipeline stage (future)
+application/               composition, Runtime-to-engine adapters, and platform execution service
+workflow/                  invokes platform capabilities as coarse-grained pipeline stages
 runtime/                   owns process/session/resources/persistence implementations
 interfaces/                calls the Platform Facade only
 ```
 
-Phase 1 implements pure engine foundation only. Runtime persistence adapters, local subprocess backend, workflow/facade integration, and CLI changes remain future phases.
+The foundation, Runtime persistence adapter, local subprocess backend, and Facade/Console execution integration are implemented. The remaining input-side gap is materialization: ordinary planning output must be converted into a validated, `READY` materialized graph before an execution run is created.
 
 ### Ownership boundaries
 
@@ -108,6 +110,7 @@ Phase 1 implements pure engine foundation only. Runtime persistence adapters, lo
 | Analysis | Paper-stated reproduction facts and gaps | Resource search, strategy, execution |
 | Discovery | External candidates, evidence, verification, ranking, selection | Execution commands or task state |
 | Execution Planning | Strategy, resource binding, planning rationale, `ExecutionGraph` | Runtime task status or side effects |
+| Materialization | Typed executable instructions, path/resource resolution, readiness report | Planning decisions, task lifecycle, side effects |
 | Execution Engine | Decomposition, readiness, dispatch, task lifecycle, artifact registration, execution reporting | Planning decisions, Runtime lifecycle, LLM lifecycle |
 | Platform Runtime | Process/session lifecycle, configuration, logging, resources, workspace/persistence services | Business scheduling or execution policy |
 | Workflow | Ordering of platform capabilities and high-level history | Per-task scheduling or backend control |
@@ -146,15 +149,15 @@ ExecutionTrace and durable run state observe the entire flow.
 
 **Input**
 
-- `ExecutionStrategy` and discovery assets during Execution Planning.
+- An abstract graph from Planning, enriched by Materialization before execution.
 
 **Output**
 
-- A validated `ExecutionGraph` consumed read-only by Task Decomposition.
+- A validated materialized `ExecutionGraph` consumed read-only by Task Decomposition.
 
 **Forbidden responsibilities**
 
-- Mutable runtime status, attempts, timestamps, backend selection, commands, credentials, logs, metrics, or artifact paths.
+- Mutable runtime status, attempts, timestamps, credentials, logs, metrics, scheduler policy, or process control. Optional immutable execution specifications belong to Materialization, not Planning.
 - Scheduler policy, retry policy, or process control.
 - Silent mutation after execution starts.
 
@@ -475,7 +478,7 @@ Out of scope for the foundation: distributed scheduling, dynamic DAG mutation, a
 | Risk | Why it exists now | Required control |
 |---|---|---|
 | Graph/task semantic collapse | `ExecutionGraph` is already called execution-oriented | Keep graph immutable; introduce explicit decomposition and provenance mapping |
-| Missing graph handoff | Current facade planning returns `ExecutionStrategy`, while graph construction/persistence is mainly a console/session side path | Make the graph an explicit, validated engine input and define how facade/workflow load or receive it before integration |
+| Missing executable graph handoff | Planning can return an `ExecutionStrategy` and abstract graph, but these do not necessarily satisfy the LocalExecutor contract | Require a `READY` `ExecutionMaterialization` as the application-level handoff; never let the engine guess commands or paths |
 | Legacy/new result collision | `models.execution.ExecutionResult` represents one command only | Version and migrate deliberately; do not silently redefine persisted JSON or public return types |
 | Duplicate execution coordinators | `Runner` already coordinates a fixed local flow | Adapt/migrate it behind the new executor boundary; define one public engine coordinator |
 | Planning mutation during failure recovery | Missing resources may tempt execution-time improvisation | Fail with structured evidence and require a new planning artifact for changed intent |
@@ -560,5 +563,6 @@ Until resolved, v1.3 should choose conservative defaults: existing workspace onl
 - [RUNTIME.md](RUNTIME.md) — Platform Runtime lifecycle and dependency rules
 - [EXECUTION_PLANNING.md](EXECUTION_PLANNING.md) — planning capability and `ExecutionGraph`
 - [EXECUTION_MODEL.md](EXECUTION_MODEL.md) — canonical execution model specification
+- [EXECUTION_MATERIALIZATION.md](EXECUTION_MATERIALIZATION.md) — abstract graph to executable instruction boundary
 - [ADR-0006](../adr/ADR-0006-Runtime-Artifact-Ownership.md) — repository/runtime artifact ownership
 - [ADR-0007](../adr/ADR-0007-Execution-Capability.md) — current legacy Runner decomposition

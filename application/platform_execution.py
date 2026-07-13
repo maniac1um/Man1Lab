@@ -15,9 +15,19 @@ from models.execution_engine import (
     ExecutionTaskStatus,
 )
 from models.execution_graph import ExecutionGraph
+from models.execution_materialization import MaterializationReport, MaterializationStatus
 from runtime.context import RuntimeContext
 from runtime.execution_store.file_store import FileExecutionStore
+from runtime.session.materialization_artifacts import MaterializationArtifactStore
 from runtime.session.workspace_store import WorkspaceArtifactStore
+
+
+class MaterializationGateError(ValueError):
+    """Raised when execution cannot start because materialization is not READY."""
+
+    def __init__(self, report: MaterializationReport, message: str | None = None) -> None:
+        self.report = report
+        super().__init__(message or f"materialization status is {report.status.value}")
 
 
 @dataclass(frozen=True)
@@ -93,17 +103,23 @@ class PlatformExecutionService:
         self,
         graph: ExecutionGraph | None = None,
         *,
+        materialization_report: MaterializationReport | None = None,
         run_id: str | None = None,
         resume: bool = True,
         workspace_ref: str | None = None,
     ) -> ExecutionRunOutcome:
         """Start or resume execution for a planned graph."""
+        mat_store = MaterializationArtifactStore(self._workspace_root)
         if graph is None:
-            graph = WorkspaceArtifactStore(self._workspace_root).load_execution_graph()
+            graph = mat_store.load_materialized_graph()
+            if graph is None:
+                graph = WorkspaceArtifactStore(self._workspace_root).load_execution_graph()
             if graph is None:
                 raise ValueError(
                     "Execution graph not found in workspace. Run plan before execute."
                 )
+        report = materialization_report or mat_store.load_materialization_report()
+        self._enforce_materialization_ready(graph, report)
         engine = self._engine_factory()
         store = self._require_store(engine)
         resolved_workspace_ref = workspace_ref or self._workspace_root.as_posix()
@@ -218,3 +234,30 @@ class PlatformExecutionService:
             ):
                 return summary
         return None
+
+    @staticmethod
+    def _enforce_materialization_ready(
+        graph: ExecutionGraph,
+        report: MaterializationReport | None,
+    ) -> None:
+        if report is None:
+            raise MaterializationGateError(
+                MaterializationReport(
+                    status=MaterializationStatus.BLOCKED,
+                    errors=(),
+                ),
+                "materialization report is required before execution",
+            )
+        if report.status is not MaterializationStatus.READY:
+            raise MaterializationGateError(report)
+        if not graph.materialization_id:
+            raise MaterializationGateError(report, "materialized graph is missing materialization_id")
+        graph_node_ids = {node.node_id for node in graph.nodes}
+        report_node_ids = {node.node_id for node in report.node_results}
+        if graph_node_ids != report_node_ids:
+            raise MaterializationGateError(
+                report,
+                "materialization report does not match graph nodes",
+            )
+        if any(node.execution_spec is None for node in graph.nodes):
+            raise MaterializationGateError(report, "materialized graph contains incomplete nodes")

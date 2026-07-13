@@ -521,4 +521,4 @@ Future: GUI
 
 ---
 
-**Last aligned with:** Man1Lab v1.3 Execution Runtime Integration architecture (implementation pending)
+**Last aligned with:** Man1Lab v1.3 Execution Runtime Integration implementation

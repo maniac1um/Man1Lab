@@ -7,7 +7,10 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from models.executable_task_spec import ExecutableTaskSpec
+
 SCHEMA_VERSION = "1.0"
+MATERIALIZATION_SCHEMA_VERSION = "1.0"
 
 
 class ExecutionGraphStageType(str, Enum):
@@ -33,6 +36,10 @@ class ExecutionGraphNode(BaseModel):
     binding_ids: list[str] = Field(default_factory=list)
     asset_ids: list[str] = Field(default_factory=list)
     rationale: str = ""
+    execution_spec: ExecutableTaskSpec | None = Field(
+        default=None,
+        description="Optional typed executable specification added by materialization.",
+    )
 
 
 class ExecutionGraph(BaseModel):
@@ -45,3 +52,11 @@ class ExecutionGraph(BaseModel):
     strategy_id: str
     nodes: list[ExecutionGraphNode] = Field(default_factory=list)
     schema_version: str = SCHEMA_VERSION
+    materialization_id: str | None = Field(
+        default=None,
+        description="Present when the graph has been materialized for execution.",
+    )
+    materialization_schema_version: str | None = Field(
+        default=None,
+        description="Schema version of the materialization envelope when present.",
+    )

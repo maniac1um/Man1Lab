@@ -373,10 +373,30 @@ def _cmd_execute_all(ctx: ConsoleContext, args: list[str]) -> int:
 
 
 def _cmd_reproduce(ctx: ConsoleContext, args: list[str]) -> int:
-    code = _cmd_plan_all(ctx, args)
-    if code != 0:
-        return code
-    return _cmd_execute(ctx, [])
+    if not args:
+        ctx.renderer.write_error("Usage: reproduce <paper.pdf>")
+        return 0
+    paper_path = Path(args[0]).expanduser().resolve()
+    if not paper_path.exists():
+        ctx.renderer.write_error(f"Paper not found: {paper_path}")
+        return 0
+    if paper_path.suffix.lower() != ".pdf":
+        ctx.renderer.write_error(f"Expected a PDF file: {paper_path}")
+        return 0
+    ensure_session_open(ctx)
+    ctx.session.workspace.current_paper = paper_path
+    report = ctx.platform.reproduce(paper_path)
+    if report.final_status == "blocked":
+        ctx.renderer.write_error(report.reproduction_summary)
+        return 0
+    ctx.renderer.render_command_success(
+        message=f"Reproduction complete: {report.final_status}",
+        generated=("Analysis", "Discovery", "Planning", "Materialization", "Execution"),
+        next_command="execution status",
+    )
+    if report.report_path is not None:
+        ctx.renderer.write(f"Report: {report.report_path}")
+    return 0
 
 
 def ensure_session_open(ctx: ConsoleContext) -> None:

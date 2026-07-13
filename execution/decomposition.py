@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from execution.validation import task_type_for_stage, validate_execution_graph, validate_task_dag
+from execution_materialization.task_factory import merge_metadata
 from models.execution_engine import (
     DECOMPOSITION_VERSION,
     ExecutionArtifactReference,
@@ -101,6 +102,18 @@ def decompose_execution_graph(
 
     for node in graph.nodes:
         task_type = task_type_for_stage(node.stage_type)
+        base_metadata = {
+            "source_graph_id": graph.graph_id,
+            "source_node_id": node.node_id,
+            "decomposition_version": DECOMPOSITION_VERSION,
+            "stage_type": node.stage_type.value,
+            "binding_ids": ",".join(node.binding_ids),
+            "asset_ids": ",".join(node.asset_ids),
+        }
+        if node.execution_spec is not None:
+            metadata = merge_metadata(base_metadata, node.execution_spec)
+        else:
+            metadata = base_metadata
         task = ExecutionTask(
             id=node_to_task[node.node_id],
             name=node.label,
@@ -110,14 +123,7 @@ def decompose_execution_graph(
             inputs=_inputs_for_node(node),
             outputs=_default_outputs(node.stage_type),
             status=ExecutionTaskStatus.PENDING,
-            metadata={
-                "source_graph_id": graph.graph_id,
-                "source_node_id": node.node_id,
-                "decomposition_version": DECOMPOSITION_VERSION,
-                "stage_type": node.stage_type.value,
-                "binding_ids": ",".join(node.binding_ids),
-                "asset_ids": ",".join(node.asset_ids),
-            },
+            metadata=metadata,
         )
         tasks.append(task)
         events.append(

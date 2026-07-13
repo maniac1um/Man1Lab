@@ -121,14 +121,17 @@ class Man1LabConstructionTest(unittest.TestCase):
 
 
 class Man1LabDelegationTest(unittest.TestCase):
-    def test_reproduce_delegates_to_orchestrator(self) -> None:
-        orchestrator = MagicMock()
+    def test_reproduce_delegates_to_pipeline(self) -> None:
         expected = ReportModel(
             reproduction_summary="ok",
             implementation_summary="ok",
             final_status="SUCCESS",
         )
-        orchestrator.run.return_value = expected
+        pipeline_result = MagicMock()
+        pipeline_result.report = expected
+        pipeline_result.execution = None
+        pipeline_result.blocked = False
+        pipeline_result.diagnostics = ""
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -149,14 +152,15 @@ class Man1LabDelegationTest(unittest.TestCase):
                 logging=settings.logging,
                 tracking=settings.tracking,
             )
-            platform = Man1Lab(
-                settings=settings,
-                initialize_configuration=False,
-                configure_logging=False,
-                orchestrator=orchestrator,
-            )
-            report = platform.reproduce()
-            orchestrator.run.assert_called_once_with(paper_path)
+            with patch("application.facade.ReproductionPipelineService") as pipeline_cls:
+                pipeline_cls.return_value.reproduce.return_value = pipeline_result
+                platform = Man1Lab(
+                    settings=settings,
+                    initialize_configuration=False,
+                    configure_logging=False,
+                )
+                report = platform.reproduce()
+            pipeline_cls.return_value.reproduce.assert_called_once_with(paper_path)
             self.assertEqual(report, expected)
 
     def test_analyze_delegates_to_reader(self) -> None:
