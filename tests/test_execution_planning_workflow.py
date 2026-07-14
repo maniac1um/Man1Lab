@@ -218,7 +218,7 @@ class ExecutionPlanningWorkflowDeterminismTest(unittest.TestCase):
 class ExecutionPlanningWorkflowSimplificationTest(unittest.TestCase):
     def test_workflow_contains_no_placeholder_stages(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        source = (repo_root / "execution_planning" / "workflow.py").read_text(encoding="utf-8")
+        source = (repo_root / "src" / "execution_planning" / "workflow.py").read_text(encoding="utf-8")
         self.assertNotIn("_run_strategy_stage", source)
         self.assertNotIn("_PlaceholderStrategyService", source)
         self.assertNotIn(".plan(", source)
@@ -236,7 +236,7 @@ class ExecutionPlanningWorkflowBoundaryTest(unittest.TestCase):
 
     def test_workflow_imports_only_services_not_providers(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        workflow_path = repo_root / "execution_planning" / "workflow.py"
+        workflow_path = repo_root / "src" / "execution_planning" / "workflow.py"
         tree = ast.parse(workflow_path.read_text(encoding="utf-8"))
         offenders: list[str] = []
         for node in ast.walk(tree):
@@ -255,7 +255,7 @@ class ExecutionPlanningWorkflowBoundaryTest(unittest.TestCase):
 
     def test_workflow_imports_services(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        source = (repo_root / "execution_planning" / "workflow.py").read_text(encoding="utf-8")
+        source = (repo_root / "src" / "execution_planning" / "workflow.py").read_text(encoding="utf-8")
         self.assertIn("services.execution_planning", source)
 
 

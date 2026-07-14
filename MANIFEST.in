@@ -1,11 +1,11 @@
 include LICENSE
 include README.md
 include .env.example
-recursive-include conf *
-recursive-include prompts *
-prune workspace/tasks
-prune outputs
-prune logs
+recursive-include resources/conf *
+recursive-include resources/prompts *
+prune var/workspace/tasks
+prune var/outputs
+prune var/logs
 prune mlruns
 prune .cache
 global-exclude __pycache__

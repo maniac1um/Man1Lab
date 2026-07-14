@@ -13,7 +13,7 @@ class DecisionQualityPhase2BoundaryTest(unittest.TestCase):
     _RUNTIME_FORBIDDEN = ("discovery", "execution_planning", "workflow", "providers", "agents")
 
     def test_runtime_session_decision_artifacts_uses_importlib(self) -> None:
-        path = REPO_ROOT / "runtime" / "session" / "decision_artifacts.py"
+        path = REPO_ROOT / "src" / "runtime" / "session" / "decision_artifacts.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         offenders: list[str] = []
         for node in ast.walk(tree):
@@ -25,10 +25,10 @@ class DecisionQualityPhase2BoundaryTest(unittest.TestCase):
 
     def test_models_do_not_import_discovery_or_planning(self) -> None:
         model_paths = [
-            REPO_ROOT / "models" / "decision_trace.py",
-            REPO_ROOT / "models" / "execution_graph.py",
-            REPO_ROOT / "models" / "explainable_confidence.py",
-            REPO_ROOT / "models" / "research_asset.py",
+            REPO_ROOT / "src" / "models" / "decision_trace.py",
+            REPO_ROOT / "src" / "models" / "execution_graph.py",
+            REPO_ROOT / "src" / "models" / "explainable_confidence.py",
+            REPO_ROOT / "src" / "models" / "research_asset.py",
         ]
         forbidden = {"discovery", "execution_planning", "providers", "services"}
         for path in model_paths:

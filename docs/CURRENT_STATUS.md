@@ -45,7 +45,7 @@ CLI (man1lab)  ·  Interactive Console  ·  Python SDK  ·  Future MCP  ·  Futu
 | MCP | `interfaces/mcp/` | Reserved |
 | REST | `interfaces/api/` | Reserved |
 
-Legacy maintainer entry: `app.py` / `pixi run run` — **not** the recommended user path.
+Legacy maintainer entry: `scripts/legacy_app.py` / `pixi run run` — **not** the recommended user path.
 
 ---
 

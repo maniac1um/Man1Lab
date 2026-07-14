@@ -254,7 +254,7 @@ class ModelRegistryBoundaryTest(unittest.TestCase):
 
     def test_model_registry_has_no_forbidden_imports(self) -> None:
         offenders: list[str] = []
-        for path in (REPO_ROOT / "providers" / "llm" / "registry.py", REPO_ROOT / "providers" / "llm" / "profiles.py"):
+        for path in (REPO_ROOT / "src" / "providers" / "llm" / "registry.py", REPO_ROOT / "src" / "providers" / "llm" / "profiles.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
             for node in ast.walk(tree):
                 module = None

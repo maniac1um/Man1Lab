@@ -73,14 +73,14 @@ Checks include Python, Pixi, Git, GitHub token, workspace paths, configuration, 
 
 Remove regeneratable workspace artifacts without touching configuration, papers, or source code.
 
-**SAFE mode (default)** removes `outputs/`, `logs/`, `mlruns/`, tool caches (`.pytest_cache`, `.mypy_cache`, `.ruff_cache`), `__pycache__/` directories, and `workspace/cache/` + `workspace/tmp/`. It preserves `workspace/tasks/`, `workspace/papers/`, `conf/`, and `.env`.
+**SAFE mode (default)** removes `var/outputs/`, `var/logs/`, `mlruns/`, tool caches (`.pytest_cache`, `.mypy_cache`, `.ruff_cache`), `__pycache__/` directories, and transient workspace caches. It preserves `var/workspace/tasks/`, `resources/conf/`, and `.env`.
 
 ```bash
 man1lab clean
 man1lab clean --dry-run
 ```
 
-**ALL mode** additionally removes `workspace/tasks/` and `workspace/artifacts/`. Confirmation is required unless you pass `--yes`:
+**ALL mode** additionally removes persisted data under `var/workspace/`. Confirmation is required unless you pass `--yes`:
 
 ```bash
 man1lab clean --all
@@ -229,7 +229,7 @@ Without API keys, mock LLM providers return deterministic fixtures for tests.
 
 ### Model profiles (advanced)
 
-Hydra configuration supports named model profiles under `conf/llm/default.yaml`:
+Hydra configuration supports named model profiles under `resources/conf/llm/default.yaml`:
 
 ```yaml
 llm:
@@ -274,7 +274,7 @@ man1lab model import profiles.yaml --replace
 man1lab model import profiles.yaml --skip-existing
 ```
 
-Profile changes persist to `conf/llm/user_profiles.yaml`. Export writes a portable format (`profiles` + `active` only — never API keys). Import validates and merges profiles without contacting providers. The CLI delegates exclusively to `Man1Lab` facade methods.
+Profile changes persist to `resources/conf/llm/user_profiles.yaml`. Export writes a portable format (`profiles` + `active` only — never API keys). Import validates and merges profiles without contacting providers. The CLI delegates exclusively to `Man1Lab` facade methods.
 
 Legacy `.env` variables (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`) continue to work. When no profiles are configured, Man1Lab auto-migrates them into a `default` profile at runtime.
 
@@ -296,7 +296,7 @@ mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 pixi run integration
 ```
 
-Requires a configured API key. Results: `outputs/` and `logs/`.
+Requires a configured API key. Repository-level results: `var/outputs/` and `var/logs/`.
 
 ---
 

@@ -186,7 +186,7 @@ class BusinessModuleImportAuditTest(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         offenders: list[str] = []
         for root_name in self._BUSINESS_ROOTS:
-            for path in (repo_root / root_name).rglob("*.py"):
+            for path in (repo_root / "src" / root_name).rglob("*.py"):
                 tree = ast.parse(path.read_text(encoding="utf-8"))
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):

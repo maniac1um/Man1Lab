@@ -189,7 +189,7 @@ class AnthropicProviderBoundaryTest(unittest.TestCase):
     )
 
     def test_anthropic_provider_has_no_forbidden_imports(self) -> None:
-        path = REPO_ROOT / "providers" / "llm" / "anthropic_provider.py"
+        path = REPO_ROOT / "src" / "providers" / "llm" / "anthropic_provider.py"
         offenders: list[str] = []
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

@@ -242,7 +242,7 @@ class RuntimeSessionBoundaryTest(unittest.TestCase):
     )
 
     def test_session_package_has_no_forbidden_imports(self) -> None:
-        session_dir = REPO_ROOT / "runtime" / "session"
+        session_dir = REPO_ROOT / "src" / "runtime" / "session"
         offenders: list[str] = []
         for path in sorted(session_dir.glob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"))

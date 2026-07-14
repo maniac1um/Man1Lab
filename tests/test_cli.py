@@ -140,7 +140,7 @@ class CLIWorkflowIsolationTest(unittest.TestCase):
 
     def test_cli_modules_do_not_import_workflow_or_capabilities(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        cli_root = repo_root / "interfaces" / "cli"
+        cli_root = repo_root / "src" / "interfaces" / "cli"
         offenders: list[str] = []
         for path in cli_root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -160,7 +160,7 @@ class CLIWorkflowIsolationTest(unittest.TestCase):
 
     def test_cli_imports_application_facade(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        common_source = (repo_root / "interfaces" / "cli" / "common.py").read_text(encoding="utf-8")
+        common_source = (repo_root / "src" / "interfaces" / "cli" / "common.py").read_text(encoding="utf-8")
         self.assertIn("from application import Man1Lab", common_source)
 
 

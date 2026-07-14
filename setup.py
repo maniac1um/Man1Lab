@@ -18,7 +18,7 @@ def _data_files(prefix: str, directory: str) -> list[tuple[str, list[str]]]:
 
 
 setup(
-    data_files=_data_files("share/man1lab/conf", "conf")
-    + _data_files("share/man1lab/prompts", "prompts")
+    data_files=_data_files("share/man1lab/conf", "resources/conf")
+    + _data_files("share/man1lab/prompts", "resources/prompts")
     + [("share/man1lab", [".env.example"])],
 )

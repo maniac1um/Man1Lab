@@ -341,7 +341,7 @@ class InitWizardBoundaryTest(unittest.TestCase):
     )
 
     def test_init_cli_has_no_forbidden_imports(self) -> None:
-        path = REPO_ROOT / "interfaces" / "cli" / "commands" / "init.py"
+        path = REPO_ROOT / "src" / "interfaces" / "cli" / "commands" / "init.py"
         offenders: list[str] = []
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

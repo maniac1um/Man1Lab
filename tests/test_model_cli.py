@@ -227,7 +227,7 @@ class ModelCLIBoundaryTest(unittest.TestCase):
     )
 
     def test_model_cli_has_no_forbidden_imports(self) -> None:
-        path = REPO_ROOT / "interfaces" / "cli" / "commands" / "model.py"
+        path = REPO_ROOT / "src" / "interfaces" / "cli" / "commands" / "model.py"
         offenders: list[str] = []
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

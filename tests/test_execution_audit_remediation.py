@@ -242,7 +242,7 @@ class SemanticValidationTest(unittest.TestCase):
 
 class ImportBoundaryTest(unittest.TestCase):
     def _forbidden_imports(self, relative_path: str) -> list[str]:
-        path = ROOT / relative_path
+        path = ROOT / "src" / relative_path
         tree = ast.parse(path.read_text(encoding="utf-8"))
         forbidden: list[str] = []
         for node in ast.walk(tree):

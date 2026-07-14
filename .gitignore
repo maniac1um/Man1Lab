@@ -17,16 +17,16 @@ build/
 !docs/**/*.pdf
 
 # Runtime workspaces (per-execution reproduction projects)
-workspace/tasks/**
-!workspace/tasks/.gitkeep
+var/workspace/tasks/**
+!var/workspace/tasks/.gitkeep
 
 # Generated reports
-outputs/**
-!outputs/.gitkeep
+var/outputs/**
+!var/outputs/.gitkeep
 
 # Execution logs
-logs/**
-!logs/.gitkeep
+var/logs/**
+!var/logs/.gitkeep
 
 # MLflow local tracking store
 mlruns/**

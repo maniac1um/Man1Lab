@@ -302,7 +302,7 @@ class ExpandedSemanticValidationTest(unittest.TestCase):
 
 class PublicBoundaryTest(unittest.TestCase):
     def test_capability_root_does_not_export_test_adapters(self) -> None:
-        tree = ast.parse((ROOT / "execution" / "__init__.py").read_text(encoding="utf-8"))
+        tree = ast.parse((ROOT / "src" / "execution" / "__init__.py").read_text(encoding="utf-8"))
         modules = {
             node.module
             for node in ast.walk(tree)

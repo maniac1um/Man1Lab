@@ -59,7 +59,7 @@ def _test_settings(temp_dir: Path) -> AppSettings:
         workspace_root=temp_dir / "workspace",
         outputs_dir=temp_dir / "outputs",
         logs_dir=temp_dir / "logs",
-        prompts_dir=Path("prompts"),
+        prompts_dir=Path(__file__).resolve().parents[1] / "resources" / "prompts",
         paper_path=temp_dir / "paper.pdf",
         parser=ParserConfig(backend="pymupdf"),
         discovery=DiscoveryConfig(enabled=True),
@@ -289,7 +289,7 @@ class Man1LabDelegationTest(unittest.TestCase):
 
 class Man1LabBackwardCompatibilityTest(unittest.TestCase):
     def test_app_main_uses_facade(self) -> None:
-        with patch("app.Man1Lab") as facade_cls:
+        with patch("scripts.legacy_app.Man1Lab") as facade_cls:
             facade = facade_cls.return_value
             facade.reproduce.return_value = ReportModel(
                 reproduction_summary="ok",
@@ -297,7 +297,7 @@ class Man1LabBackwardCompatibilityTest(unittest.TestCase):
                 final_status="SUCCESS",
                 report_path=Path("outputs/report.md"),
             )
-            from app import main
+            from scripts.legacy_app import main
 
             main()
             facade_cls.assert_called_once()
@@ -307,7 +307,7 @@ class Man1LabBackwardCompatibilityTest(unittest.TestCase):
         import ast
         from pathlib import Path as PathLib
 
-        source = PathLib("app.py").read_text(encoding="utf-8")
+        source = PathLib("scripts/legacy_app.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
         imports = []
         for node in ast.walk(tree):
@@ -328,7 +328,7 @@ class Man1LabBoundaryTest(unittest.TestCase):
 
         repo_root = PathLib(__file__).resolve().parents[1]
         offenders: list[str] = []
-        for path in (repo_root / "workflow").rglob("*.py"):
+        for path in (repo_root / "src" / "workflow").rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
             for node in ast.walk(tree):
                 if isinstance(node, ast.ImportFrom) and node.module and "application" in node.module:

@@ -476,7 +476,7 @@ class RuntimeIntegrationBoundaryTest(unittest.TestCase):
     )
 
     def test_context_py_has_no_forbidden_imports(self) -> None:
-        path = REPO_ROOT / "runtime" / "context.py"
+        path = REPO_ROOT / "src" / "runtime" / "context.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         offenders: list[str] = []
         for node in ast.walk(tree):
@@ -495,7 +495,7 @@ class RuntimeIntegrationBoundaryTest(unittest.TestCase):
 
     def test_facade_has_no_new_forbidden_imports_from_runtime(self) -> None:
         """Facade only imports from runtime.resources.manager and runtime.runtime."""
-        path = REPO_ROOT / "application" / "facade.py"
+        path = REPO_ROOT / "src" / "application" / "facade.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         runtime_imports: list[str] = []
         for node in ast.walk(tree):
@@ -518,7 +518,7 @@ class RuntimeIntegrationBoundaryTest(unittest.TestCase):
 
     def test_no_circular_dependency_runtime_to_facade(self) -> None:
         """Runtime modules must not import from application."""
-        runtime_dir = REPO_ROOT / "runtime"
+        runtime_dir = REPO_ROOT / "src" / "runtime"
         offenders: list[str] = []
         for path in sorted(runtime_dir.rglob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -539,7 +539,7 @@ class RuntimeIntegrationBoundaryTest(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_no_global_singleton_in_context_module(self) -> None:
-        source = (REPO_ROOT / "runtime" / "context.py").read_text(encoding="utf-8")
+        source = (REPO_ROOT / "src" / "runtime" / "context.py").read_text(encoding="utf-8")
         self.assertNotIn("_instance", source)
         self.assertNotIn("singleton", source.lower())
 
@@ -608,7 +608,7 @@ class RuntimeIntegrationPhase8CompatTest(unittest.TestCase):
 
 
     def test_agents_do_not_construct_prompt_loader(self) -> None:
-        agent_dir = REPO_ROOT / "agents"
+        agent_dir = REPO_ROOT / "src" / "agents"
         offenders: list[str] = []
         for path in sorted(agent_dir.glob("*.py")):
             source = path.read_text(encoding="utf-8")
@@ -617,7 +617,7 @@ class RuntimeIntegrationPhase8CompatTest(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_planning_does_not_construct_prompt_loader(self) -> None:
-        path = REPO_ROOT / "planning" / "patch_planner.py"
+        path = REPO_ROOT / "src" / "planning" / "patch_planner.py"
         self.assertNotIn("PromptLoader()", path.read_text(encoding="utf-8"))
 
 

@@ -208,7 +208,7 @@ class PlatformPipelineIntegrationTest(unittest.TestCase):
 
 class HydraPlatformConfigTest(unittest.TestCase):
     def test_discovery_and_execution_planning_enabled_by_default(self) -> None:
-        conf_dir = Path(__file__).resolve().parents[1] / "conf"
+        conf_dir = Path(__file__).resolve().parents[1] / "resources" / "conf"
         with initialize_config_dir(config_dir=str(conf_dir), version_base=None):
             cfg = compose(config_name="config")
         settings = HydraSettingsProvider(cfg).get_settings()

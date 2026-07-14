@@ -136,7 +136,7 @@ class ExecutionPlanningServiceBoundaryTest(unittest.TestCase):
 
     def test_strategy_service_does_not_import_workflow(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        path = repo_root / "services" / "execution_planning" / "strategy_service.py"
+        path = repo_root / "src" / "services" / "execution_planning" / "strategy_service.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         offenders: list[str] = []
         for node in ast.walk(tree):

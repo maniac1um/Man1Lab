@@ -261,7 +261,7 @@ class RuntimeResourceBoundaryTest(unittest.TestCase):
     )
 
     def test_resources_package_has_no_forbidden_imports(self) -> None:
-        resources_dir = REPO_ROOT / "runtime" / "resources"
+        resources_dir = REPO_ROOT / "src" / "runtime" / "resources"
         offenders: list[str] = []
         for path in sorted(resources_dir.glob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"))

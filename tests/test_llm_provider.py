@@ -160,7 +160,7 @@ class LLMProviderBoundaryTest(unittest.TestCase):
     )
 
     def test_llm_provider_package_has_no_forbidden_imports(self) -> None:
-        llm_root = REPO_ROOT / "providers" / "llm"
+        llm_root = REPO_ROOT / "src" / "providers" / "llm"
         offenders: list[str] = []
         for path in llm_root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))

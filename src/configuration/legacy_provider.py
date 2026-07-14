@@ -28,10 +28,10 @@ class LegacySettingsProvider:
 
     def get_settings(self) -> AppSettings:
         return AppSettings(
-            workspace_root=Path("workspace/tasks"),
-            outputs_dir=Path("outputs"),
-            logs_dir=Path("logs"),
-            prompts_dir=Path("prompts"),
+            workspace_root=Path("var/workspace/tasks"),
+            outputs_dir=Path("var/outputs"),
+            logs_dir=Path("var/logs"),
+            prompts_dir=Path("resources/prompts"),
             paper_path=Path(os.getenv("PAPER_PATH", "paper.pdf")),
             parser=ParserConfig(
                 backend=os.getenv("PARSER_BACKEND", "docling"),

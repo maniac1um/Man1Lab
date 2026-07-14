@@ -358,6 +358,7 @@ class FileExecutionStoreTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")},
         )
         try:
             self.assertEqual(process.stdout.readline().strip(), "locked")

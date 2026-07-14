@@ -119,7 +119,7 @@ Parsing → Analysis → Discovery → Execution Planning
  Planner → Coder → Runner → Verification → Review → Report
 ```
 
-Legacy maintainer entry: `app.py` — not a public interface.
+Legacy maintainer entry: `scripts/legacy_app.py` — not a public interface.
 
 **CLI (v1.2):** `interfaces/cli/` — Typer commands delegate exclusively to `Man1Lab`.
 
@@ -222,7 +222,7 @@ OpenAIProvider / DeepSeekProvider / AnthropicProvider / (future providers)
 
 **Reserved for future phases:** Gemini, OpenRouter, Ollama, Azure OpenAI.
 
-Configuration uses `LLMConfig.active` and `LLMConfig.profiles` in `conf/llm/default.yaml`. Legacy flat `OPENAI_*` fields remain supported and are auto-migrated into a `default` profile when profiles are absent.
+Configuration uses `LLMConfig.active` and `LLMConfig.profiles` in `resources/conf/llm/default.yaml`. Legacy flat `OPENAI_*` fields remain supported and are auto-migrated into a `default` profile when profiles are absent.
 
 ---
 

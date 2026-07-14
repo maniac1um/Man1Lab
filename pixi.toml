@@ -28,7 +28,7 @@ pypi-dependencies = { pytest = ">=8.0", pip = ">=24.0", build = ">=1.0" }
 default = { features = ["dev"], solve-group = "default" }
 
 [tasks]
-run = { cmd = "python app.py", env = { PYTHONPATH = "." } }
-man1lab = { cmd = "python -m man1lab", env = { PYTHONPATH = "." } }
-test = { cmd = "python -m pytest tests/ -v", env = { PYTHONPATH = "." } }
-integration = { cmd = "python scripts/run_integration_m7_1.py", env = { PYTHONPATH = "." } }
+run = { cmd = "python scripts/legacy_app.py", env = { PYTHONPATH = "src" } }
+man1lab = { cmd = "python -m man1lab", env = { PYTHONPATH = "src" } }
+test = { cmd = "python -m pytest tests/ -v", env = { PYTHONPATH = "src" } }
+integration = { cmd = "python scripts/run_integration_m7_1.py", env = { PYTHONPATH = "src" } }

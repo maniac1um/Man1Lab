@@ -173,7 +173,7 @@ class RuntimeProfilingBoundaryTest(unittest.TestCase):
     )
 
     def test_runtime_profiling_has_no_forbidden_imports(self) -> None:
-        profiling_root = REPO_ROOT / "runtime" / "profiling"
+        profiling_root = REPO_ROOT / "src" / "runtime" / "profiling"
         offenders: list[str] = []
         for path in profiling_root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))

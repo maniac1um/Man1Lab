@@ -130,7 +130,7 @@ class SDKIsolationTest(unittest.TestCase):
 
     def test_sdk_modules_do_not_import_workflow_or_cli(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        sdk_root = repo_root / "interfaces" / "sdk"
+        sdk_root = repo_root / "src" / "interfaces" / "sdk"
         offenders: list[str] = []
         for path in sdk_root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -150,7 +150,7 @@ class SDKIsolationTest(unittest.TestCase):
 
     def test_man1lab_package_reexports_sdk(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        source = (repo_root / "man1lab" / "__init__.py").read_text(encoding="utf-8")
+        source = (repo_root / "src" / "man1lab" / "__init__.py").read_text(encoding="utf-8")
         self.assertIn("from interfaces.sdk import", source)
         self.assertNotIn("workflow", source)
 

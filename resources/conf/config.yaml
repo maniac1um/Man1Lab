@@ -14,8 +14,8 @@ defaults:
   - tracking: default
   - _self_
 
-workspace_root: workspace/tasks
-outputs_dir: outputs
-logs_dir: logs
-prompts_dir: prompts
+workspace_root: var/workspace/tasks
+outputs_dir: var/outputs
+logs_dir: var/logs
+prompts_dir: resources/prompts
 paper_path: ${oc.env:PAPER_PATH,paper.pdf}

@@ -350,6 +350,7 @@ class V130ReleaseAcceptanceTest(unittest.TestCase):
                 text=True,
                 check=False,
                 timeout=60,
+                env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")},
             )
             self.assertEqual(completed.returncode, 86, completed.stderr)
 

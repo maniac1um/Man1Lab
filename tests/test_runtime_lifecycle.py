@@ -213,13 +213,13 @@ class RuntimeLifecycleBoundaryTest(unittest.TestCase):
 
     def test_runtime_core_has_no_forbidden_imports(self) -> None:
         paths = [
-            REPO_ROOT / "runtime" / "runtime.py",
-            REPO_ROOT / "runtime" / "state.py",
-            REPO_ROOT / "runtime" / "context.py",
-            REPO_ROOT / "runtime" / "lifecycle" / "errors.py",
-            *sorted((REPO_ROOT / "runtime" / "lazy").glob("*.py")),
-            *sorted((REPO_ROOT / "runtime" / "resources").glob("*.py")),
-            *sorted((REPO_ROOT / "runtime" / "session").glob("*.py")),
+            REPO_ROOT / "src" / "runtime" / "runtime.py",
+            REPO_ROOT / "src" / "runtime" / "state.py",
+            REPO_ROOT / "src" / "runtime" / "context.py",
+            REPO_ROOT / "src" / "runtime" / "lifecycle" / "errors.py",
+            *sorted((REPO_ROOT / "src" / "runtime" / "lazy").glob("*.py")),
+            *sorted((REPO_ROOT / "src" / "runtime" / "resources").glob("*.py")),
+            *sorted((REPO_ROOT / "src" / "runtime" / "session").glob("*.py")),
         ]
         offenders: list[str] = []
         for path in paths:
@@ -239,7 +239,7 @@ class RuntimeLifecycleBoundaryTest(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_profiling_remains_independent(self) -> None:
-        profiling_init = REPO_ROOT / "runtime" / "profiling" / "__init__.py"
+        profiling_init = REPO_ROOT / "src" / "runtime" / "profiling" / "__init__.py"
         source = profiling_init.read_text(encoding="utf-8")
         self.assertNotIn("lifecycle", source)
         self.assertNotIn("PlatformRuntime", source)

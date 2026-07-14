@@ -45,7 +45,7 @@ from tests.execution_engine_fixtures import linear_graph
 
 
 def _load_execution_wiring():
-    module_path = Path(__file__).resolve().parents[1] / "application" / "runtime" / "execution_wiring.py"
+    module_path = Path(__file__).resolve().parents[1] / "src" / "application" / "runtime" / "execution_wiring.py"
     spec = importlib.util.spec_from_file_location("execution_wiring_test", module_path)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None

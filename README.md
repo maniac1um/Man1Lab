@@ -217,6 +217,7 @@ Architecture documentation:
 - Architecture
 - Runtime
 - Current Status
+- [Project Structure](docs/PROJECT_STRUCTURE.md)
 - Roadmap
 
 ---

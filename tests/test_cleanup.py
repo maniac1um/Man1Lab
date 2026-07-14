@@ -300,7 +300,7 @@ class LifecycleBoundaryTest(unittest.TestCase):
     )
 
     def test_lifecycle_package_has_no_forbidden_imports(self) -> None:
-        lifecycle_root = REPO_ROOT / "application" / "lifecycle"
+        lifecycle_root = REPO_ROOT / "src" / "application" / "lifecycle"
         offenders: list[str] = []
         for path in lifecycle_root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))

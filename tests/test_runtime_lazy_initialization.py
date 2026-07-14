@@ -236,7 +236,7 @@ class RuntimeLazyBoundaryTest(unittest.TestCase):
     )
 
     def test_lazy_package_has_no_forbidden_imports(self) -> None:
-        lazy_dir = REPO_ROOT / "runtime" / "lazy"
+        lazy_dir = REPO_ROOT / "src" / "runtime" / "lazy"
         offenders: list[str] = []
         for path in sorted(lazy_dir.glob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -255,7 +255,7 @@ class RuntimeLazyBoundaryTest(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_no_global_singleton_in_lazy_package(self) -> None:
-        lazy_init = (REPO_ROOT / "runtime" / "lazy" / "__init__.py").read_text(encoding="utf-8")
+        lazy_init = (REPO_ROOT / "src" / "runtime" / "lazy" / "__init__.py").read_text(encoding="utf-8")
         self.assertNotIn("singleton", lazy_init.lower())
 
 

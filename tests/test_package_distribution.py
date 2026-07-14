@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import os
 import subprocess
 import sys
 import tempfile
@@ -37,7 +38,7 @@ def _test_settings(temp_dir: Path) -> AppSettings:
         workspace_root=temp_dir / "workspace",
         outputs_dir=temp_dir / "outputs",
         logs_dir=temp_dir / "logs",
-        prompts_dir=Path("prompts"),
+        prompts_dir=REPO_ROOT / "resources" / "prompts",
         paper_path=temp_dir / "paper.pdf",
         parser=ParserConfig(backend="pymupdf"),
         discovery=DiscoveryConfig(enabled=True),
@@ -83,6 +84,7 @@ class ConsoleEntryTest(unittest.TestCase):
             capture_output=True,
             text=True,
             check=False,
+            env={**os.environ, "PYTHONPATH": str(REPO_ROOT / "src")},
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("Man1Lab", result.stdout)
@@ -149,7 +151,7 @@ class PackageMetadataTest(unittest.TestCase):
 
     def test_manifest_includes_resources(self) -> None:
         manifest = (REPO_ROOT / "MANIFEST.in").read_text(encoding="utf-8")
-        self.assertIn("recursive-include conf", manifest)
+        self.assertIn("recursive-include resources/conf", manifest)
         self.assertIn(".env.example", manifest)
 
 
@@ -157,7 +159,7 @@ class PackageIsolationTest(unittest.TestCase):
     _FORBIDDEN_ROOTS = ("workflow", "agents", "discovery", "execution_planning")
 
     def test_man1lab_package_does_not_import_workflow(self) -> None:
-        package_root = REPO_ROOT / "man1lab"
+        package_root = REPO_ROOT / "src" / "man1lab"
         offenders: list[str] = []
         for path in package_root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -176,7 +178,7 @@ class PackageIsolationTest(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_man1lab_main_delegates_to_cli(self) -> None:
-        source = (REPO_ROOT / "man1lab" / "__main__.py").read_text(encoding="utf-8")
+        source = (REPO_ROOT / "src" / "man1lab" / "__main__.py").read_text(encoding="utf-8")
         self.assertIn("interfaces.cli.app", source)
 
 

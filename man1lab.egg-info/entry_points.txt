@@ -1,2 +1,0 @@
-[console_scripts]
-man1lab = interfaces.cli.app:run_cli

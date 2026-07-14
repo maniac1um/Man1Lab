@@ -142,7 +142,7 @@ docs(governance): add DEVELOPMENT.md and docs structure
 ### Rules
 
 - One logical milestone per commit when possible
-- Do not commit runtime artifacts (`workspace/tasks/*`, `outputs/*`, `logs/*`)
+- Do not commit runtime artifacts (`var/workspace/tasks/*`, `var/outputs/*`, `var/logs/*`)
 - Do not commit secrets or API keys
 - Write commit messages in complete sentences focusing on *why*
 
@@ -179,7 +179,7 @@ Changing a frozen interface requires:
 - Placeholder/mock return values
 - Private methods and attributes (e.g. `Reader._last_prompt`)
 - Test fixtures
-- Prompt file content under `prompts/`
+- Prompt file content under `resources/prompts/`
 
 ### Repository and Runtime Artifact Ownership
 
@@ -213,34 +213,17 @@ See [CAPABILITIES.md](docs/architecture/CAPABILITIES.md) for the capability refe
 
 ```text
 Man1Lab/
-├── app.py                  # Composition root
-├── config.py               # Configuration constants
+├── src/                    # All importable product packages
+├── resources/              # Hydra configuration and prompt assets
+├── var/                    # Generated workspaces, outputs, and logs
+├── scripts/                # Maintainer and compatibility entry points
+├── tests/                  # Unit, integration, and acceptance tests
+├── docs/                   # Architecture, guides, ADRs, and releases
 ├── pixi.toml               # Official environment (Pixi)
 ├── requirements.txt        # Legacy pip compatibility layer
-├── tracking/               # Experiment tracking (MLflow adapter)
 ├── DEVELOPMENT.md          # This file
 ├── ARCHITECTURE.md         # Pointer to canonical architecture doc
-├── docs/
-│   ├── README.md           # Documentation index
-│   ├── GETTING_STARTED.md  # Contributor quick start
-│   ├── CURRENT_STATUS.md   # Implementation status (single source of truth)
-│   ├── architecture/       # Architecture document
-│   ├── adr/                # Architecture Decision Records
-│   ├── reviews/            # Migration pointer (work docs in private/)
-│   └── api/                # API reference
-├── private/                # Local work documents (gitignored)
-├── agents/                 # Agent implementations
-├── models/                 # Pydantic domain models
-├── workflow/               # Orchestrator and pipeline
-├── services/               # Cross-cutting services (PDF, environment, execution)
-├── execution/              # ExecutionPlanner
-├── planning/               # PatchPlanner
-├── routing/                # TaskRouter
-├── prompt/                 # Prompt loader and builder
-├── prompts/                # Prompt resource files
-├── llm/                    # LLM provider abstraction
-├── workspace/              # Workspace manager
-└── tests/                  # Unit and integration tests
+└── pyproject.toml          # Packaging and test configuration
 ```
 
 ---
@@ -259,8 +242,8 @@ pixi run run
 
 ```bash
 pip install -r requirements.txt
-PYTHONPATH=. python -m pytest tests/ -v
-PYTHONPATH=. python app.py
+PYTHONPATH=src python -m pytest tests/ -v
+PYTHONPATH=src python scripts/legacy_app.py
 ```
 
 Set `PAPER_PATH` to override the default `paper.pdf` location.

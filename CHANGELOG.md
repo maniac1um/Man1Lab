@@ -104,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **LLM Provider foundation** — `LLMManager`, `ModelRegistry`, `ProviderRegistry` ([reviews/7.1](docs/reviews/7.1_llm_provider_foundation/))
-- **Model Registry** — named profiles, active profile resolution, validation, persistence to `conf/llm/user_profiles.yaml`
+- **Model Registry** — named profiles, active profile resolution, validation, persistence to `resources/conf/llm/user_profiles.yaml`
 - **Anthropic provider** — `claude-sonnet-4` and compatible models
 - **Model Management CLI** — `man1lab model list|current|use|add|remove|rename|test|validate`
 - **First-run Experience** — interactive `man1lab init` wizard for first model setup; `man1lab model export|import`

@@ -28,7 +28,7 @@ class HydraBootstrapTest(unittest.TestCase):
         self.assertIsInstance(settings, AppSettings)
         self.assertEqual(config.PARSER_BACKEND, "pymupdf")
         self.assertEqual(settings.parser.backend, "pymupdf")
-        self.assertEqual(settings.workspace_root, Path("workspace/tasks"))
+        self.assertEqual(settings.workspace_root, Path("var/workspace/tasks"))
         self.assertTrue(settings.tracking.enabled)
         self.assertEqual(settings.tracking.backend, "mlflow")
 

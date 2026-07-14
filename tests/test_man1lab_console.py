@@ -764,7 +764,7 @@ class ConsoleBoundaryTest(unittest.TestCase):
     )
 
     def test_console_package_has_no_forbidden_imports(self) -> None:
-        console_dir = REPO_ROOT / "runtime" / "console"
+        console_dir = REPO_ROOT / "src" / "runtime" / "console"
         offenders: list[str] = []
         for path in sorted(console_dir.glob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -784,8 +784,8 @@ class ConsoleBoundaryTest(unittest.TestCase):
 
     def test_console_does_not_import_workflow_modules(self) -> None:
         source = "\n".join(
-            (REPO_ROOT / "runtime" / "console" / name).read_text(encoding="utf-8")
-            for name in sorted(p.name for p in (REPO_ROOT / "runtime" / "console").glob("*.py"))
+            (REPO_ROOT / "src" / "runtime" / "console" / name).read_text(encoding="utf-8")
+            for name in sorted(p.name for p in (REPO_ROOT / "src" / "runtime" / "console").glob("*.py"))
         )
         self.assertNotIn("workflow.", source)
         self.assertNotIn("providers.", source)

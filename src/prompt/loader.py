@@ -1,12 +1,17 @@
 from pathlib import Path
 
 import config
+from configuration.paths import resolve_configured_prompts_dir
 from prompt.exceptions import PromptNotFoundError
 
 
 class PromptLoader:
     def __init__(self, prompts_dir: Path | None = None) -> None:
-        self._prompts_dir = prompts_dir or config.PROMPTS_DIR
+        self._prompts_dir = (
+            prompts_dir
+            if prompts_dir is not None
+            else resolve_configured_prompts_dir(config.PROMPTS_DIR)
+        )
         self._cache: dict[tuple[str, str], str] = {}
 
     def load(self, agent: str, section: str) -> str:
