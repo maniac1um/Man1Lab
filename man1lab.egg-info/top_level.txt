@@ -5,6 +5,7 @@ config
 configuration
 discovery
 execution
+execution_materialization
 execution_planning
 interfaces
 llm
