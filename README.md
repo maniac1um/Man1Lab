@@ -11,7 +11,7 @@ Starting from a research paper, it analyzes the methodology, discovers official 
 [![PyPI version](https://img.shields.io/pypi/v/man1lab)](https://pypi.org/project/man1lab/)
 [![Python Version](https://img.shields.io/pypi/pyversions/man1lab)](https://pypi.org/project/man1lab/)
 [![Latest Release](https://img.shields.io/github/v/release/maniac1um/Man1Lab)](https://github.com/maniac1um/Man1Lab/releases)
-[![Tests](https://img.shields.io/badge/tests-826%20passing-brightgreen)](docs/CURRENT_STATUS.md)
+[![Tests](https://img.shields.io/badge/tests-997%20passing-brightgreen)](docs/CURRENT_STATUS.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ![Man1Lab Console](docs/images/1.png)
@@ -52,7 +52,10 @@ Research Resource Discovery
 Execution Planning
    │
    ▼
-Execution (ongoing)
+Materialization
+   │
+   ▼
+Execution and Report
 ```
 
 Each stage produces structured artifacts that become the input of the next stage.
@@ -225,7 +228,7 @@ Architecture documentation:
   author  = {maniac1um},
   title   = {Man1Lab: An Autonomous Research Paper Reproduction Platform},
   year    = {2026},
-  version = {1.2.4},
+  version = {1.3.0},
   url     = {https://github.com/maniac1um/Man1Lab}
 }
 ```

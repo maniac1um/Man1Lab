@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from models.execution_evidence import EvidenceAvailability
+
 
 @dataclass(frozen=True)
 class ResolvedReference:
@@ -15,6 +17,9 @@ class ResolvedReference:
     source_kind: str
     source_id: str
     confidence: float = 1.0
+    availability: EvidenceAvailability = EvidenceAvailability.PRESENT
+    producer_node_id: str | None = None
+    producer_output: str | None = None
 
 
 @dataclass(frozen=True)

@@ -79,6 +79,7 @@ class ConsoleEntryTest(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, "-m", "man1lab", "--help"],
             cwd=REPO_ROOT,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             check=False,
@@ -183,7 +184,9 @@ class FacadeLifecycleTest(unittest.TestCase):
     def test_facade_init_and_doctor(self) -> None:
         from application import Man1Lab as Platform
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir, patch.dict(
+            "os.environ", {"OPENAI_API_KEY": "test-release-key"}
+        ):
             platform = Platform(
                 settings=_test_settings(Path(temp_dir)),
                 initialize_configuration=False,

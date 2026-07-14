@@ -388,7 +388,7 @@ SessionWorkspace                ← interaction references + hydration
 WorkspaceArtifactStore          ← runtime-owned stage persistence
 ```
 
-Execution persistence branch (v1.3 architecture; not yet implemented):
+Execution persistence branch (implemented in v1.3.0):
 
 ```text
 PlatformRuntime

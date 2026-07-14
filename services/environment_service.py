@@ -56,9 +56,16 @@ class EnvironmentService:
             )
 
         venv_path = workspace_path / VENV_DIRNAME
-        pip_path = self._pip_executable(venv_path)
+        venv_python = self._python_executable(venv_path)
         venv_command = [sys.executable, "-m", "venv", str(venv_path)]
-        pip_command = [str(pip_path), "install", "-r", str(requirements_path)]
+        pip_command = [
+            str(venv_python),
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            str(requirements_path),
+        ]
         executed_command = (
             f"{' '.join(venv_command)} && {' '.join(pip_command)}"
         )
@@ -162,10 +169,10 @@ class EnvironmentService:
         return result
 
     @staticmethod
-    def _pip_executable(venv_path: Path) -> Path:
+    def _python_executable(venv_path: Path) -> Path:
         scripts_dir = "Scripts" if os.name == "nt" else "bin"
-        pip_name = "pip.exe" if os.name == "nt" else "pip"
-        return venv_path / scripts_dir / pip_name
+        python_name = "python.exe" if os.name == "nt" else "python"
+        return venv_path / scripts_dir / python_name
 
     @staticmethod
     def _write_log(workspace_path: Path, log_lines: list[str]) -> None:

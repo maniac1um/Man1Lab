@@ -9,6 +9,7 @@ from execution_materialization.ports import MaterializationContext
 from execution_materialization.templates import TaskTemplateRegistry
 from execution_materialization.validation import ExecutionReadinessValidator
 from models.execution_graph import ExecutionGraph
+from models.execution_evidence import ExecutionEvidenceBundle
 from models.execution_materialization import ExecutionMaterialization
 from models.execution_strategy import ExecutionStrategy
 from models.research_resource_discovery import ResearchResourceDiscovery
@@ -35,12 +36,19 @@ def materialize_execution_graph(
     discovery: ResearchResourceDiscovery,
     graph: ExecutionGraph,
     workspace_root: Path,
+    evidence_bundle: ExecutionEvidenceBundle | None = None,
     materializer: ExecutionMaterializer | None = None,
 ) -> ExecutionMaterialization:
     """Materialize an abstract planning graph for the given workspace."""
     resolved = materializer or create_execution_materializer()
     context = create_materialization_context(workspace_root)
-    return resolved.materialize(strategy, discovery, graph, context)
+    return resolved.materialize(
+        strategy,
+        discovery,
+        graph,
+        context,
+        evidence_bundle=evidence_bundle,
+    )
 
 
 def persist_materialization(workspace_root: Path, materialization: ExecutionMaterialization) -> None:

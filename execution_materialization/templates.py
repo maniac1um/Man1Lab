@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import sys
 
 from execution_materialization.ports import ResolvedReference
 from models.execution_graph import ExecutionGraphStageType
@@ -117,7 +118,7 @@ def build_spec_from_template(
 
     if template.template_id == "local/pip_install_requirements":
         requirements = _path_relative_to_workdir(repo, evidence["requirements_file"].path)
-        command = ("python", "-m", "pip", "install", "-r", requirements)
+        command = (sys.executable, "-m", "pip", "install", "-r", requirements)
         return ExecutableTaskSpec(
             command=command,
             working_directory=workdir,
@@ -135,7 +136,7 @@ def build_spec_from_template(
         entry = _path_relative_to_workdir(repo, evidence["entry_script"].path)
         config = _path_relative_to_workdir(repo, evidence["config_path"].path)
         output = _path_relative_to_workdir(repo, evidence["output_path"].path)
-        command = ("python", entry, "--config", config)
+        command = (sys.executable, entry, "--config", config)
         return ExecutableTaskSpec(
             command=command,
             working_directory=workdir,
@@ -153,7 +154,7 @@ def build_spec_from_template(
         entry = _path_relative_to_workdir(repo, evidence["eval_script"].path)
         config = _path_relative_to_workdir(repo, evidence["config_path"].path)
         output = _path_relative_to_workdir(repo, evidence["output_path"].path)
-        command = ("python", entry, "--config", config)
+        command = (sys.executable, entry, "--config", config)
         return ExecutableTaskSpec(
             command=command,
             working_directory=workdir,
@@ -170,7 +171,7 @@ def build_spec_from_template(
     if template.template_id == "local/report_collect":
         entry = _path_relative_to_workdir(repo, evidence["comparison_script"].path)
         output = _path_relative_to_workdir(repo, evidence["output_path"].path)
-        command = ("python", entry, "--output", output)
+        command = (sys.executable, entry, "--output", output)
         return ExecutableTaskSpec(
             command=command,
             working_directory=workdir,

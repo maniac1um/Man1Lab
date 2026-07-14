@@ -296,7 +296,10 @@ class FileExecutionStoreTest(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        with mock.patch("os.kill", return_value=None):
+        with mock.patch(
+            "runtime.execution_store.locking._pid_is_running",
+            return_value=True,
+        ):
             with self.assertRaises(WriterConflictError):
                 RunWriterLock(run_dir).acquire()
 
@@ -316,7 +319,10 @@ class FileExecutionStoreTest(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        with mock.patch("os.kill", return_value=None):
+        with mock.patch(
+            "runtime.execution_store.locking._pid_is_running",
+            return_value=True,
+        ):
             self.assertFalse(RunWriterLock(run_dir).recover_stale())
             with self.assertRaises(WriterConflictError):
                 RunWriterLock(run_dir).acquire()
@@ -348,6 +354,7 @@ class FileExecutionStoreTest(unittest.TestCase):
         process = subprocess.Popen(
             [sys.executable, "-c", script, str(run_dir)],
             cwd=Path(__file__).resolve().parents[1],
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -357,7 +364,6 @@ class FileExecutionStoreTest(unittest.TestCase):
             with self.assertRaises(WriterConflictError):
                 RunWriterLock(run_dir).acquire()
         finally:
-            process.terminate()
             process.communicate(timeout=5)
 
     def test_journal_recovery_after_crash_before_snapshots(self) -> None:

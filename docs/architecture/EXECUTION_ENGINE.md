@@ -1,7 +1,7 @@
 # Execution Engine Architecture
 
 **Target:** Man1Lab v1.3 foundation  
-**Status:** Foundation, Runtime persistence, LocalExecutor, platform integration, and Materialization foundation implemented; full executable graph coverage pending
+**Status:** v1.3.0 implemented for READY graphs backed by complete, conflict-free, pinned execution evidence
 **Audience:** Architects and Execution Engine implementers  
 **Canonical model specification:** [EXECUTION_MODEL.md](EXECUTION_MODEL.md)
 

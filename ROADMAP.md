@@ -1,7 +1,7 @@
 # Man1Lab Roadmap
 
-**Last updated:** 2026-07-08  
-**Current version:** v1.2.3 (Release Candidate)
+**Last updated:** 2026-07-14
+**Current version:** v1.3.0
 
 For live implementation state see [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md). For release history see [docs/releases/README.md](docs/releases/README.md).
 
@@ -97,9 +97,24 @@ Release: [docs/releases/v1.2.3.md](docs/releases/v1.2.3.md)
 
 ---
 
+### v1.3 — Execution Runtime & Materialization (2026-07-14)
+
+| Deliverable | Status |
+|-------------|--------|
+| Runtime-owned ExecutionStore and crash-consistent persistence | ✅ |
+| LocalExecutor and platform/console integration | ✅ |
+| Planning-to-Execution Materialization and readiness gate | ✅ |
+| Typed execution evidence and bounded preparation | ✅ |
+| Provider-driven pinned release acceptance | ✅ |
+| Cross-process conservative reconciliation | ✅ |
+
+Release: [docs/releases/v1.3.0.md](docs/releases/v1.3.0.md)
+
+---
+
 ## Planned
 
-### v1.3 — Repository Understanding
+### v1.4 — Repository Understanding
 
 | Goal | Direction |
 |------|-----------|
@@ -111,7 +126,7 @@ Release: [docs/releases/v1.2.3.md](docs/releases/v1.2.3.md)
 
 ---
 
-### v1.4 — Repository Adaptation
+### v1.5 — Repository Adaptation
 
 | Goal | Direction |
 |------|-----------|
@@ -122,7 +137,7 @@ Release: [docs/releases/v1.2.3.md](docs/releases/v1.2.3.md)
 
 ---
 
-### v1.5 — Knowledge Memory
+### Future — Knowledge Memory
 
 | Goal | Direction |
 |------|-----------|

@@ -10,12 +10,14 @@ from application.runtime.materialization_wiring import (
     materialize_execution_graph,
     persist_materialization,
 )
+from discovery.execution_evidence import project_execution_evidence
 from execution_planning.execution_graph import build_execution_graph
 from models.execution_materialization import ExecutionMaterialization, MaterializationReport, MaterializationStatus
 from models.paper_reproduction_analysis import PaperReproductionAnalysis
 from models.report import ReportModel
 from models.research_resource_discovery import ResearchResourceDiscovery
 from runtime.session.decision_artifacts import persist_planning_decision_artifacts
+from runtime.session.execution_evidence_artifacts import ExecutionEvidenceArtifactStore
 from runtime.session.workspace_store import WorkspaceArtifactStore
 
 
@@ -61,6 +63,9 @@ class ReproductionPipelineService:
         discovery = self._discover(analysis)
         store.save_discovery(discovery)
 
+        evidence_bundle = project_execution_evidence(discovery)
+        ExecutionEvidenceArtifactStore(self._workspace_root).save(evidence_bundle)
+
         strategy = self._plan(analysis, discovery)
         store.save_strategy(strategy)
 
@@ -73,6 +78,7 @@ class ReproductionPipelineService:
             discovery=discovery,
             graph=abstract_graph,
             workspace_root=self._workspace_root,
+            evidence_bundle=evidence_bundle,
         )
         persist_materialization(self._workspace_root, materialization)
 

@@ -7,6 +7,9 @@ from __future__ import annotations
 
 
 from datetime import UTC, datetime
+import hashlib
+import json
+from pathlib import Path
 
 from uuid import uuid4
 
@@ -75,6 +78,19 @@ class InMemoryArtifactTracker:
         self._artifacts: dict[str, Artifact] = {}
         self._workspace_root = workspace_root.replace("\\", "/").rstrip("/")
 
+    def _workspace_relative_location(self, location_ref: str) -> str:
+        if not location_ref or not self._workspace_root:
+            return location_ref
+        candidate = Path(location_ref)
+        if not candidate.is_absolute():
+            return location_ref.replace("\\", "/")
+        root = Path(self._workspace_root).resolve()
+        resolved = candidate.resolve()
+        try:
+            return resolved.relative_to(root).as_posix()
+        except ValueError:
+            return location_ref
+
 
 
     def register_candidate(
@@ -97,7 +113,8 @@ class InMemoryArtifactTracker:
 
         artifact_id = f"art-{uuid4()}"
 
-        if candidate.location_ref and not _location_ref_safe(candidate.location_ref):
+        location_ref = self._workspace_relative_location(candidate.location_ref)
+        if location_ref and not _location_ref_safe(location_ref):
             raise UnsafeArtifactLocationError(
                 f"unsafe location_ref for {candidate.logical_name}: {candidate.location_ref}"
             )
@@ -118,7 +135,7 @@ class InMemoryArtifactTracker:
 
             scope=scope,
 
-            location_ref=candidate.location_ref,
+            location_ref=location_ref,
 
             size_bytes=candidate.size_bytes,
 
@@ -376,7 +393,31 @@ class InMemoryArtifactTracker:
             return False
         if artifact.location_ref and not _location_ref_safe(artifact.location_ref):
             return False
+        if not self._preparation_receipt_valid(artifact.location_ref):
+            return False
         return True
+
+    def _preparation_receipt_valid(self, location_ref: str) -> bool:
+        if not location_ref or not self._workspace_root or not location_ref.endswith("_receipt.json"):
+            return True
+        receipt = (Path(self._workspace_root) / location_ref).resolve()
+        root = Path(self._workspace_root).resolve()
+        try:
+            receipt.relative_to(root)
+        except ValueError:
+            return False
+        if not receipt.is_file():
+            return False
+        try:
+            payload = json.loads(receipt.read_text(encoding="utf-8"))
+            target = (root / str(payload["target_path"])).resolve()
+            target.relative_to(root)
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            return False
+        if not target.exists():
+            return False
+        expected = str(payload.get("checksum_sha256", ""))
+        return not expected or _digest_path(target) == expected
 
     def hydrate_artifacts(self, artifacts: tuple[Artifact, ...]) -> None:
         """Load persisted artifact manifests into the in-memory tracker."""
@@ -415,6 +456,7 @@ class InMemoryArtifactTracker:
                 and artifact.scope == declaration.scope
                 and artifact.validation_state == ArtifactValidationState.VALID
                 and (not artifact.location_ref or _location_ref_safe(artifact.location_ref))
+                and self._preparation_receipt_valid(artifact.location_ref)
             ]
             if not matches:
                 return False
@@ -423,4 +465,18 @@ class InMemoryArtifactTracker:
             except ArtifactIntegrityError:
                 return False
         return True
+
+
+def _digest_path(path: Path) -> str:
+    if path.is_file():
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    digest = hashlib.sha256()
+    for item in sorted(candidate for candidate in path.rglob("*") if candidate.is_file()):
+        digest.update(item.relative_to(path).as_posix().encode("utf-8"))
+        digest.update(_digest_path(item).encode("ascii"))
+    return digest.hexdigest()
 

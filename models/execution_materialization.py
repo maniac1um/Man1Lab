@@ -91,6 +91,7 @@ class ExecutionMaterialization(BaseModel):
     graph_id: str
     discovery_id: str | None = None
     analysis_id: str | None = None
+    evidence_bundle_id: str | None = None
     backend_kind: str = "local"
     materialized_graph: ExecutionGraph
     report: MaterializationReport

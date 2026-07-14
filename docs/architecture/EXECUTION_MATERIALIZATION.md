@@ -1,6 +1,6 @@
 # Planning-to-Execution Materialization Architecture
 
-**Status:** Foundation implemented; supported-template coverage and controlled end-to-end reproduction remain incomplete
+**Status:** Foundation and initial preparation templates implemented; provider evidence breadth and paper-level end-to-end reproduction remain incomplete
 **Target:** Man1Lab v1.3 executable reproduction path
 **Audience:** Architects and implementers
 

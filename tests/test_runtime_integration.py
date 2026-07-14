@@ -432,7 +432,7 @@ class PromptRegistryPathResolutionTest(unittest.TestCase):
 
         previous = os.getcwd()
         try:
-            os.chdir("/tmp")
+            os.chdir(tempfile.gettempdir())
             settings = _test_settings(REPO_ROOT)
             manager = RuntimeResourceManager()
             wire_runtime_resources(manager, settings=settings, initialize_configuration=False)
@@ -448,7 +448,7 @@ class PromptRegistryPathResolutionTest(unittest.TestCase):
 
         previous = os.getcwd()
         try:
-            os.chdir("/tmp")
+            os.chdir(tempfile.gettempdir())
             with tempfile.TemporaryDirectory() as temp_dir:
                 settings = _test_settings(Path(temp_dir))
                 platform = Man1Lab(

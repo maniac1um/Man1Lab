@@ -46,6 +46,7 @@ class MaterializationArtifactStore:
             "graph_id": materialization.graph_id,
             "discovery_id": materialization.discovery_id,
             "analysis_id": materialization.analysis_id,
+            "evidence_bundle_id": materialization.evidence_bundle_id,
             "backend_kind": materialization.backend_kind,
             "created_at": materialization.created_at.isoformat(),
             "schema_version": materialization.schema_version,

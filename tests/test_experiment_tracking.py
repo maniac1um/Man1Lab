@@ -8,6 +8,7 @@ import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import patch
 
 from agents.coder import Coder
 from agents.planner import Planner
@@ -92,13 +93,15 @@ class ExperimentTrackerBootstrapTest(unittest.TestCase):
         self.assertIsInstance(tracker, NoOpExperimentTracker)
 
     def test_build_mlflow_backend(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "mlflow.db"
+        with tempfile.TemporaryDirectory() as temp_dir, patch.dict(
+            "os.environ", {"MLFLOW_ALLOW_FILE_STORE": "true"}
+        ):
+            tracking_root = Path(temp_dir) / "mlruns"
             tracker = build_experiment_tracker(
                 TrackingConfig(
                     enabled=True,
                     backend="mlflow",
-                    tracking_uri=f"sqlite:///{db_path}",
+                    tracking_uri=tracking_root.as_uri(),
                 )
             )
         self.assertIsInstance(tracker, MLflowExperimentTracker)
@@ -106,9 +109,11 @@ class ExperimentTrackerBootstrapTest(unittest.TestCase):
 
 class MLflowExperimentTrackerTest(unittest.TestCase):
     def test_records_run_params_metrics_artifacts_and_nested_runs(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "mlflow.db"
-            tracking_uri = f"sqlite:///{db_path}"
+        with tempfile.TemporaryDirectory() as temp_dir, patch.dict(
+            "os.environ", {"MLFLOW_ALLOW_FILE_STORE": "true"}
+        ):
+            tracking_root = Path(temp_dir) / "mlruns"
+            tracking_uri = tracking_root.as_uri()
             tracker = MLflowExperimentTracker(
                 tracking_uri=tracking_uri,
                 experiment_name="test-experiment",
@@ -126,7 +131,7 @@ class MLflowExperimentTrackerTest(unittest.TestCase):
                     tracker.set_tag("status", "SUCCESS")
                 tracker.log_artifact(artifact)
 
-            self.assertTrue(db_path.exists())
+            self.assertTrue(tracking_root.exists())
 
 
 class TrackedWorkflowOrchestratorTest(unittest.TestCase):

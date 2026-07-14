@@ -68,7 +68,7 @@ def _inputs_for_node(node: ExecutionGraphNode) -> tuple[ExecutionArtifactReferen
             ExecutionArtifactReference(
                 logical_name=f"binding:{binding_id}",
                 artifact_type="binding",
-                required=True,
+                required=node.execution_spec is None,
                 role="binding",
             )
         )

@@ -2,17 +2,18 @@
 
 **Project:** Man1Lab  
 **Single source of truth for implementation and integration state.**  
-**Last updated:** 2026-07-13
+**Last updated:** 2026-07-14
 
 | Field | Value |
 |-------|-------|
-| **Current Version** | **v1.3 (in progress)** |
+| **Current Version** | **v1.3.0** |
+| **Release Readiness** | **READY** |
 | **License** | MIT ([LICENSE](../../LICENSE)) |
-| **Milestone** | **Planning-to-Execution Materialization** |
+| **Milestone** | **Execution Runtime and Materialization released** |
 | **Previous Release** | v1.2.4 (Console UX and Workspace Persistence) |
 | **Next Milestone** | **Repository Understanding (v1.4)** |
 
-Release notes: [releases/v1.2.4.md](releases/v1.2.4.md) · Previous: [releases/v1.2.3.md](releases/v1.2.3.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
+Release notes: [releases/v1.3.0.md](releases/v1.3.0.md) · Previous: [releases/v1.2.4.md](releases/v1.2.4.md) · Roadmap: [ROADMAP.md](../ROADMAP.md)
 
 For install and run: [GETTING_STARTED.md](GETTING_STARTED.md). Architecture: [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md).
 
@@ -37,7 +38,7 @@ CLI (man1lab)  ·  Interactive Console  ·  Python SDK  ·  Future MCP  ·  Futu
 | **CLI** | `interfaces/cli/` | ✅ Typer — `man1lab init\|doctor\|clean\|model\|reproduce\|profile\|…` |
 | **Interactive Console** | `runtime/console/` | ✅ `man1lab` (no args) — guided REPL, pipeline commands, workspace persistence |
 | **Python SDK** | `man1lab/` + `interfaces/sdk/` | ✅ `from man1lab import Man1Lab` |
-| **Package** | `pyproject.toml` | ✅ `pip install man1lab` (v1.2.4) |
+| **Package** | `pyproject.toml` | ✅ `pip install man1lab` (v1.3.0) |
 | **Lifecycle** | `application/lifecycle/` | ✅ `init` (+ first-model wizard), `doctor` (+ LLM checks), `clean` |
 | **LLM Providers** | `providers/llm/` | ✅ `LLMManager`, `ModelRegistry`, `ProviderRegistry`, OpenAI, DeepSeek, Anthropic |
 | **Model CLI** | `interfaces/cli/commands/model.py` | ✅ `man1lab model list\|current\|use\|add\|remove\|rename\|test\|validate\|export\|import` |
@@ -70,9 +71,9 @@ ExecutionResult                 ← Runner
 ReportModel                     ← Reporter
 ```
 
-### Planned (roadmap only)
+### Execution path (implemented in v1.3.0)
 
-The canonical v1.3 execution path extends the implemented planning pipeline as follows:
+The canonical v1.3.0 execution path extends the planning pipeline as follows:
 
 ```text
 ExecutionStrategy + abstract ExecutionGraph
@@ -84,7 +85,7 @@ ExecutionStrategy + abstract ExecutionGraph
 
 | Artifact | Milestone |
 |----------|-----------|
-| `RepositoryKnowledge` | v1.3 Repository Understanding |
+| `RepositoryKnowledge` | v1.4 Repository Understanding |
 
 ---
 
@@ -124,12 +125,12 @@ Planner → Coder → Runner → Verification → Reviewer → Reporter
 | Reporter | ✅ | `ReportModel` |
 | Experiment Tracking | ✅ | MLflow (optional noop) |
 | Platform Runtime | ✅ | Lifecycle, resources, profiling, session |
-| Execution Engine Foundation | 🚧 Foundation complete | Canonical models, decomposition, sequential scheduler, state machine, trace, artifact tracking, report, memory-level resume |
+| Execution Engine | ✅ v1.3.0 | Canonical models, decomposition, sequential scheduler, state machine, trace, artifacts, report, durable resume |
 | Runtime Execution Persistence | ✅ Phase 1–2 + audit | Journal replay, revision-tagged snapshots, O_EXCL locks, typed runtime wiring |
 | Local execution platform integration | ✅ | `LocalExecutor`, `PlatformExecutionService`, Facade and Console execution commands |
-| Planning-to-Execution Materialization | 🚧 Foundation implemented | Typed specs, supported templates, resolvers, strict readiness gate, reproduction pipeline; default full Planning graph coverage remains incomplete |
+| Planning-to-Execution Materialization | ✅ Bounded v1.3 contract | Typed specs, preparation templates, resolvers, strict readiness gate, and one-command pipeline |
 
-### Execution Engine maturity (v1.3 foundation)
+### Execution Engine maturity (v1.3.0)
 
 | Component | Status |
 |-----------|--------|
@@ -139,10 +140,10 @@ Planner → Coder → Runner → Verification → Reviewer → Reporter
 | Artifact model/tracker port | ✅ |
 | Memory-level resume and reconciliation contracts | ✅ |
 | Runtime-owned `ExecutionStore` | ✅ Phase 1–2 |
-| Cross-process crash recovery | ✅ Phase 1–2 (file store; LocalExecutor E2E deferred) |
+| Cross-process crash recovery | ✅ Real process interruption, reload, reconciliation, and completed-task reuse verified |
 | Real `LocalExecutor` | ✅ |
 | Facade/console execution integration | ✅ |
-| Ordinary Planning graph materialization | 🚧 Partial — unsupported preparation stages block safely |
+| Planning graph materialization | ✅ For complete, conflict-free, pinned evidence; incomplete/unsupported cases block safely |
 
 ### Execution Planning maturity (v1.2.1+)
 
@@ -225,7 +226,7 @@ Phase audits: [reviews/8.1_runtime_performance_audit/](reviews/8.1_runtime_perfo
 
 | Metric | Value |
 |--------|-------|
-| **Unit tests** | **109 Execution Engine + persistence tests passing** (verified 2026-07-13); full `tests/` suite requires project dependencies |
+| **Full suite** | **997 passed, 76 dependency warnings, 8 subtests passed** (Python 3.14, Windows, verified 2026-07-14) |
 | Runtime | `tests/test_runtime_*.py`, `tests/test_man1lab_console.py` |
 | Platform facade | `tests/test_platform_facade.py` |
 | CLI | `tests/test_cli.py` |
@@ -235,21 +236,13 @@ Phase audits: [reviews/8.1_runtime_performance_audit/](reviews/8.1_runtime_perfo
 | Platform integration | `tests/test_platform_integration.py` |
 | Discovery / GitHub / Execution Planning | Dedicated test modules |
 | Execution persistence | `tests/test_execution_store.py`, `tests/test_execution_runtime_integration.py` |
-Execution Engine + persistence (109 tests):
+Full release gate:
 
 ```bash
-python -m pytest tests/test_execution_engine_models.py tests/test_execution_graph_validation.py tests/test_execution_decomposition.py tests/test_execution_scheduler.py tests/test_execution_resume.py tests/test_execution_ports.py tests/test_execution_audit_remediation.py tests/test_execution_second_audit_remediation.py tests/test_execution_store.py tests/test_execution_runtime_integration.py -q
+python -m pytest tests/ -q
 ```
 
-The 109-test verification was also executed with the equivalent `unittest` module list in the available audit runtime. The broader `test_execution*.py` discovery reached 166 tests but 9 Execution Planning modules could not be collected because that audit runtime does not include `fitz`; this is an environment limitation, not recorded as a passing full-suite result.
-
-Regression subset:
-
-```bash
-python -m pytest tests/test_execution_store.py tests/test_execution_runtime_integration.py -q
-```
-
-Full suite (`python -m pytest tests/`) requires project dependencies (`python-dotenv`, `PyMuPDF`/fitz, etc.); collection fails in minimal environments without them.
+The complete suite finished with zero failures and no unexplained hangs. The warnings are MLflow deprecation warnings from the installed dependency and do not affect test outcomes.
 
 ---
 
@@ -265,27 +258,32 @@ Full suite (`python -m pytest tests/`) requires project dependencies (`python-do
 | L-06 | MCP / REST interfaces not implemented | Roadmap |
 | L-07 | `execution_planning.enabled=false` uses legacy Planner path | Transitional |
 | L-08 | SDK does not expose model management methods | Optional polish |
-| L-09 | Console execution is wired, but some ordinary Planning graphs contain preparation stages without supported templates | Partially resolved; readiness gate blocks safely |
-| L-10 | Repository entrypoint/output resolution is not yet materialized from verified evidence | Partial (evidence-backed v1.3 path only) |
+| L-09 | Execution requires complete, conflict-free, pinned provider evidence | Supported v1.3 contract; incomplete cases block safely |
+| L-10 | Arbitrary-paper reproduction is not supported or claimed | Product boundary |
 | L-11 | Execution runs, attempts, and trace durably persisted | Resolved (v1.3 Phase 1–2) |
-| L-12 | Interrupted `RUNNING` tasks reconciled across processes | Resolved (v1.3 Phase 2; LocalExecutor E2E deferred) |
+| L-12 | Process-lost LocalExecutor attempts require conservative reconciliation and are not automatically redispatched | Supported safety behavior |
 
 Full benchmark history: [benchmark section in prior releases](releases/v1.1.0.md).
 
 ---
 
-## Next Milestone — Repository Understanding (v1.4)
+## v1.3.0 Execution Readiness
 
 | Capability | Direction |
 |------------|-----------|
 | **ExecutionStore** | ✅ Phase 1–2 complete |
 | **Runtime injection** | ✅ Phase 1–2 complete |
-| **Crash resume** | ✅ Phase 1–2 (file store + engine; E2E with LocalExecutor deferred) |
+| **Crash resume** | ✅ Cross-process reload and conservative LocalExecutor reconciliation verified |
 | **First backend** | ✅ LocalExecutor + facade/console integration |
 | **Materialization models and readiness gate** | ✅ Implemented |
-| **One-command reproduction** | ✅ `ReproductionPipelineService` + facade/console delegation |
+| **One-command orchestration** | ✅ `ReproductionPipelineService` + facade/console delegation |
+| **Typed execution evidence** | ✅ Canonical bundle, deterministic projector, conflict handling, workspace persistence |
+| **Repository/dataset/checkpoint/config preparation** | ✅ Initial local/Git/HTTPS/render templates, safe operations, receipts, integrity checks |
+| **Future-reference and resume validation** | ✅ Producer dependency validation and receipt/resource revalidation |
+| **Controlled one-command reproduction fixture** | ✅ Application pipeline → materialize → LocalExecutor → artifacts/report |
+| **Provider-driven release fixture** | ✅ Pinned DeiT evidence → generated graph → LocalExecutor → ExecutionStore → ExecutionReport |
 
-See [architecture/EXECUTION_MATERIALIZATION.md](architecture/EXECUTION_MATERIALIZATION.md), [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md), and [ROADMAP.md](ROADMAP.md).
+See [architecture/REPRODUCTION_EXECUTION_READINESS.md](architecture/REPRODUCTION_EXECUTION_READINESS.md), [architecture/EXECUTION_MATERIALIZATION.md](architecture/EXECUTION_MATERIALIZATION.md), [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md), and [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -296,10 +294,11 @@ See [architecture/EXECUTION_MATERIALIZATION.md](architecture/EXECUTION_MATERIALI
 | Install and run | [GETTING_STARTED.md](GETTING_STARTED.md) |
 | Architecture | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md), [architecture/RUNTIME.md](architecture/RUNTIME.md) |
 | Planning-to-Execution Materialization | [architecture/EXECUTION_MATERIALIZATION.md](architecture/EXECUTION_MATERIALIZATION.md) |
+| Reproduction Execution Readiness | [architecture/REPRODUCTION_EXECUTION_READINESS.md](architecture/REPRODUCTION_EXECUTION_READINESS.md) |
 | Execution Runtime architecture | [architecture/EXECUTION_RUNTIME.md](architecture/EXECUTION_RUNTIME.md) |
 | Execution Runtime roadmap | [ROADMAP.md](ROADMAP.md) |
 | Product roadmap | [ROADMAP.md](../ROADMAP.md) |
-| Release notes | [releases/v1.2.4.md](releases/v1.2.4.md) |
+| Release notes | [releases/v1.3.0.md](releases/v1.3.0.md) |
 | ADRs | [adr/README.md](adr/README.md) |
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |
 

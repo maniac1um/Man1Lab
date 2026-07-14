@@ -592,9 +592,9 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 | Review loop re-implementation | Patch plan produced; automatic Coder/Runner retry not enabled |
 | Full training reproduction success | Pipeline runs end-to-end; success not guaranteed |
 | MCP / REST interfaces | Reserved layout only |
-| Execution Engine Foundation | Core models, scheduling, state machine, trace, artifacts, report, and memory-level resume implemented; real backend/integration partial |
+| Execution Engine | Core models, scheduling, state machine, trace, artifacts, reports, durable persistence, and LocalExecutor implemented |
 | Runtime-owned execution persistence | ✅ Phase 1–2 — `FileExecutionStore`, engine injection, cross-process resume |
-| Planning-to-Execution Materialization | Foundation implemented; preparation-stage coverage and controlled E2E pending |
+| Planning-to-Execution Materialization | Implemented for complete, conflict-free, pinned execution evidence; incomplete and unsupported cases block safely |
 
 ### Planned (roadmap)
 
@@ -602,7 +602,7 @@ See [ADR-0013](../adr/ADR-0013-Research-Resource-Discovery.md), [ADR-0014](../ad
 |------------|-----------|
 | **ExecutionStore + Runtime injection** | ✅ v1.3 Phase 1–2 |
 | **LocalExecutor + facade/console** | ✅ implemented |
-| **Planning-to-Execution Materialization** | v1.3 — executable graph readiness gate |
+| **Planning-to-Execution Materialization** | ✅ v1.3 — bounded executable graph readiness contract |
 | **Repository Understanding** | v1.4 — `RepositoryKnowledge` artifact |
 | **Repository Adaptation** | v1.5 |
 | **Knowledge Memory** | Future |
@@ -704,4 +704,4 @@ Non-goals are **features intentionally deferred or excluded**, not missing bugs.
 | Backend swap (e.g. parser) | §3 Parsing only | Yes |
 | Implementation detail | No — use CAPABILITIES / CURRENT_STATUS | Rarely |
 
-**Last aligned with:** Man1Lab v1.2.4 — Console UX and Workspace Persistence
+**Last aligned with:** Man1Lab v1.3.0 — Execution Runtime and Materialization

@@ -73,11 +73,10 @@ class EnvironmentServiceTest(unittest.TestCase):
         pip_commands = [
             command
             for command, _ in self._recording_runner.commands
-            if command and Path(command[0]).name.startswith("pip")
+            if len(command) >= 4 and command[1:4] == ["-m", "pip", "install"]
         ]
         self.assertEqual(len(pip_commands), 1)
-        self.assertIn("install", pip_commands[0])
-        self.assertIn("-r", pip_commands[0])
+        self.assertEqual(pip_commands[0][1:5], ["-m", "pip", "install", "-r"])
         self.assertTrue(
             any("requirements.txt" in part for part in pip_commands[0])
         )
@@ -101,7 +100,7 @@ class EnvironmentServiceTest(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.workspace_path, workspace.root_path.resolve())
         self.assertIn("venv", result.executed_command)
-        self.assertIn("pip install", result.executed_command)
+        self.assertIn("-m pip install -r", result.executed_command)
         self.assertGreater(result.execution_time_seconds, 0.0)
 
 

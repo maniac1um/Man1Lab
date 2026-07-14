@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-14
+
+**Execution Runtime & Materialization** — durable local execution for plans backed by complete, conflict-free, pinned execution evidence.
+
+### Added
+
+- Runtime-owned `ExecutionStore` with atomic snapshots, append-only traces, artifact manifests, reports, and conservative cross-process reconciliation
+- Execution Engine lifecycle, scheduler, task decomposition, reports, and `LocalExecutor`
+- Planning-to-Execution Materialization with typed executable specifications and a readiness gate
+- Typed repository, dataset, checkpoint, and configuration evidence with bounded preparation operations
+- One-command application orchestration from Analysis through durable `ExecutionReport`
+- Provider-driven DeiT release acceptance covering pinned evidence, LocalExecutor, persistence, report generation, and real process interruption
+
+### Changed
+
+- `PLATFORM_VERSION` → 1.3.0
+- Virtual-environment installation uses `<venv-python> -m pip install`, independent of platform executable naming
+
+### Compatibility and limitations
+
+- Existing Planning, Runtime, Facade, and console boundaries remain intact
+- Reproduction executes only when Discovery supplies complete, conflict-free, pinned execution evidence
+- Missing, conflicting, unsupported, or authenticated evidence is rejected as `BLOCKED` or `UNSUPPORTED`; arbitrary-paper reproduction is not claimed
+- LocalExecutor is the only v1.3.0 backend; Docker, remote GPU, cluster, and robot backends remain out of scope
+- A process-lost LocalExecutor attempt is conservatively reported as `RECONCILIATION_REQUIRED`; it is not automatically redispatched
+
+[1.3.0]: https://github.com/maniac1um/Man1Lab/releases/tag/v1.3.0
+
 ## [1.2.4] - 2026-07-09
 
 **Console UX & Workspace Persistence** — guided console workflow, pipeline commands, runtime-owned artifact persistence, and resume utilities.

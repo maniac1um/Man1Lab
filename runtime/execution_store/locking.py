@@ -165,11 +165,37 @@ class RunWriterLock:
         local_host = os.environ.get("COMPUTERNAME", os.environ.get("HOSTNAME", ""))
         if info.host and local_host and info.host != local_host:
             return False
-        try:
-            os.kill(info.pid, 0)
-        except OSError:
+        if not _pid_is_running(info.pid):
             return True
         # A live owner never becomes stale merely because a task runs for a long
         # time. Long-running training commonly exceeds the diagnostic age
         # threshold; PID liveness is authoritative for a local lock.
         return False
+
+
+def _pid_is_running(pid: int) -> bool:
+    """Check process liveness without using terminating Windows signals."""
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        import ctypes
+
+        process_query_limited_information = 0x1000
+        still_active = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+        if not handle:
+            # Access denied means the process exists but cannot be inspected.
+            return kernel32.GetLastError() == 5
+        try:
+            exit_code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return True
+            return exit_code.value == still_active
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True

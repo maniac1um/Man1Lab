@@ -128,6 +128,7 @@ class DecompositionProjectionTest(unittest.TestCase):
                 for key in project_spec_to_metadata(spec)
             })
             parse_local_invocation(task, default_working_directory=root)
+            self.assertTrue(all(not item.required for item in task.inputs))
 
 
 def _discovery_with_evidence(

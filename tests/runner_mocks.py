@@ -17,7 +17,7 @@ def mock_command_runner(command: list[str], cwd: Path) -> CommandResult:
         (scripts_path / python_name).write_text("", encoding="utf-8")
         return CommandResult(0, "virtual environment created\n", "")
 
-    if command and Path(command[0]).name.startswith("pip"):
+    if len(command) >= 4 and command[1:4] == ["-m", "pip", "install"]:
         return CommandResult(0, "requirements installed\n", "")
 
     if command and any(part.endswith("train.py") for part in command):

@@ -131,7 +131,7 @@ class LocalExecutorRuntimeIntegrationTest(unittest.TestCase):
                     logs_dir=logs_dir.as_posix(),
                 )
             )
-            self.assertTrue(outcome.succeeded)
+            self.assertTrue(outcome.succeeded, outcome)
             stdout_log = next(log for log in outcome.logs if log.stream == "stdout")
             log_path = Path(stdout_log.location_ref)
             self.assertTrue(log_path.is_file())

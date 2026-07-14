@@ -89,7 +89,7 @@ class Man1LabConstructionTest(unittest.TestCase):
                 configure_logging=False,
             )
             self.assertEqual(platform.version(), PLATFORM_VERSION)
-            self.assertEqual(PLATFORM_VERSION, "1.2.4")
+            self.assertEqual(PLATFORM_VERSION, "1.3.0")
 
     def test_configuration_returns_effective_settings(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -105,7 +105,9 @@ class Man1LabConstructionTest(unittest.TestCase):
             self.assertTrue(configuration["execution_planning"]["enabled"])
 
     def test_doctor_reports_environment(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir, patch.dict(
+            "os.environ", {"OPENAI_API_KEY": "test-release-key"}
+        ):
             platform = Man1Lab(
                 settings=_test_settings(Path(temp_dir)),
                 initialize_configuration=False,
